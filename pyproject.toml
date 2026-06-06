@@ -1,0 +1,31 @@
+[project]
+name = "lucid-ads-bot"
+version = "2.0.0"
+description = "Lucid Ads Bot — Production-Grade Telegram Advertising Automation Platform"
+requires-python = ">=3.12"
+dependencies = [
+    "telethon>=1.43",
+    "pymongo[srv]>=4.10",
+    "redis>=5.2",
+    "pydantic>=2.10",
+    "pydantic-settings>=2.7",
+    "structlog>=25.0",
+    "cryptography>=44.0",
+    "python-dotenv>=1.1",
+]
+
+[project.optional-dependencies]
+fast = [
+    "uvloop>=0.21; sys_platform != 'win32'",
+]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.24",
+]
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["app*", "core*", "telegram*", "services*", "workers*", "repositories*", "database*", "cache*", "models*", "utils*"]

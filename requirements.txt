@@ -1,0 +1,9 @@
+telethon==1.43.2
+pymongo[srv]==4.17.0
+redis==7.4.0
+pydantic==2.13.4
+pydantic-settings==2.14.1
+structlog==25.5.0
+cryptography==46.0.5
+python-dotenv==1.0.0
+openai==2.40.0
