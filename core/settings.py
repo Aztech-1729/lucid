@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     logs_bot_username: Optional[str] = None
     api_id: int
     api_hash: str
+    admin_username: str = "@LucidDeveloper"
 
     # ── MongoDB ─────────────────────────────────────────────
     mongo_uri: str = "mongodb://localhost:27017"
@@ -48,13 +49,17 @@ class Settings(BaseSettings):
 
     # ── Thresholds ──────────────────────────────────────────
     health_pause_threshold: int = 40
-    health_quarantine_threshold: int = 20
 
     # ── Client Pool ─────────────────────────────────────────
     pool_max_clients: int = 200
     pool_idle_eviction_minutes: int = 15
     pool_circuit_failure_threshold: int = 5
     pool_circuit_cooldown_seconds: int = 60
+
+    # ── Force Join ──────────────────────────────────────────
+    force_join_enabled: bool = False
+    force_join_channel: str = ""
+    force_join_group: str = ""
 
     # ── Session Encryption ──────────────────────────────────
     session_encryption_key: str  # base64-encoded 32-byte AES key
@@ -75,5 +80,7 @@ class Settings(BaseSettings):
     # ── Admin ───────────────────────────────────────────────
     admin_user_ids: list[int] = []
 
-    # ── Branding ────────────────────────────────────────────
+    # ── Bot Branding ────────────────────────────────────────
     bot_image_url: str = ""
+    logs_bot_image_url: str = ""
+    bot_username: str = ""

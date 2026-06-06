@@ -41,11 +41,40 @@ async def init_logs_bot() -> None:
         from repositories import users_repo
         await users_repo.update(event.sender_id, {"has_started_logs_bot": True})
         
+        from telethon.tl.types import KeyboardButtonStyle
+        
+        buttons = []
+        
+        if settings.force_join_channel:
+            btn_channel = Button.url("Channel", settings.force_join_channel)
+            btn_channel.style = KeyboardButtonStyle(bg_primary=True, icon=5447410659077661506)
+            buttons.append(btn_channel)
+            
+        if settings.force_join_group:
+            btn_group = Button.url("Group", settings.force_join_group)
+            btn_group.style = KeyboardButtonStyle(bg_primary=True, icon=5253742260054409879)
+            buttons.append(btn_group)
+            
+        # Group channel and group horizontally
+        keyboard = [buttons] if buttons else []
+            
+        if settings.bot_username:
+            bot_link = f"https://t.me/{settings.bot_username.strip('@')}"
+            btn_bot = Button.url("Main Bot", bot_link)
+            btn_bot.style = KeyboardButtonStyle(bg_success=True, icon=6147460667281511517)
+            keyboard.append([btn_bot])
+            
         text = (
-            "🚀 <b>LOGS BOT ACTIVATED</b>\n"
-            "<b>Real-time notifications are now enabled.</b>"
+            "<b><tg-emoji emoji-id=\"5443038326535759644\">🔒</tg-emoji> LUCID LOGS SYSTEM</b>\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "<b>Welcome to the official Lucid Ads logging network!</b>\n\n"
+            "<b><tg-emoji emoji-id=\"6147460667281511517\">✅</tg-emoji> Real-time notifications have been successfully enabled for your account. You will now receive instantaneous logs and updates right here!</b>"
         )
-        await event.respond(text, parse_mode="html")
+        
+        if settings.logs_bot_image_url:
+            await event.respond(file=settings.logs_bot_image_url, message=text, buttons=keyboard, parse_mode="html")
+        else:
+            await event.respond(message=text, buttons=keyboard, parse_mode="html")
 
     @_logs_bot.on(events.CallbackQuery())
     async def on_callback(event: events.CallbackQuery.Event) -> None:

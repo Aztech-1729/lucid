@@ -17,44 +17,48 @@ from core.constants import CB
 
 def _b(text: str) -> str:
     """Convert text to Unicode bold (mathematical bold)."""
-    # Map for normal chars to bold chars
-    # Upper: A(0x41) -> 𝐀(0x1D400)
-    # Lower: a(0x61) -> 𝐚(0x1D41A)
-    # Digits: 0(0x30) -> 𝟎(0x1D7CE)
-    
-    result = ""
-    for char in text:
-        cp = ord(char)
-        if 0x41 <= cp <= 0x5A: # A-Z
-            result += chr(cp + 0x1D3BF)
-        elif 0x61 <= cp <= 0x7A: # a-z
-            result += chr(cp + 0x1D3B9)
-        elif 0x30 <= cp <= 0x39: # 0-9
-            result += chr(cp + 0x1D79E)
-        else:
-            result += char
-    return result
+    return text
 
 # ── 1. MAIN MENU (DASHBOARD) ───────────────────────────────
 
+from telethon.tl.types import KeyboardButtonStyle
+
 def main_menu_keyboard() -> list[list[Button]]:
     """Main menu buttons — 2-column grid + full-width My Plan."""
+    
+    btn_accounts = Button.inline(_b("Accounts"), CB.ACCOUNTS)
+    btn_accounts.style = KeyboardButtonStyle(bg_primary=True, icon=6296218646284863141)
+    
+    btn_campaigns = Button.inline(_b("Campaigns"), CB.CAMPAIGNS)
+    btn_campaigns.style = KeyboardButtonStyle(bg_primary=True, icon=5424818078833715060)
+    
+    btn_analytics = Button.inline(_b("Analytics"), CB.ANALYTICS)
+    btn_analytics.style = KeyboardButtonStyle(bg_primary=True, icon=5231200819986047254)
+    
+    btn_health = Button.inline(_b("Health"), CB.HEALTH)
+    btn_health.style = KeyboardButtonStyle(bg_primary=True, icon=5289562446216835198)
+    
+    btn_autoreply = Button.inline(_b("Auto Reply"), CB.SETTINGS_AUTOREPLY)
+    btn_autoreply.style = KeyboardButtonStyle(bg_primary=True, icon=5253742260054409879)
+    
+    btn_autojoin = Button.inline(_b("Auto Join"), CB.AUTO_JOIN)
+    btn_autojoin.style = KeyboardButtonStyle(bg_primary=True, icon=5224607267797606837)
+    
+    btn_ai = Button.inline(_b("Personal AI"), CB.AI_CHAT)
+    btn_ai.style = KeyboardButtonStyle(bg_success=True, icon=5877651964208091297)
+
+    from core.config import get_settings
+    settings = get_settings()
+    admin_url = f"https://t.me/{settings.admin_username.replace('@', '')}"
+    btn_owner = Button.url(f"Owner / Developer: {settings.admin_username}", admin_url)
+    btn_owner.style = KeyboardButtonStyle(bg_danger=True, icon=6235572922086331108)
+
     return [
-        [
-            Button.inline(_b("📋 Accounts"), CB.ACCOUNTS, style="primary"),
-            Button.inline(_b("📢 Campaigns"), CB.CAMPAIGNS, style="primary"),
-        ],
-        [
-            Button.inline(_b("📊 Analytics"), CB.ANALYTICS, style="primary"),
-            Button.inline(_b("❤️ Health"), CB.HEALTH, style="primary"),
-        ],
-        [
-            Button.inline(_b("💬 Auto Reply"), CB.SETTINGS_AUTOREPLY, style="primary"),
-            Button.inline(_b("🤖 Auto Join"), CB.AUTO_JOIN, style="primary"),
-        ],
-        [
-            Button.inline(_b("🧠 Personal AI"), CB.AI_CHAT, style="primary"),
-        ],
+        [btn_accounts, btn_campaigns],
+        [btn_analytics, btn_health],
+        [btn_autoreply, btn_autojoin],
+        [btn_ai],
+        [btn_owner],
     ]
 
 

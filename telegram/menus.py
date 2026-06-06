@@ -82,8 +82,7 @@ def _status_dot(status: str) -> str:
         "WARNING": "🟡",
         "PAUSED": "🟡",
         "LIMITED": "🟠",
-        "QUARANTINED": "🔴",
-        "BANNED": "⛔",
+        "BANNED": "⚫",
         "DISABLED": "⚫",
         "UNKNOWN": "⚫",
     }
@@ -100,9 +99,7 @@ def _health_label(score: int) -> str:
         return "Low Trust"
     elif score >= 30:
         return "Limited"
-    elif score >= 10:
-        return "Quarantined"
-    else:
+    if score >= 10:
         return "Critical"
 
 
@@ -152,17 +149,16 @@ def render_dashboard(data: dict | None) -> str:
     healthy = data.get("healthy_accounts", 0)
     warning = data.get("warning_accounts", 0)
     limited = data.get("limited_accounts", 0)
-    quarantined = data.get("quarantined_accounts", 0)
     overall_health = data.get("overall_health", 0)
-    health_total = max(healthy + warning + limited + quarantined, 1)
+    health_total = max(healthy + limited, 1)
 
     now = datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%I:%M %p")
 
     return (
-        f"🏠 <b>DASHBOARD</b>\n"
+        f"<b><tg-emoji emoji-id=\"5447410659077661506\">🏠</tg-emoji> DASHBOARD</b>\n"
         f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        f"👤 <b>User: @{username}</b>\n\n"
-        f"📊 <b>OVERVIEW:</b>\n"
+        f"<b><tg-emoji emoji-id=\"5461117441612462242\">👤</tg-emoji> User: @{username}</b>\n\n"
+        f"<b><tg-emoji emoji-id=\"5231200819986047254\">📊</tg-emoji> OVERVIEW:</b>\n"
         f"├ <b>Total Accounts: {total_accs}</b>\n"
         f"├ <b>Active Accounts: {active_accs}</b>\n"
         f"├ <b>Active Campaigns: {active_camps}</b>\n"
@@ -170,13 +166,11 @@ def render_dashboard(data: dict | None) -> str:
         f"├ <b>Successful: {successful}</b>\n"
         f"├ <b>Failed: {failed}</b>\n"
         f"└ <b>Success Rate: {success_rate:.2f}%</b>\n\n"
-        f"🛡️ <b>HEALTH:</b>\n"
-        f"├ 🟢 <b>Healthy: {healthy} ({healthy/health_total*100:.1f}%)</b>\n"
-        f"├ 🟡 <b>Warning: {warning} ({warning/health_total*100:.1f}%)</b>\n"
-        f"├ 🟠 <b>Limited: {limited} ({limited/health_total*100:.1f}%)</b>\n"
-        f"├ 🔴 <b>Quarantined: {quarantined} ({quarantined/health_total*100:.1f}%)</b>\n"
-        f"└ ⭐ <b>Overall Score: {overall_health}%</b>\n\n"
-        f"🕐 <b>Last Updated: {now}</b>"
+        f"<b><tg-emoji emoji-id=\"5289562446216835198\">🛡️</tg-emoji> HEALTH:</b>\n"
+        f"├ <b><tg-emoji emoji-id=\"5416081784641168838\">🟢</tg-emoji> Healthy: {healthy} ({healthy/health_total*100:.1f}%)</b>\n"
+        f"├ <b><tg-emoji emoji-id=\"5411225014148014586\">🟠</tg-emoji> Limited: {limited} ({limited/health_total*100:.1f}%)</b>\n"
+        f"└ <b><tg-emoji emoji-id=\"5438496463044752972\">⭐</tg-emoji> Overall Score: {overall_health}%</b>\n\n"
+        f"<b><tg-emoji emoji-id=\"5413879192267805083\">🕐</tg-emoji> Last Updated: {now}</b>"
     )
 
 
@@ -401,21 +395,17 @@ def render_health_overview(data: dict | None) -> str:
     healthy = counts.get("HEALTHY", 0)
     warning = counts.get("WARNING", 0)
     limited = counts.get("LIMITED", 0)
-    quarantined = counts.get("QUARANTINED", 0)
     banned = counts.get("BANNED", 0)
     total = data.get("total_accounts", 0) or 1
     overall = data.get("overall_health_pct", 0)
 
     return (
-        f"🩺 <b>ACCOUNTS HEALTH</b>\n"
+        f"<b><tg-emoji emoji-id=\"5289562446216835198\">🛡️</tg-emoji> ACCOUNTS HEALTH</b>\n"
         f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        f"🛡️ <b>STATUS:</b>\n"
-        f"├ 🟢 <b>Healthy: {healthy} ({healthy/total*100:.1f}%)</b>\n"
-        f"├ 🟡 <b>Warning: {warning} ({warning/total*100:.1f}%)</b>\n"
-        f"├ 🟠 <b>Limited: {limited} ({limited/total*100:.1f}%)</b>\n"
-        f"├ 🔴 <b>Quarantined: {quarantined} ({quarantined/total*100:.1f}%)</b>\n"
-        f"└ ⛔ <b>Banned: {banned}</b>\n\n"
-        f"⭐ <b>Overall Health Score: {overall}%</b>"
+        f"<b><tg-emoji emoji-id=\"5231200819986047254\">📊</tg-emoji> STATUS:</b>\n"
+        f"├ <b><tg-emoji emoji-id=\"5416081784641168838\">🟢</tg-emoji> Healthy: {healthy} ({healthy/total*100:.1f}%)</b>\n"
+        f"└ <b><tg-emoji emoji-id=\"5411225014148014586\">🟠</tg-emoji> Limited: {limited} ({limited/total*100:.1f}%)</b>\n\n"
+        f"<b><tg-emoji emoji-id=\"5438496463044752972\">⭐</tg-emoji> Overall Health Score: {overall}%</b>"
     )
 
 
@@ -425,7 +415,7 @@ def render_health_settings() -> str:
         "⚙️ <b>HEALTH SETTINGS</b>\n"
         "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         "Configure how the bot handles account health.\n\n"
-        "<b>Auto-Pause Unhealthy:</b> If ON, the bot will automatically pause ad forwarding for accounts that drop into the WARNING or QUARANTINED state, protecting them from bans."
+        "<b>Auto-Pause Unhealthy:</b> If ON, the bot will automatically pause ad forwarding for accounts that drop into the WARNING state, protecting them from bans."
     )
 
 

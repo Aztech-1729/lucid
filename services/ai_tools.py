@@ -127,7 +127,7 @@ TOOLS = [
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "status_filter": {"type": "string", "enum": ["ALL", "ACTIVE", "PAUSED", "QUARANTINED", "BANNED", "DISABLED"], "description": "Filter by status"}
+                    "status_filter": {"type": "string", "enum": ["ALL", "ACTIVE", "PAUSED", "BANNED", "DISABLED"], "description": "Filter by status"}
                 },
                 "required": []
             }
@@ -202,20 +202,6 @@ TOOLS = [
                 "type": "object",
                 "properties": {},
                 "required": []
-            }
-        }
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "quarantine_account",
-            "description": "WRITE: Sets an account to QUARANTINED status, removing it from all active campaigns.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "phone": {"type": "string", "description": "The phone number to quarantine"}
-                },
-                "required": ["phone"]
             }
         }
     }
@@ -621,25 +607,6 @@ async def propose_pause_all_campaigns(user_id: int, kwargs: dict) -> str:
         "message": "All active campaigns have been paused."
     })
 
-async def propose_quarantine_account(user_id: int, kwargs: dict) -> str:
-    phone = kwargs.get("phone")
-    if not phone:
-        return json.dumps({"error": "Phone number is required."})
-        
-    accounts = await accounts_repo.list_by_owner(user_id)
-    target = next((a for a in accounts if a.phone == phone), None)
-    
-    if not target:
-        return json.dumps({"error": f"account_not_found: You do not own an account with phone number {phone}."})
-        
-    from telegram.client_pool import client_pool
-    await client_pool.evict(target.id)
-    await accounts_repo.update_status(target.id, "QUARANTINED")
-    return json.dumps({
-        "success": True,
-        "message": f"Account {phone} quarantined successfully."
-    })
-
 
 
 # ── Registry ────────────────────────────────────────────────
@@ -658,5 +625,4 @@ TOOL_REGISTRY: Dict[str, Callable[[int, dict], Coroutine[Any, Any, str]]] = {
     "edit_campaign_message": propose_edit_campaign_message,
     "edit_campaign_accounts": propose_edit_campaign_accounts,
     "pause_all_campaigns": propose_pause_all_campaigns,
-    "quarantine_account": propose_quarantine_account,
 }

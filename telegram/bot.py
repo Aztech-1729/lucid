@@ -67,6 +67,71 @@ async def stop_bot() -> None:
         await log.ainfo("bot.stopped")
         _bot = None
 
+async def get_missing_force_joins(event, bot) -> list[str]:
+    settings = get_settings()
+    if not settings.force_join_enabled:
+        return []
+    
+    user_id = event.sender_id
+    from telethon.errors import UserNotParticipantError
+    
+    missing = []
+
+    # Check channel
+    if settings.force_join_channel:
+        try:
+            participant = await bot.get_permissions(settings.force_join_channel, user_id)
+            if not participant:
+                missing.append("channel")
+        except Exception as e:
+            if not isinstance(e, UserNotParticipantError):
+                await log.aerror("force_join_channel.check_failed", error=str(e))
+            missing.append("channel")
+
+    # Check group
+    if settings.force_join_group:
+        try:
+            participant = await bot.get_permissions(settings.force_join_group, user_id)
+            if not participant:
+                missing.append("group")
+        except Exception as e:
+            if not isinstance(e, UserNotParticipantError):
+                await log.aerror("force_join_group.check_failed", error=str(e))
+            missing.append("group")
+
+    return missing
+
+async def enforce_join(event, bot):
+    settings = get_settings()
+    from telethon.tl.custom import Button
+    from telethon.tl.types import KeyboardButtonStyle
+    buttons = []
+    
+    if settings.force_join_channel:
+        btn1 = Button.url("Join Channel", settings.force_join_channel)
+        btn1.style = KeyboardButtonStyle(bg_primary=True, icon=5447410659077661506)
+        buttons.append([btn1])
+    if settings.force_join_group:
+        btn2 = Button.url("Join Group", settings.force_join_group)
+        btn2.style = KeyboardButtonStyle(bg_primary=True, icon=5253742260054409879)
+        buttons.append([btn2])
+        
+    btn_check = Button.inline("Joined", b"force_join_check")
+    btn_check.style = KeyboardButtonStyle(bg_success=True, icon=6147460667281511517)
+    buttons.append([btn_check])
+    
+    caption = (
+        "<b><tg-emoji emoji-id=\"5420323339723881652\">🔒</tg-emoji> ACCESS DENIED</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━\n\n"
+        "<b>Welcome to Lucid Ads Bot!</b>\n\n"
+        "<b>To unlock full access to all bot features, you must be an active member of our official community.</b>\n\n"
+        "<b><tg-emoji emoji-id=\"5406745015365943482\">👇</tg-emoji> Please join the required channel and group below, then click <tg-emoji emoji-id=\"6147460667281511517\">✅</tg-emoji> Joined to verify your account!</b>"
+    )
+    if settings.bot_image_url:
+        await event.respond(file=settings.bot_image_url, message=caption, buttons=buttons, parse_mode="html")
+    else:
+        await event.respond(message=caption, buttons=buttons, parse_mode="html")
+
 
 def _register_handlers(bot: TelegramClient) -> None:
     """Register all event handlers on the bot client."""
@@ -74,6 +139,11 @@ def _register_handlers(bot: TelegramClient) -> None:
     @bot.on(events.NewMessage(pattern="/start"))
     async def on_start(event: events.NewMessage.Event) -> None:
         """Handle /start command — entry point for all users."""
+        missing = await get_missing_force_joins(event, bot)
+        if missing:
+            await enforce_join(event, bot)
+            return
+
         settings = get_settings()
         sender = await event.get_sender()
         username = getattr(sender, "username", None)
@@ -112,9 +182,106 @@ def _register_handlers(bot: TelegramClient) -> None:
                 parse_mode="html",
             )
 
+    @bot.on(events.NewMessage(pattern=r"^/bd$"))
+    async def on_broadcast(event: events.NewMessage.Event) -> None:
+        """Handle /bd command for admin broadcasting."""
+        settings = get_settings()
+        sender = await event.get_sender()
+        sender_username = getattr(sender, "username", "")
+        
+        # Check if user is admin
+        is_admin = False
+        if event.sender_id in settings.admin_user_ids:
+            is_admin = True
+        elif sender_username and f"@{sender_username.lower()}" == settings.admin_username.lower():
+            is_admin = True
+            
+        if not is_admin:
+            return
+            
+        if not event.is_reply:
+            await event.reply("⚠️ Please reply to a message with /bd to broadcast it.")
+            return
+            
+        reply_msg = await event.get_reply_message()
+        if not reply_msg:
+            return
+            
+        status_msg = await event.reply("🚀 <b>Starting broadcast...</b>", parse_mode="html")
+        
+        async def run_broadcast():
+            active_users = await users_repo.get_all_active_user_ids()
+            success_count = 0
+            fail_count = 0
+            import asyncio
+            
+            for uid in active_users:
+                try:
+                    await bot.send_message(uid, reply_msg)
+                    success_count += 1
+                except Exception:
+                    fail_count += 1
+                await asyncio.sleep(0.05) # Prevent global flood limit
+                
+            await status_msg.edit(
+                f"✅ <b>Broadcast Complete!</b>\n\n"
+                f"🎯 <b>Successfully sent to:</b> {success_count} users\n"
+                f"❌ <b>Failed:</b> {fail_count} users", 
+                parse_mode="html"
+            )
+
+        import asyncio
+        asyncio.create_task(run_broadcast())
+
     @bot.on(events.CallbackQuery)
     async def on_callback(event: events.CallbackQuery.Event) -> None:
         """Handle all inline button presses."""
+        
+        if event.data == b"force_join_check":
+            missing = await get_missing_force_joins(event, bot)
+            if not missing:
+                await event.delete()
+                # Manually trigger on_start logic to show dashboard
+                # We mock a /start event
+                class MockStartEvent:
+                    sender_id = event.sender_id
+                    async def get_sender(self): return await event.get_sender()
+                    async def respond(self, *args, **kwargs): return await event.respond(*args, **kwargs)
+                
+                # Get or create user
+                sender = await event.get_sender()
+                username = getattr(sender, "username", None)
+                await users_repo.get_or_create(
+                    user_id=event.sender_id,
+                    username=username,
+                    first_name=getattr(sender, "first_name", None),
+                )
+                from cache import dashboard_cache
+                from services import dashboard_service
+                data = await dashboard_cache.get(event.sender_id)
+                if not data:
+                    data = await dashboard_service.build_dashboard(event.sender_id)
+                text = menus.render_dashboard(data)
+                settings = get_settings()
+                if settings.bot_image_url:
+                    await event.respond(file=settings.bot_image_url, message=text, buttons=keyboards.main_menu_keyboard(), parse_mode="html")
+                else:
+                    await event.respond(text, buttons=keyboards.main_menu_keyboard(), parse_mode="html")
+            else:
+                if len(missing) == 2:
+                    msg = "❌ You haven't joined the channel and group yet!"
+                elif missing[0] == "channel":
+                    msg = "❌ You haven't joined the channel yet!"
+                else:
+                    msg = "❌ You haven't joined the group yet!"
+                await event.answer(msg, alert=True)
+            return
+
+        missing_any = await get_missing_force_joins(event, bot)
+        if missing_any:
+            await event.answer("🔒 You must join the required community first!", alert=True)
+            await enforce_join(event, bot)
+            return
 
         try:
             await callbacks.route_callback(event)
@@ -139,6 +306,11 @@ def _register_handlers(bot: TelegramClient) -> None:
 
         if event.text and event.text.startswith("/"):
             # Command handled by other handlers
+            return
+
+        missing = await get_missing_force_joins(event, bot)
+        if missing:
+            await enforce_join(event, bot)
             return
 
         user_id = event.sender_id

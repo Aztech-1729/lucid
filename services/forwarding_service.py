@@ -193,17 +193,17 @@ async def safe_forward(
                     account_id=account_id,
                     wait_seconds=e.seconds,
                 )
-                # Immediately Quarantine Account
+                # Immediately limit the account
                 from core.constants import AccountStatus
-                await accounts_repo.update_health(account_id, 0, AccountStatus.QUARANTINED)
+                await accounts_repo.update_health(account_id, 0, AccountStatus.LIMITED)
                 
-                # Force disconnect from pool to clear any internal flood locks
-                from telegram.client_pool import client_pool
-                await client_pool.evict(account_id)
-                
-                # Bubble up exception to stop forwarding for this account this round
-                from core.exceptions import AccountQuarantinedError
-                raise AccountQuarantinedError(f"Quarantined due to excessive FloodWait ({e.seconds}s)")
+                await log.awarning(
+                    "forward.account_limited_due_to_flood",
+                    account_id=account_id,
+                    seconds=e.seconds
+                )
+                from core.exceptions import AccountLimitedError
+                raise AccountLimitedError(f"Limited due to excessive FloodWait ({e.seconds}s)")
 
 
             await log.awarning(

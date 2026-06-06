@@ -101,8 +101,7 @@ def format_account_status(status: str) -> str:
     status_emojis = {
         "ACTIVE": "🟢",
         "PAUSED": "⏸️",
-        "QUARANTINED": "🔴",
-        "BANNED": "⛔",
+        "BANNED": "⚫",
         "DISABLED": "⚫",
     }
     emoji = status_emojis.get(status, "❓")

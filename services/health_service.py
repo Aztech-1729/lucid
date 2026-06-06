@@ -66,7 +66,6 @@ def compute_health_score(
         HealthState.HEALTHY: 1.0,
         HealthState.WARNING: 0.6,
         HealthState.LIMITED: 0.3,
-        HealthState.QUARANTINED: 0.1,
         HealthState.BANNED: 0.0,
         HealthState.UNKNOWN: 0.5,
     }
@@ -101,9 +100,7 @@ def compute_health_score(
 
     # Restrictions factor (based on status)
     restriction_factor = 1.0
-    if account.status == AccountStatus.QUARANTINED:
-        restriction_factor = 0.1
-    elif account.status == AccountStatus.PAUSED:
+    if account.status == AccountStatus.PAUSED:
         restriction_factor = 0.7
 
     # Weighted score
@@ -153,8 +150,6 @@ async def evaluate_account(
     new_status = None
     if state == HealthState.BANNED:
         new_status = AccountStatus.BANNED
-    elif score < settings.health_quarantine_threshold:
-        new_status = AccountStatus.QUARANTINED
     elif score < settings.health_pause_threshold:
         new_status = AccountStatus.PAUSED
 
@@ -210,7 +205,6 @@ async def get_health_summary(owner_id: int) -> dict:
             HealthState.HEALTHY: counts.get(HealthState.HEALTHY, 0),
             HealthState.WARNING: counts.get(HealthState.WARNING, 0),
             HealthState.LIMITED: counts.get(HealthState.LIMITED, 0),
-            HealthState.QUARANTINED: counts.get(HealthState.QUARANTINED, 0),
             HealthState.BANNED: counts.get(HealthState.BANNED, 0),
             HealthState.UNKNOWN: counts.get(HealthState.UNKNOWN, 0),
         },

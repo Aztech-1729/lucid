@@ -752,12 +752,6 @@ async def on_ai_confirm(event: events.CallbackQuery.Event, action_id: str) -> No
                 if getattr(c, "status", "") == "ACTIVE":
                     await campaigns_repo.update_status(c.id, "PAUSED")
             await event.edit("✅ All active campaigns have been paused.", buttons=keyboards.back_keyboard())
-        elif action_type == "quarantine_account":
-            account_id = payload.get("account_id")
-            if account_id:
-                from repositories import accounts_repo
-                await accounts_repo.update_status(account_id, "QUARANTINED")
-                await event.edit("✅ Account quarantined successfully.", buttons=keyboards.back_keyboard())
         else:
             await event.edit(f"⚠️ Unknown action type: {action_type}", buttons=keyboards.back_keyboard())
     except Exception as e:
@@ -1016,7 +1010,13 @@ async def on_confirm_yes(event: events.CallbackQuery.Event, action: str, target_
                     "Please click the button below to start it, then try again."
                 )
                 buttons = keyboards.logs_bot_activation_keyboard(bot_username, target_id)
-                await event.edit(text, buttons=buttons, parse_mode="html")
+                try:
+                    await event.edit(text, buttons=buttons, parse_mode="html")
+                except Exception as e:
+                    if "Message is not modified" in str(e) or "not modified" in str(e).lower():
+                        await event.answer("⚠️ You haven't started the Logs Bot yet! Please click the link to start it first.", alert=True)
+                    else:
+                        raise e
                 return
 
             from services import campaign_service

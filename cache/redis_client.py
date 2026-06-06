@@ -37,7 +37,7 @@ async def init_redis(uri: str, prefix: str = "lucidads") -> None:
     )
 
     # Verify connectivity
-    res = await _client.ping()
+    res = await _client.ping()  # type: ignore
     await log.ainfo("redis.connected", prefix=prefix)
 
 

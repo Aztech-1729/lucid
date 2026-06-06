@@ -26,8 +26,8 @@ class AccountBannedError(LucidAdsBaseError):
     """Raised when attempting to use a banned account."""
 
 
-class AccountQuarantinedError(LucidAdsBaseError):
-    """Raised when attempting to use a quarantined account."""
+class AccountLimitedError(LucidAdsBaseError):
+    """Raised when attempting to use a limited account."""
 
 
 # ── Campaign Errors ─────────────────────────────────────────

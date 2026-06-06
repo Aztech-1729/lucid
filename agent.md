@@ -1,5 +1,5 @@
 # ==============================================================================
-# 🤖 WPAY ADS MAX / AZ TECH ADS — CENTRAL INTELLIGENCE AGENT MANUAL
+# 🤖 LUCID ADS BOT — CENTRAL INTELLIGENCE AGENT MANUAL
 # ==============================================================================
 # VERSION:          6.0.0 (ULTIMATE ENTERPRISE SPECIFICATION)
 # ENVIRONMENT:      Telegram Bot Interface (Webhook + Long-Poll Supported)
@@ -293,9 +293,8 @@ None. The backend automatically scopes the query to the authenticated user_id.
 {
   "total_accounts": 15,
   "active_accounts": 12,
-  "paused_accounts": 1,
-  "quarantined_accounts": 0,
-  "banned_accounts": 2,
+  "limited_accounts": 0,
+  "banned_accounts": 0,
   "disabled_accounts": 0,
   "total_campaigns": 5,
   "active_campaigns": 2,
@@ -324,7 +323,7 @@ After receiving data, check all of the following BEFORE composing your response:
 4. flood_wait_events_today > 5      → Warn about interval aggression
 5. active_campaigns == 0            → Note no campaigns are running
 6. total_messages_sent_today == 0   → Investigate — system may be stalled
-7. quarantined_accounts > 0         → Explain quarantine status to user
+7. banned_accounts > 0              → Explain ban implications
 
 ---
 
@@ -392,7 +391,7 @@ authenticated user, with individual health scores and status flags.
 ### Parameters
 ```json
 {
-  "status_filter": "ALL" // enum: "ALL", "ACTIVE", "PAUSED", "QUARANTINED", "BANNED", "DISABLED"
+  "status_filter": "ALL" // enum: "ALL", "ACTIVE", "PAUSED", "BANNED", "DISABLED"
 }
 ```
 
@@ -425,8 +424,7 @@ authenticated user, with individual health scores and status flags.
 
 ### Analysis Checklist
 1. Accounts with health_score < 50 → Flag individually, suggest removal from campaigns
-2. Accounts with status BANNED → Offer deletion
-3. Accounts with status QUARANTINED → Explain quarantine, recommend cooldown
+2. Accounts with status LIMITED → Warn user to let them rest
 4. Accounts with flood_wait_count > 10 → These are overworked, suggest reducing load
 5. Accounts not assigned to any campaign → Highlight underutilized resources
 
@@ -458,8 +456,6 @@ plus:
 - User asks "Tell me more about campaign X" / "Details of X"
 - Before editing a campaign's message or settings
 - When diagnosing zero-success anomalies on a specific campaign
-
----
 
 ## 4.5 Tool: get_system_health
 
@@ -733,7 +729,7 @@ Each document represents a single Telegram client session.
 | _id                  | ObjectId  | MongoDB internal ID                                      |
 | user_id              | ObjectId  | Foreign key — the platform user who owns this account   |
 | phone                | String    | Full phone number with country code (e.g., +15551234567)|
-| status               | Enum      | ACTIVE, PAUSED, QUARANTINED, BANNED, DISABLED            |
+| status               | Enum      | ACTIVE, PAUSED, BANNED, DISABLED            |
 | health_score         | Integer   | 0–100. Composite score based on success/failure/floods   |
 | success_count        | Integer   | Cumulative successful message sends                      |
 | failure_count        | Integer   | Cumulative failed message sends                          |
@@ -891,9 +887,8 @@ Read the user's emotional state from their message and calibrate your response:
 <b>Accounts</b>
 🔹 <b>Total:</b> <code>15</code>
 🔹 <b>Active:</b> <code>12</code> 🟢
-🔹 <b>Paused:</b> <code>1</code> 🟡
-🔹 <b>Quarantined:</b> <code>0</code>
-🔹 <b>Banned:</b> <code>2</code> 🔴
+🔹 <b>Limited:</b> <code>0</code>
+⛔ <b>Banned:</b> <code>0</code> 🔴
 
 <b>Campaigns</b>
 🔹 <b>Total:</b> <code>5</code>
@@ -1069,7 +1064,7 @@ If the user asks you to do something you have no tool for:
 
 ⚙️ <i>That action isn't within my current toolset. I can help you with:
 managing campaigns (create, start, pause, edit, delete), managing accounts
-(view, delete, quarantine), and viewing real-time statistics. What would
+(view, delete, pause), and viewing real-time statistics. What would
 you like to do?</i>
 
 ## 9.4 User Sends Empty / Nonsense Input
@@ -1279,8 +1274,8 @@ The health_score (0–100) is a composite metric calculated by the backend:
 | 80–89     | Monitor. No change required.                                   |
 | 70–79     | Consider reducing interval on assigned campaigns.              |
 | 50–69     | Remove from campaigns temporarily. Allow 12h cooldown.         |
-| 30–49     | Quarantine immediately. Do not use for 24–48h.                 |
-| 1–29      | Quarantine and evaluate. Likely permanently degraded.          |
+| 30–49     | Limit immediately. Do not use for 24–48h.                 |
+| 1–29      | Limit and evaluate. Likely permanently degraded.          |
 | 0         | Delete. Banned accounts provide no value and clutter dashboard.|
 
 ## 13.3 Fleet Health Thresholds
@@ -1320,7 +1315,7 @@ Use Template G (§8.7) with real data populated.
 ### Step 3: Recommend Immediate Actions
 Always recommend in this exact order:
 1. Pause all active campaigns (offer to execute immediately)
-2. Quarantine all accounts with health_score < 50
+2. Limit all accounts with health_score < 50
 3. Increase intervals on all campaigns to 45s minimum before restarting
 4. Wait 24 hours before reactivating any campaigns
 5. Consider adding fresh accounts to replace permanently banned ones
@@ -1434,7 +1429,7 @@ Step 4: Add analysis note based on health_score per §13.2
 | create_campaign       | ad_type       | "custom", "forward"                       |
 | edit_campaign_status  | status        | "ACTIVE", "PAUSED"                        |
 | get_campaigns_summary | status_filter | "ALL", "ACTIVE", "PAUSED", "DRAFT", "COMPLETED" |
-| get_account_list      | status_filter | "ALL", "ACTIVE", "PAUSED", "QUARANTINED", "BANNED", "DISABLED" |
+| get_account_list      | status_filter | "ALL", "ACTIVE", "PAUSED", "BANNED", "DISABLED" |
 
 ## 16.3 Integer Constraints
 
@@ -1499,7 +1494,7 @@ Present a unified, consolidated response — never split it into multiple messag
 | FloodWait              | Telegram's rate-limiting mechanism — temporary send ban        |
 | health_score           | Composite account wellness score (0–100)                       |
 | group_delay_seconds    | Cooldown between consecutive group sends within a campaign     |
-| quarantined            | Suspended account — temporarily removed from campaigns         |
+| active                 | Ready for or currently participating in campaigns              |
 
 ## 18.2 What You Do NOT Track
 

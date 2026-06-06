@@ -14,7 +14,6 @@ from enum import StrEnum
 class AccountStatus(StrEnum):
     ACTIVE = "ACTIVE"
     PAUSED = "PAUSED"
-    QUARANTINED = "QUARANTINED"
     BANNED = "BANNED"
     DISABLED = "DISABLED"
 
@@ -25,7 +24,6 @@ class HealthState(StrEnum):
     HEALTHY = "HEALTHY"
     WARNING = "WARNING"
     LIMITED = "LIMITED"
-    QUARANTINED = "QUARANTINED"
     BANNED = "BANNED"
     UNKNOWN = "UNKNOWN"
 
@@ -34,7 +32,6 @@ HEALTH_EMOJI: dict[HealthState, str] = {
     HealthState.HEALTHY: "🟢",
     HealthState.WARNING: "🟡",
     HealthState.LIMITED: "🟠",
-    HealthState.QUARANTINED: "🔴",
     HealthState.BANNED: "⛔",
     HealthState.UNKNOWN: "⚫",
 }

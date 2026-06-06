@@ -28,7 +28,7 @@ async def run_health_check_cycle() -> None:
     Picks accounts due for check, contacts SpamBot for each,
     evaluates health, and updates caches.
     """
-    accounts = await accounts_repo.get_due_for_check(limit=10)
+    accounts = await accounts_repo.get_due_for_check(limit=500)
 
     if not accounts:
         return
@@ -71,6 +71,13 @@ async def check_single_account(account) -> None:
                 await accounts_repo.update_name(account.id, new_name)
                 account.name = new_name # Update local object for evaluate_account notifications
                 
+            # Unblock SpamBot to ensure delivery
+            from telethon.tl.functions.contacts import UnblockRequest
+            try:
+                await client(UnblockRequest(id='SpamBot'))
+            except Exception:
+                pass
+
             # Send /start to SpamBot
             await client.send_message("SpamBot", "/start")
 
@@ -118,6 +125,12 @@ async def check_single_account(account) -> None:
     # Update health summary cache for owner
     summary = await health_service.get_health_summary(account.owner_id)
     await health_cache.set_summary(account.owner_id, summary)
+
+    # Schedule the next check
+    from datetime import datetime, timedelta
+    settings = get_settings()
+    next_check = datetime.utcnow() + timedelta(seconds=settings.health_check_interval_seconds)
+    await accounts_repo.set_next_check(account.id, next_check)
 
 
 async def run(stop_event: asyncio.Event | None = None) -> None:

@@ -69,7 +69,7 @@ async def build_dashboard(user_id: int) -> dict:
         "healthy_accounts": healthy_count,
         "warning_accounts": health_counts.get("WARNING", 0) if health_counts else 0,
         "limited_accounts": health_counts.get("LIMITED", 0) if health_counts else 0,
-        "quarantined_accounts": health_counts.get("QUARANTINED", 0) if health_counts else 0,
+        "banned_accounts": health_counts.get("BANNED", 0) if health_counts else 0,
         "overall_health": overall_health,
         "updated_at": datetime.utcnow().isoformat(),
     }
