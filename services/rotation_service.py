@@ -52,7 +52,6 @@ def compute_rotation_weight(account: Account) -> float:
     Accounts with higher weights receive proportionally more forwarding traffic.
     """
     if account.status in (
-        AccountStatus.QUARANTINED,
         AccountStatus.BANNED,
         AccountStatus.DISABLED,
     ):

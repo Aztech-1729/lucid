@@ -73,6 +73,14 @@ async def get_missing_force_joins(event, bot) -> list[str]:
         return []
     
     user_id = event.sender_id
+    
+    # Fast path: check cache
+    from cache.redis_client import cache_get, cache_set
+    cache_key = f"force_join:{user_id}"
+    cached = await cache_get(cache_key)
+    if cached is not None:
+        return cached.get("missing", [])
+
     from telethon.errors import UserNotParticipantError
     
     missing = []
@@ -99,6 +107,8 @@ async def get_missing_force_joins(event, bot) -> list[str]:
                 await log.aerror("force_join_group.check_failed", error=str(e))
             missing.append("group")
 
+    # Cache for 10 minutes (600 seconds)
+    await cache_set(cache_key, {"missing": missing}, ttl=600)
     return missing
 
 async def enforce_join(event, bot):
@@ -308,6 +318,9 @@ def _register_handlers(bot: TelegramClient) -> None:
         """Handle all inline button presses."""
         
         if event.data == b"force_join_check":
+            from cache.redis_client import cache_delete
+            await cache_delete(f"force_join:{event.sender_id}")
+            
             missing = await get_missing_force_joins(event, bot)
             if not missing:
                 await event.delete()

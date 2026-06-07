@@ -384,6 +384,10 @@ def campaign_manage_accounts_keyboard(
         rows.append([Button.inline(f"{mark} {phone}", f"cmp:acc_detail:{acc_id}", style=btn_style)])
         
     # 2. Quick Actions
+    rows.append([
+        Button.inline(_b("🔄 Refresh All Groups"), f"cmp:refresh_all_grps:{campaign_id}", style=None),
+    ])
+    
     total_items = pagination.get("total_items", 0)
     if total_items > 0 and len(assigned_ids) >= total_items:
         rows.append([

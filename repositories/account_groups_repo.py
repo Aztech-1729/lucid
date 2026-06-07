@@ -20,20 +20,45 @@ async def save_groups(account_id: str, groups: list[dict]) -> None:
         
     ops = []
     for g in groups:
-        update_doc = {"title": g["title"], "is_selected": g.get("is_selected", False)}
+        set_doc = {"title": g["title"]}
         if "access_hash" in g:
-            update_doc["access_hash"] = g["access_hash"]
+            set_doc["access_hash"] = g["access_hash"]
             
         ops.append(
             UpdateOne(
                 {"account_id": account_id, "group_id": g["id"]},
-                {"$set": update_doc},
+                {
+                    "$set": set_doc,
+                    "$setOnInsert": {"is_selected": g.get("is_selected", False)}
+                },
                 upsert=True
             )
         )
         
     if ops:
         await _coll().bulk_write(ops)
+
+
+async def sync_groups_from_telegram(account_id: str) -> None:
+    """Fetch all groups from Telegram and upsert them, preserving selections."""
+    try:
+        from telegram.client_pool import client_pool
+        async with client_pool.acquire(account_id) as client:
+            dialogs = await client.get_dialogs()
+            groups = []
+            for d in dialogs:
+                if d.is_group or d.is_channel:
+                    access_hash = getattr(d.entity, "access_hash", 0) if d.entity else 0
+                    groups.append({
+                        "id": d.id, 
+                        "title": d.title, 
+                        "access_hash": access_hash,
+                        "is_selected": False
+                    })
+            await save_groups(account_id, groups)
+    except Exception as e:
+        import logging
+        logging.getLogger("account_groups_repo").error(f"Failed to sync groups: {e}")
 
 
 async def get_groups_paginated(account_id: str, page: int = 1, limit: int = 10) -> tuple[list[dict], dict]:

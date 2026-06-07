@@ -412,9 +412,27 @@ async def on_campaign_account_toggle(event: events.CallbackQuery.Event) -> None:
     await on_campaign_acc_detail(event, account_id)
 
 
+async def on_campaign_refresh_all_groups(event: events.CallbackQuery.Event, campaign_id: str) -> None:
+    """Fetch latest groups from Telegram for all assigned accounts in a campaign."""
+    await event.answer("Fetching latest groups for all accounts...", alert=False)
+    from repositories import account_groups_repo
+    from services import campaign_service
+    
+    camp = await campaign_service.get_campaign(campaign_id)
+    if not camp or not camp.account_ids:
+        await on_campaign_manage_accounts(event, campaign_id)
+        return
+        
+    for acc_id in camp.account_ids:
+        await account_groups_repo.sync_groups_from_telegram(str(acc_id))
+        
+    await on_campaign_manage_accounts(event, campaign_id)
+
+
 async def on_campaign_acc_detail(event: events.CallbackQuery.Event, account_id: str) -> None:
 
     """Show details for an account inside a campaign context."""
+    await event.answer()
     from services import campaign_service
     from repositories import accounts_repo, account_groups_repo
     
@@ -436,7 +454,6 @@ async def on_campaign_acc_detail(event: events.CallbackQuery.Event, account_id: 
     # Check if we have groups, if not, fetch them
     total_groups = await account_groups_repo._coll().count_documents({"account_id": account_id})
     if total_groups == 0:
-        await event.answer("Fetching groups... this may take a few seconds.")
         try:
             from telegram.client_pool import client_pool
             async with client_pool.acquire(account_id) as client:
@@ -449,8 +466,6 @@ async def on_campaign_acc_detail(event: events.CallbackQuery.Event, account_id: 
                 total_groups = len(groups)
         except Exception as exc:
             pass # Ignore and continue with 0 groups
-    else:
-        await event.answer()
     
     phone = account.phone or "Unknown"
     
@@ -1408,6 +1423,9 @@ async def route_callback(event: events.CallbackQuery.Event) -> None:
         await on_campaign_unselect_all_accounts(event, campaign_id)
     elif data.startswith("cmp:toggle_acc"):
         await on_campaign_account_toggle(event)
+    elif data.startswith("cmp:refresh_all_grps:"):
+        campaign_id = data.split(":")[2]
+        await on_campaign_refresh_all_groups(event, campaign_id)
     elif data.startswith("cmp:acc_detail:"):
         _, _, account_id = data.split(":")
         await on_campaign_acc_detail(event, account_id)
