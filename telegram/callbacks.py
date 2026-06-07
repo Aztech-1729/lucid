@@ -35,7 +35,17 @@ async def on_dashboard(event: events.CallbackQuery.Event) -> None:
         data = await dashboard_cache.get(event.sender_id)
         
     text = menus.render_dashboard(data)
-    await event.edit(text, buttons=keyboards.main_menu_keyboard(), parse_mode="html")
+    from core.config import get_settings
+    from repositories import users_repo
+    settings = get_settings()
+    user = await users_repo.get(event.sender_id)
+    is_admin = False
+    if event.sender_id in settings.admin_user_ids:
+        is_admin = True
+    elif user and user.username and user.username.lower() == settings.admin_username.lower().replace("@", ""):
+        is_admin = True
+    
+    await event.edit(text, buttons=keyboards.build_dashboard_keyboard(is_admin), parse_mode="html")
 
 
 # ── Accounts ────────────────────────────────────────────────
@@ -111,7 +121,7 @@ async def on_account_resume(event: events.CallbackQuery.Event, account_id: str) 
 async def on_account_delete(event: events.CallbackQuery.Event, account_id: str) -> None:
     """Confirm account deletion."""
     await event.answer()  # LINE 1. Non-negotiable.
-    text = "🗑️ Are you sure you want to <b>delete</b> this account?\n\n⚠️ This action cannot be undone."
+    text = "🗑️ Are you sure you want to <b>delete</b> this account?\n\n<tg-emoji emoji-id='5420323339723881652'>⚠️</tg-emoji> This action cannot be undone."
     buttons = keyboards.confirm_keyboard("delete_account", account_id)
     await event.edit(text, buttons=buttons, parse_mode="html")
 
@@ -124,7 +134,7 @@ async def on_accounts_delete_all(event: events.CallbackQuery.Event) -> None:
         "🗑️ <b>REMOVE ALL ACCOUNTS</b>\n"
         "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         "Are you sure you want to remove <b>ALL</b> accounts from the bot?\n\n"
-        "⚠️ This action <b>CANNOT</b> be undone and will delete all session data."
+        "<tg-emoji emoji-id='5420323339723881652'>⚠️</tg-emoji> This action <b>CANNOT</b> be undone and will delete all session data."
     )
     buttons = keyboards.confirm_keyboard("delete_all_accounts", "all")
     await event.edit(text, buttons=buttons, parse_mode="html")
@@ -134,7 +144,7 @@ async def on_accounts_delete_limited(event: events.CallbackQuery.Event) -> None:
     """Prompt for confirmation before deleting limited accounts."""
     await event.answer()
     text = (
-        "⚠️ <b>REMOVE LIMITED ACCOUNTS</b>\n"
+        "<tg-emoji emoji-id='5420323339723881652'>⚠️</tg-emoji> <b>REMOVE LIMITED ACCOUNTS</b>\n"
         "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         "Are you sure you want to remove <b>ALL</b> accounts with a health score below 50?\n"
         "This will help clean up accounts that are likely to fail."
@@ -187,16 +197,16 @@ async def on_account_stats(event: events.CallbackQuery.Event, account_id: str) -
     if data:
         from utils.formatters import format_number, format_percentage
         text = (
-            f"📊 <b>Account Statistics</b>\n"
+            f"<tg-emoji emoji-id='5231200819986047254'>📊</tg-emoji> <b>Account Statistics</b>\n"
             f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-            f"✅ Success: <b>{format_number(data.get('success_count', 0))}</b>\n"
-            f"❌ Failed: <b>{format_number(data.get('failure_count', 0))}</b>\n"
+            f"<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Success: <b>{format_number(data.get('success_count', 0))}</b>\n"
+            f"<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> Failed: <b>{format_number(data.get('failure_count', 0))}</b>\n"
             f"📈 Success Rate: <b>{format_percentage(data.get('success_rate', 0))}</b>\n\n"
             f"🎯 Rotation Score: <b>{data.get('rotation_score', 0):.4f}</b>\n"
             f"🕐 Last Used: <b>{menus._format_iso_date(data.get('last_used_at'))}</b>"
         )
     else:
-        text = "📊 No statistics available for this account."
+        text = "<tg-emoji emoji-id='5231200819986047254'>📊</tg-emoji> No statistics available for this account."
     await event.edit(text, buttons=keyboards.back_keyboard(), parse_mode="html")
 
 
@@ -331,7 +341,7 @@ async def on_campaign_select_all_accounts(event: events.CallbackQuery.Event, cam
     """Prompt for confirmation to add all accounts."""
     await event.answer()
     text = (
-        "✅ <b>SELECT ALL ACCOUNTS</b>\n"
+        "<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> <b>SELECT ALL ACCOUNTS</b>\n"
         "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         "Add <b>ALL</b> your accounts to this campaign?\n"
         "This will also select <b>ALL joined groups</b> for every account."
@@ -343,7 +353,7 @@ async def on_campaign_unselect_all_accounts(event: events.CallbackQuery.Event, c
     """Prompt for confirmation to remove all accounts."""
     await event.answer()
     text = (
-        "❌ <b>UNSELECT ALL ACCOUNTS</b>\n"
+        "<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> <b>UNSELECT ALL ACCOUNTS</b>\n"
         "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         "Remove <b>ALL</b> your accounts from this campaign?\n"
         "This will pause all active operations for this campaign."
@@ -571,7 +581,7 @@ async def on_campaign_resume(event: events.CallbackQuery.Event, campaign_id: str
 async def on_campaign_delete(event: events.CallbackQuery.Event, campaign_id: str) -> None:
     """Confirm campaign deletion."""
     await event.answer()  # LINE 1. Non-negotiable.
-    text = "🗑️ Are you sure you want to <b>delete</b> this campaign?\n\n⚠️ This action cannot be undone."
+    text = "🗑️ Are you sure you want to <b>delete</b> this campaign?\n\n<tg-emoji emoji-id='5420323339723881652'>⚠️</tg-emoji> This action cannot be undone."
     buttons = keyboards.confirm_keyboard("delete_campaign", campaign_id)
     await event.edit(text, buttons=buttons, parse_mode="html")
 
@@ -683,7 +693,7 @@ async def on_ai_confirm(event: events.CallbackQuery.Event, action_id: str) -> No
     action = await get_action(action_id)
     
     if not action:
-        await event.edit("⚠️ Action expired or not found.", buttons=keyboards.back_keyboard())
+        await event.edit("<tg-emoji emoji-id='5420323339723881652'>⚠️</tg-emoji> Action expired or not found.", buttons=keyboards.back_keyboard())
         return
         
     if action.get("user_id") != event.sender_id:
@@ -702,12 +712,12 @@ async def on_ai_confirm(event: events.CallbackQuery.Event, action_id: str) -> No
             if account_id:
                 from repositories import accounts_repo
                 await accounts_repo.delete(account_id)
-                await event.edit("✅ Account deleted successfully.", buttons=keyboards.back_keyboard())
+                await event.edit("<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Account deleted successfully.", buttons=keyboards.back_keyboard())
         elif action_type == "create_campaign":
             from repositories import campaigns_repo
             try:
                 await campaigns_repo.create(payload)
-                await event.edit(f"✅ Campaign '{payload.get('name')}' created successfully.", buttons=keyboards.back_keyboard())
+                await event.edit(f"<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Campaign '{payload.get('name')}' created successfully.", buttons=keyboards.back_keyboard())
             except ValueError as e:
                 await event.answer(str(e), alert=True)
                 return
@@ -717,45 +727,45 @@ async def on_ai_confirm(event: events.CallbackQuery.Event, action_id: str) -> No
             if campaign_id and status:
                 from repositories import campaigns_repo
                 await campaigns_repo.update_status(campaign_id, status)
-                await event.edit(f"✅ Campaign status updated to {status}.", buttons=keyboards.back_keyboard())
+                await event.edit(f"<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Campaign status updated to {status}.", buttons=keyboards.back_keyboard())
         elif action_type == "edit_campaign_interval":
             campaign_id = payload.get("campaign_id")
             delay = payload.get("group_delay_seconds")
             if campaign_id and delay is not None:
                 from repositories import campaigns_repo
                 await campaigns_repo.update_fields(campaign_id, {"group_delay_seconds": int(delay)})
-                await event.edit(f"✅ Campaign interval updated to {delay}s.", buttons=keyboards.back_keyboard())
+                await event.edit(f"<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Campaign interval updated to {delay}s.", buttons=keyboards.back_keyboard())
         elif action_type == "delete_campaign":
             campaign_id = payload.get("campaign_id")
             if campaign_id:
                 from repositories import campaigns_repo
                 await campaigns_repo.delete(campaign_id)
-                await event.edit("✅ Campaign deleted successfully.", buttons=keyboards.back_keyboard())
+                await event.edit("<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Campaign deleted successfully.", buttons=keyboards.back_keyboard())
         elif action_type == "edit_campaign_message":
             campaign_id = payload.get("campaign_id")
             message = payload.get("message")
             if campaign_id and message is not None:
                 from repositories import campaigns_repo
                 await campaigns_repo.update_fields(campaign_id, {"message": message})
-                await event.edit("✅ Campaign message updated successfully.", buttons=keyboards.back_keyboard())
+                await event.edit("<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Campaign message updated successfully.", buttons=keyboards.back_keyboard())
         elif action_type == "edit_campaign_accounts":
             campaign_id = payload.get("campaign_id")
             account_ids = payload.get("account_ids")
             if campaign_id and account_ids is not None:
                 from repositories import campaigns_repo
                 await campaigns_repo.update_fields(campaign_id, {"account_ids": account_ids})
-                await event.edit("✅ Campaign accounts updated successfully.", buttons=keyboards.back_keyboard())
+                await event.edit("<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Campaign accounts updated successfully.", buttons=keyboards.back_keyboard())
         elif action_type == "pause_all_campaigns":
             from repositories import campaigns_repo
             campaigns = await campaigns_repo.list_by_owner(event.sender_id)
             for c in campaigns:
                 if getattr(c, "status", "") == "ACTIVE":
                     await campaigns_repo.update_status(c.id, "PAUSED")
-            await event.edit("✅ All active campaigns have been paused.", buttons=keyboards.back_keyboard())
+            await event.edit("<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> All active campaigns have been paused.", buttons=keyboards.back_keyboard())
         else:
-            await event.edit(f"⚠️ Unknown action type: {action_type}", buttons=keyboards.back_keyboard())
+            await event.edit(f"<tg-emoji emoji-id='5420323339723881652'>⚠️</tg-emoji> Unknown action type: {action_type}", buttons=keyboards.back_keyboard())
     except Exception as e:
-        await event.edit(f"⚠️ Execution failed: {str(e)}", buttons=keyboards.back_keyboard())
+        await event.edit(f"<tg-emoji emoji-id='5420323339723881652'>⚠️</tg-emoji> Execution failed: {str(e)}", buttons=keyboards.back_keyboard())
     finally:
         await clear_action(action_id)
 
@@ -957,23 +967,23 @@ async def on_confirm_yes(event: events.CallbackQuery.Event, action: str, target_
         if action == "delete_account":
             from services import account_service
             await account_service.delete_account(target_id, event.sender_id)
-            text = "✅ Account deleted successfully."
+            text = "<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Account deleted successfully."
         elif action == "delete_all_accounts":
             from services import account_service
             await account_service.delete_all_accounts(event.sender_id)
-            text = "✅ All accounts removed."
+            text = "<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> All accounts removed."
         elif action == "delete_limited_accounts":
             from services import account_service
             count = await account_service.delete_limited_accounts(event.sender_id)
-            text = f"✅ {count} limited accounts removed."
+            text = f"<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> {count} limited accounts removed."
         elif action == "select_all_accounts":
             from services import campaign_service
             await campaign_service.select_all_accounts(target_id, event.sender_id)
-            text = "✅ All accounts added to campaign."
+            text = "<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> All accounts added to campaign."
         elif action == "unselect_all_accounts":
             from services import campaign_service
             await campaign_service.unselect_all_accounts(target_id, event.sender_id)
-            text = "✅ All accounts removed from campaign."
+            text = "<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> All accounts removed from campaign."
         elif action == "pause_account":
             from services import account_service
             await account_service.pause_account(target_id, event.sender_id)
@@ -985,7 +995,7 @@ async def on_confirm_yes(event: events.CallbackQuery.Event, action: str, target_
         elif action == "delete_campaign":
             from services import campaign_service
             await campaign_service.delete_campaign(target_id, event.sender_id)
-            text = "✅ Campaign deleted successfully."
+            text = "<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Campaign deleted successfully."
         elif action == "pause_campaign":
             from services import campaign_service
             await campaign_service.pause_campaign(target_id, event.sender_id)
@@ -1004,7 +1014,7 @@ async def on_confirm_yes(event: events.CallbackQuery.Event, action: str, target_
                     await event.answer("Logs bot username is not configured in the environment.", alert=True)
                     return
                 text = (
-                    "⚠️ <b>Logs Bot Not Started</b>\n\n"
+                    "<tg-emoji emoji-id='5420323339723881652'>⚠️</tg-emoji> <b>Logs Bot Not Started</b>\n\n"
                     "To receive real-time campaign notifications and success logs, "
                     "you must first start the Logs Bot.\n\n"
                     "Please click the button below to start it, then try again."
@@ -1040,7 +1050,7 @@ async def on_confirm_yes(event: events.CallbackQuery.Event, action: str, target_
                     except Exception: pass
                 success, failed = await bulk_service.bulk_remove_usernames(event.sender_id, progress_callback=update_progress)
                 try:
-                    await event.edit(render_bulk_progress("Remove Usernames", success, failed, success+failed, "✅ Completed!"), buttons=bulk_manager_keyboard(), parse_mode="html")
+                    await event.edit(render_bulk_progress("Remove Usernames", success, failed, success+failed, "<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Completed!"), buttons=bulk_manager_keyboard(), parse_mode="html")
                 except Exception: pass
             import asyncio
             asyncio.create_task(run_task())
@@ -1058,7 +1068,7 @@ async def on_confirm_yes(event: events.CallbackQuery.Event, action: str, target_
                     except Exception: pass
                 success, failed = await bulk_service.bulk_delete_profile_photos(event.sender_id, progress_callback=update_progress)
                 try:
-                    await event.edit(render_bulk_progress("Remove Photo", success, failed, success+failed, "✅ Completed!"), buttons=bulk_manager_keyboard(), parse_mode="html")
+                    await event.edit(render_bulk_progress("Remove Photo", success, failed, success+failed, "<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Completed!"), buttons=bulk_manager_keyboard(), parse_mode="html")
                 except Exception: pass
             import asyncio
             asyncio.create_task(run_task())
@@ -1076,7 +1086,7 @@ async def on_confirm_yes(event: events.CallbackQuery.Event, action: str, target_
                     except Exception: pass
                 success, failed = await bulk_service.bulk_clean_dms(event.sender_id, progress_callback=update_progress)
                 try:
-                    await event.edit(render_bulk_progress("Clean DMs", success, failed, success+failed, "✅ Completed!"), buttons=bulk_manager_keyboard(), parse_mode="html")
+                    await event.edit(render_bulk_progress("Clean DMs", success, failed, success+failed, "<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Completed!"), buttons=bulk_manager_keyboard(), parse_mode="html")
                 except Exception: pass
             import asyncio
             asyncio.create_task(run_task())
@@ -1094,7 +1104,7 @@ async def on_confirm_yes(event: events.CallbackQuery.Event, action: str, target_
                     except Exception: pass
                 success, failed = await bulk_service.bulk_archive_chats(event.sender_id, progress_callback=update_progress)
                 try:
-                    await event.edit(render_bulk_progress("Archive Chats", success, failed, success+failed, "✅ Completed!"), buttons=bulk_manager_keyboard(), parse_mode="html")
+                    await event.edit(render_bulk_progress("Archive Chats", success, failed, success+failed, "<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Completed!"), buttons=bulk_manager_keyboard(), parse_mode="html")
                 except Exception: pass
             import asyncio
             asyncio.create_task(run_task())
@@ -1112,7 +1122,7 @@ async def on_confirm_yes(event: events.CallbackQuery.Event, action: str, target_
                     except Exception: pass
                 success, failed = await bulk_service.bulk_leave_groups(event.sender_id, progress_callback=update_progress)
                 try:
-                    await event.edit(render_bulk_progress("Leave Groups/Channels", success, failed, success+failed, "✅ Completed!"), buttons=bulk_manager_keyboard(), parse_mode="html")
+                    await event.edit(render_bulk_progress("Leave Groups/Channels", success, failed, success+failed, "<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Completed!"), buttons=bulk_manager_keyboard(), parse_mode="html")
                 except Exception: pass
             import asyncio
             asyncio.create_task(run_task())
@@ -1130,7 +1140,7 @@ async def on_confirm_yes(event: events.CallbackQuery.Event, action: str, target_
                     except Exception: pass
                 success, failed = await group_worker.bulk_remove_folders(event.sender_id, progress_callback=update_progress)
                 try:
-                    await event.edit(render_bulk_progress("Remove Folders", success, failed, success+failed, "✅ Completed!"), buttons=bulk_manager_keyboard(), parse_mode="html")
+                    await event.edit(render_bulk_progress("Remove Folders", success, failed, success+failed, "<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Completed!"), buttons=bulk_manager_keyboard(), parse_mode="html")
                 except Exception: pass
             import asyncio
             asyncio.create_task(run_task())
@@ -1148,7 +1158,7 @@ async def on_confirm_yes(event: events.CallbackQuery.Event, action: str, target_
                     except Exception: pass
                 success, failed = await bulk_service.bulk_remove_2fa(event.sender_id, progress_callback=update_progress)
                 try:
-                    await event.edit(render_bulk_progress("Remove 2FA", success, failed, success+failed, "✅ Completed!"), buttons=bulk_manager_keyboard(), parse_mode="html")
+                    await event.edit(render_bulk_progress("Remove 2FA", success, failed, success+failed, "<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Completed!"), buttons=bulk_manager_keyboard(), parse_mode="html")
                 except Exception: pass
             import asyncio
             asyncio.create_task(run_task())
@@ -1157,10 +1167,50 @@ async def on_confirm_yes(event: events.CallbackQuery.Event, action: str, target_
         else:
             text = "❓ Unknown action."
     except Exception as exc:
-        text = f"❌ Error: {str(exc)}"
+        text = f"<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> Error: {str(exc)}"
 
     await event.edit(text, buttons=keyboards.back_keyboard(), parse_mode="html")
 
+async def on_pay_profile(event: events.CallbackQuery.Event) -> None:
+    from core.config import get_settings
+    from repositories import users_repo
+    user = await users_repo.get(event.sender_id)
+    if not user:
+        return
+    settings = get_settings()
+    is_active = user.is_active(settings.admin_user_ids, settings.admin_username)
+    text = menus.render_profile(user.model_dump(), is_active)
+    await event.edit(text, buttons=keyboards.profile_keyboard(), parse_mode="html")
+
+async def on_pay_options(event: events.CallbackQuery.Event) -> None:
+    from repositories import users_repo
+    user = await users_repo.get(event.sender_id)
+    text = menus.render_paywall()
+    await event.edit(text, buttons=keyboards.paywall_keyboard(user), parse_mode="html")
+
+async def on_admin_panel(event: events.CallbackQuery.Event) -> None:
+    text = menus.render_admin_panel()
+    await event.edit(text, buttons=keyboards.admin_panel_keyboard(), parse_mode="html")
+
+async def on_admin_stats(event: events.CallbackQuery.Event) -> None:
+    from repositories import users_repo
+    stats = await users_repo.get_stats()
+    text = menus.render_admin_stats(stats)
+    await event.edit(text, buttons=keyboards.back_keyboard("admin:panel"), parse_mode="html")
+
+async def on_admin_users(event: events.CallbackQuery.Event) -> None:
+    # simple listing for active users
+    from repositories import users_repo
+    users = await users_repo.get_active_subscribers()
+    if not users:
+        await event.answer("No active users found.", alert=True)
+        return
+        
+    text = "👑 <b>ACTIVE USERS</b>\n━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+    for u in users[:20]: # Simple limit for now
+        text += f"ID: <code>{u.user_id}</code> | @{u.username or 'NoName'} | {u.plan_type}\n"
+        
+    await event.edit(text, buttons=keyboards.back_keyboard("admin:panel"), parse_mode="html")
 
 async def on_confirm_no(event: events.CallbackQuery.Event) -> None:
     """Handle cancelled action — go back."""
@@ -1196,7 +1246,7 @@ async def on_bulk_action(event: events.CallbackQuery.Event, action: str) -> None
         await event.edit("Please send the <b>new First Name</b> for all accounts.", buttons=keyboards.back_keyboard(CB.BULK_MANAGER), parse_mode="html")
     elif action == "bio":
         await set_context(event.sender_id, "awaiting_input", "bulk_bio")
-        await event.edit("Please send the <b>new Bio/About</b> for all accounts.\n\n⚠️ <b>Important:</b> Telegram strictly allows a <b>MAXIMUM of 70 characters</b>.", buttons=keyboards.back_keyboard(CB.BULK_MANAGER), parse_mode="html")
+        await event.edit("Please send the <b>new Bio/About</b> for all accounts.\n\n<tg-emoji emoji-id='5420323339723881652'>⚠️</tg-emoji> <b>Important:</b> Telegram strictly allows a <b>MAXIMUM of 70 characters</b>.", buttons=keyboards.back_keyboard(CB.BULK_MANAGER), parse_mode="html")
     elif action == "rm_username":
         buttons = keyboards.confirm_keyboard("bulk_rm_username", "all")
         await event.edit("🚫 <b>Remove Usernames?</b>\n\nThis will completely remove the usernames from all connected accounts.", buttons=buttons, parse_mode="html")
@@ -1239,6 +1289,21 @@ async def route_callback(event: events.CallbackQuery.Event) -> None:
     This is the main entry point for all inline button presses.
     """
     data = event.data.decode("utf-8") if isinstance(event.data, bytes) else event.data
+
+    # Paywall Enforcement
+    from core.config import get_settings
+    from repositories import users_repo
+    from core.constants import CB
+    user = await users_repo.get(event.sender_id)
+    if user:
+        settings = get_settings()
+        is_active = user.is_active(settings.admin_user_ids, settings.admin_username)
+        if not is_active:
+            allowed_prefixes = ("pay:", "admin:")
+            allowed_exact = (CB.DASHBOARD, CB.NOOP, "force_join_check")
+            if not any(data.startswith(p) for p in allowed_prefixes) and data not in allowed_exact:
+                await event.answer("❌ You don't have an active plan! Please purchase a plan from 'My Plan'.", alert=True)
+                return
 
     # Simple callbacks (no parameters)
     simple_handlers = {
@@ -1378,6 +1443,16 @@ async def route_callback(event: events.CallbackQuery.Event) -> None:
         # e.g. bulk:name, bulk:2fa:set
         action = data[5:]
         await on_bulk_action(event, action)
+    elif data == "pay:profile":
+        await on_pay_profile(event)
+    elif data == "pay:options":
+        await on_pay_options(event)
+    elif data == "admin:panel":
+        await on_admin_panel(event)
+    elif data == "admin:stats":
+        await on_admin_stats(event)
+    elif data == "admin:users":
+        await on_admin_users(event)
     else:
         # Unknown callback — just answer to dismiss spinner
         await event.answer("Unknown action", alert=False)

@@ -77,3 +77,24 @@ async def get_all_active_user_ids() -> list[int]:
         {"user_id": 1, "_id": 0},
     )
     return [doc["user_id"] async for doc in cursor]
+
+
+async def get_stats() -> dict:
+    """Return stats for the Admin panel."""
+    total_users = await _coll().count_documents({})
+    now = datetime.utcnow()
+    active_subs = await _coll().count_documents({"subscription_ends_at": {"$gt": now}})
+    return {
+        "total_users": total_users,
+        "active_subscriptions": active_subs
+    }
+
+async def get_active_subscribers() -> list[User]:
+    """Return a list of all users with active subscriptions."""
+    now = datetime.utcnow()
+    cursor = _coll().find({"subscription_ends_at": {"$gt": now}})
+    users = []
+    async for doc in cursor:
+        doc["_id"] = str(doc["_id"])
+        users.append(User.model_validate(doc))
+    return users

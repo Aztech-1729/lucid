@@ -25,10 +25,6 @@ INDEX_DEFINITIONS: list[tuple[str, list[tuple[str, int]], dict]] = [
     (collections.ACCOUNTS, [("health_score", ASCENDING)], {}),
     (collections.ACCOUNTS, [("next_check_at", ASCENDING)], {}),
 
-    # ── groups ──────────────────────────────────────────────
-    (collections.GROUPS, [("owner_id", ASCENDING)], {}),
-    (collections.GROUPS, [("group_id", ASCENDING)], {}),
-
     # ── campaigns ───────────────────────────────────────────
     (collections.CAMPAIGNS, [("owner_id", ASCENDING)], {}),
     (collections.CAMPAIGNS, [("status", ASCENDING)], {}),
@@ -45,10 +41,6 @@ INDEX_DEFINITIONS: list[tuple[str, list[tuple[str, int]], dict]] = [
     # ── analytics_daily ─────────────────────────────────────
     (collections.ANALYTICS_DAILY, [("date", ASCENDING)], {}),
     (collections.ANALYTICS_DAILY, [("owner_id", ASCENDING), ("date", DESCENDING)], {}),
-
-    # ── analytics_weekly ────────────────────────────────────
-    (collections.ANALYTICS_WEEKLY, [("week", ASCENDING)], {}),
-    (collections.ANALYTICS_WEEKLY, [("owner_id", ASCENDING), ("week", DESCENDING)], {}),
 
     # ── worker_records ──────────────────────────────────────
     (collections.WORKER_RECORDS, [("worker_id", ASCENDING)], {}),

@@ -22,10 +22,6 @@ def _daily():
     return get_db()[collections.ANALYTICS_DAILY]
 
 
-def _weekly():
-    return get_db()[collections.ANALYTICS_WEEKLY]
-
-
 # ── Forwarding Logs ─────────────────────────────────────────
 
 async def log_forward(
@@ -214,14 +210,6 @@ async def upsert_daily(owner_id: int, date_str: str, data: dict) -> None:
         upsert=True,
     )
 
-
-async def upsert_weekly(owner_id: int, week_str: str, data: dict) -> None:
-    """Upsert a weekly analytics rollup."""
-    await _weekly().update_one(
-        {"owner_id": owner_id, "week": week_str},
-        {"$set": {**data, "owner_id": owner_id, "week": week_str}},
-        upsert=True,
-    )
 
 
 async def cleanup_old_logs(days: int = 90) -> int:

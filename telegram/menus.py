@@ -48,8 +48,8 @@ def _format_iso_date(iso_str: str | None) -> str:
         dt = datetime.fromisoformat(iso_str)
         if dt.tzinfo is None:
             dt = dt.replace(tzinfo=ZoneInfo("UTC"))
-        dt = dt.astimezone(ZoneInfo("Asia/Kolkata"))
-        return dt.strftime("%d %b %Y, %I:%M %p")
+        dt = dt.astimezone(ZoneInfo("UTC"))
+        return dt.strftime("%d %b %Y, %I:%M %p UTC")
     except (ValueError, TypeError):
         return str(iso_str)
 
@@ -130,7 +130,7 @@ def render_dashboard(data: dict | None) -> str:
     """Render the full dashboard with stats in tree style."""
     if not data:
         return (
-            "📊 <b>DASHBOARD</b>\n"
+            "<tg-emoji emoji-id='5231200819986047254'>📊</tg-emoji> <b>DASHBOARD</b>\n"
             "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
             "⏳ Loading dashboard data...\n"
             "Data will be available shortly."
@@ -152,13 +152,11 @@ def render_dashboard(data: dict | None) -> str:
     overall_health = data.get("overall_health", 0)
     health_total = max(healthy + limited, 1)
 
-    now = datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%I:%M %p")
-
     return (
         f"<b><tg-emoji emoji-id=\"5447410659077661506\">🏠</tg-emoji> DASHBOARD</b>\n"
         f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         f"<b><tg-emoji emoji-id=\"5461117441612462242\">👤</tg-emoji> User: @{username}</b>\n\n"
-        f"<b><tg-emoji emoji-id=\"5231200819986047254\">📊</tg-emoji> OVERVIEW:</b>\n"
+        f"<b><tg-emoji emoji-id='5231200819986047254'>📊</tg-emoji> OVERVIEW:</b>\n"
         f"├ <b>Total Accounts: {total_accs}</b>\n"
         f"├ <b>Active Accounts: {active_accs}</b>\n"
         f"├ <b>Active Campaigns: {active_camps}</b>\n"
@@ -169,8 +167,7 @@ def render_dashboard(data: dict | None) -> str:
         f"<b><tg-emoji emoji-id=\"5289562446216835198\">🛡️</tg-emoji> HEALTH:</b>\n"
         f"├ <b><tg-emoji emoji-id=\"5416081784641168838\">🟢</tg-emoji> Healthy: {healthy} ({healthy/health_total*100:.1f}%)</b>\n"
         f"├ <b><tg-emoji emoji-id=\"5411225014148014586\">🟠</tg-emoji> Limited: {limited} ({limited/health_total*100:.1f}%)</b>\n"
-        f"└ <b><tg-emoji emoji-id=\"5438496463044752972\">⭐</tg-emoji> Overall Score: {overall_health}%</b>\n\n"
-        f"<b><tg-emoji emoji-id=\"5413879192267805083\">🕐</tg-emoji> Last Updated: {now}</b>"
+        f"└ <b><tg-emoji emoji-id=\"5438496463044752972\">⭐</tg-emoji> Overall Score: {overall_health}%</b>"
     )
 
 
@@ -187,7 +184,7 @@ def render_account_list(data: dict | None) -> str:
         )
 
     total_items = data.get("total_items", 0)
-    return f"📊 Total: <b>{total_items}</b> accounts"
+    return f"<tg-emoji emoji-id='5231200819986047254'>📊</tg-emoji> Total: <b>{total_items}</b> accounts"
 
 
 # ── 3. ACCOUNT DETAILS ─────────────────────────────────────
@@ -198,7 +195,7 @@ def render_account_detail(data: dict | None) -> str:
         return (
             "📱 <b>ACCOUNT DETAILS</b>\n"
             "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-            "❌ Account data not available."
+            "<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> Account data not available."
         )
 
     phone = data.get("phone", "Unknown")
@@ -259,7 +256,7 @@ def render_campaign_list(data: dict | None) -> str:
     for c in campaigns:
         name = c.get("name", "Untitled")
         status = c.get("status", "DRAFT")
-        status_emoji = {"ACTIVE": "🟢", "PAUSED": "🟡", "DRAFT": "📝", "COMPLETED": "✅"}.get(status, "⚫")
+        status_emoji = {"ACTIVE": "🟢", "PAUSED": "🟡", "DRAFT": "📝", "COMPLETED": "<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji>"}.get(status, "⚫")
         status_label = f"<code>{status}</code>"
         accounts = c.get("account_count", 0)
         groups = c.get("group_count", 0)
@@ -280,7 +277,7 @@ def render_campaign_detail(data: dict | None) -> str:
         return (
             "📢 <b>CAMPAIGN DETAILS</b>\n"
             "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-            "❌ Campaign data not available."
+            "<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> Campaign data not available."
         )
 
     name = data.get("name", "Untitled")
@@ -297,7 +294,7 @@ def render_campaign_detail(data: dict | None) -> str:
     rate = (success / total_sent * 100) if total_sent > 0 else 0
     fail_rate = (failed / total_sent * 100) if total_sent > 0 else 0
 
-    status_badge = {"ACTIVE": "🟢 Active", "PAUSED": "🟡 Paused", "DRAFT": "📝 Draft", "COMPLETED": "✅ Done"}.get(status, status)
+    status_badge = {"ACTIVE": "🟢 Active", "PAUSED": "🟡 Paused", "DRAFT": "📝 Draft", "COMPLETED": "<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Done"}.get(status, status)
 
     ad_type = data.get("ad_type", "custom")
     if ad_type == "custom":
@@ -334,7 +331,7 @@ def render_analytics(data: dict | None) -> str:
     """Render analytics overview with all-time stats in tree style."""
     if not data:
         return (
-            "📊 <b>ANALYTICS OVERVIEW</b>\n"
+            "<tg-emoji emoji-id='5231200819986047254'>📊</tg-emoji> <b>ANALYTICS OVERVIEW</b>\n"
             "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
             "📅 Period: All Time\n\n"
             "No analytics data yet.\n"
@@ -348,7 +345,7 @@ def render_analytics(data: dict | None) -> str:
     uptime = 99.9
 
     return (
-        f"📊 <b>ANALYTICS OVERVIEW</b>\n"
+        f"<tg-emoji emoji-id='5231200819986047254'>📊</tg-emoji> <b>ANALYTICS OVERVIEW</b>\n"
         f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         f"📅 Period: <b>All Time</b>\n\n"
         f"📈 <b>PERFORMANCE:</b>\n"
@@ -402,7 +399,7 @@ def render_health_overview(data: dict | None) -> str:
     return (
         f"<b><tg-emoji emoji-id=\"5289562446216835198\">🛡️</tg-emoji> ACCOUNTS HEALTH</b>\n"
         f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        f"<b><tg-emoji emoji-id=\"5231200819986047254\">📊</tg-emoji> STATUS:</b>\n"
+        f"<b><tg-emoji emoji-id='5231200819986047254'>📊</tg-emoji> STATUS:</b>\n"
         f"├ <b><tg-emoji emoji-id=\"5416081784641168838\">🟢</tg-emoji> Healthy: {healthy} ({healthy/total*100:.1f}%)</b>\n"
         f"└ <b><tg-emoji emoji-id=\"5411225014148014586\">🟠</tg-emoji> Limited: {limited} ({limited/total*100:.1f}%)</b>\n\n"
         f"<b><tg-emoji emoji-id=\"5438496463044752972\">⭐</tg-emoji> Overall Health Score: {overall}%</b>"
@@ -426,8 +423,8 @@ def render_session_import_progress(
     text = (
         f"📦 <b>Session Import:</b> <code>{filename}</code>\n"
         f"├ <b>Total Detected:</b> {total_count}\n"
-        f"├ <b>Success:</b> {success} ✅\n"
-        f"└ <b>Failed:</b> {failed} ❌\n\n"
+        f"├ <b>Success:</b> {success} <tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji>\n"
+        f"└ <b>Failed:</b> {failed} <tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji>\n\n"
         f"<i>Please wait, importing accounts... ⏳</i>"
     )
     return text
@@ -442,8 +439,8 @@ def render_bulk_progress(
         f"👥 <b>Bulk Action:</b> <i>{action_name}</i>\n"
         f"├ <b>Total Accounts:</b> {total}\n"
         f"├ <b>Processed:</b> {processed} / {total}\n"
-        f"├ <b>Success:</b> {success} ✅\n"
-        f"└ <b>Failed:</b> {failed} ❌\n\n"
+        f"├ <b>Success:</b> {success} <tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji>\n"
+        f"└ <b>Failed:</b> {failed} <tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji>\n\n"
         f"<i>{status}</i>"
     )
     return text
@@ -480,7 +477,7 @@ def render_autojoin_progress(joined: int, failed: int, total: int, status: str =
         f"🤖 <b>AUTO JOIN PROGRESS</b>\n"
         f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         f"⏳ <b>Status: {status}</b>\n\n"
-        f"📊 <b>STATS:</b>\n"
+        f"<tg-emoji emoji-id='5231200819986047254'>📊</tg-emoji> <b>STATS:</b>\n"
         f"├ <b>Groups: {groups_count}</b>\n"
         f"├ <b>Accounts: {accounts_count}</b>\n"
         f"├ <b>Joined: {joined}</b>\n"
@@ -495,7 +492,7 @@ def render_autojoin_progress(joined: int, failed: int, total: int, status: str =
 
 def render_autoreply_menu(enabled: bool, has_custom: bool) -> str:
     """Render Auto Reply settings in tree style."""
-    status = "✅ Enabled" if enabled else "❌ Disabled"
+    status = "<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Enabled" if enabled else "<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> Disabled"
     msg_status = "Custom (Set)" if has_custom else "Default"
     
     return (
@@ -533,7 +530,7 @@ def render_ai_welcome() -> str:
 def render_ai_action(description: str) -> str:
     """Render the AI Action confirmation prompt."""
     return (
-        "⚠️ <b>AI ACTION PROPOSED</b>\n"
+        "<tg-emoji emoji-id='5420323339723881652'>⚠️</tg-emoji> <b>AI ACTION PROPOSED</b>\n"
         "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         "The AI has proposed the following action:\n\n"
         f"👉 <b>{description}</b>\n\n"
@@ -541,3 +538,66 @@ def render_ai_action(description: str) -> str:
     )
 
 
+def render_profile(user_data: dict, is_active: bool) -> str:
+    """Render the user profile and subscription status."""
+    plan = user_data.get("plan_type", "FREE_TRIAL")
+    ends_at = user_data.get("subscription_ends_at")
+    
+    status = "🟢 ACTIVE" if is_active else "🔴 INACTIVE (Trial Expired)"
+    if plan != "FREE_TRIAL" and not is_active:
+        status = "🔴 EXPIRED"
+        
+    expiry_str = "Never" if plan == "FREE_TRIAL" and is_active else "Expired"
+    if ends_at:
+        expiry_str = ends_at.strftime("%Y-%m-%d %H:%M UTC")
+
+    return (
+        f"👤 <b>USER PROFILE</b>\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"<b>User ID:</b> <code>{user_data.get('user_id')}</code>\n"
+        f"<b>Status:</b> {status}\n\n"
+        f"💳 <b>CURRENT PLAN</b>\n"
+        f"├ <b>Tier:</b> {plan}\n"
+        f"└ <b>Expires:</b> {expiry_str}\n\n"
+        f"<i>Tap the button below to purchase or upgrade your plan.</i>"
+    )
+
+def render_paywall() -> str:
+    """Render the paywall message."""
+    return (
+        f"<tg-emoji emoji-id=\"5427168083074628963\">💎</tg-emoji> <b>LUCID ADS PREMIUM</b>\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"Unlock the full power of Lucid Ads Bot to automate your campaigns.\n\n"
+        f"<tg-emoji emoji-id=\"5461151367559141950\">✨</tg-emoji> <b>Features Included:</b>\n"
+        f"• Unlimited Accounts\n"
+        f"• Unlimited Campaigns\n"
+        f"• Health Monitoring & Auto Pause\n"
+        f"• Advanced Anti-Ban Delays\n"
+        f"• Auto-Join & Auto-Reply\n"
+        f"• Personal AI Assistant\n\n"
+        f"<i>Select a plan below to contact the admin for instant activation.</i>"
+    )
+
+def render_admin_panel(stats: dict = None) -> str:
+    """Render the main admin dashboard."""
+    return (
+        f"👑 <b>ADMIN PANEL</b>\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"Manage users and subscriptions directly from Telegram.\n\n"
+        f"🛠 <b>COMMANDS:</b>\n"
+        f"<code>/grant [user_id] [weekly|monthly|yearly]</code>\n"
+        f"<i>Instantly activates a plan for a user.</i>\n\n"
+        f"<code>/revoke [user_id]</code>\n"
+        f"<i>Instantly cancels a user's subscription.</i>\n\n"
+        f"Select an option below to view statistics or active users."
+    )
+
+def render_admin_stats(stats: dict) -> str:
+    """Render admin stats."""
+    return (
+        f"<tg-emoji emoji-id='5231200819986047254'>📊</tg-emoji> <b>SYSTEM STATISTICS</b>\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"👥 <b>Total Users:</b> {stats.get('total_users', 0)}\n"
+        f"💎 <b>Active Subscriptions:</b> {stats.get('active_subscriptions', 0)}\n\n"
+        f"<i>Statistics are updated in real-time.</i>"
+    )

@@ -68,7 +68,7 @@ async def init_logs_bot() -> None:
             "<b><tg-emoji emoji-id=\"5443038326535759644\">🔒</tg-emoji> LUCID LOGS SYSTEM</b>\n"
             "━━━━━━━━━━━━━━━━━━━━\n\n"
             "<b>Welcome to the official Lucid Ads logging network!</b>\n\n"
-            "<b><tg-emoji emoji-id=\"6147460667281511517\">✅</tg-emoji> Real-time notifications have been successfully enabled for your account. You will now receive instantaneous logs and updates right here!</b>"
+            "<b><tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Real-time notifications have been successfully enabled for your account. You will now receive instantaneous logs and updates right here!</b>"
         )
         
         if settings.logs_bot_image_url:
@@ -200,7 +200,7 @@ async def send_batch_summary(owner_id: int, campaign_name: str, batch_id: str, c
         return
         
     text = (
-        f"✅ <b>Batch Success Report</b>\n"
+        f"<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> <b>Batch Success Report</b>\n"
         f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
         f"<b>Campaign:</b> {campaign_name}\n"
         f"<b>Successful Sends:</b> {count} (last 5s)"

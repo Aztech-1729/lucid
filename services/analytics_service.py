@@ -36,45 +36,6 @@ async def aggregate_daily(owner_id: int, date_str: str | None = None) -> dict:
     return stats
 
 
-async def aggregate_weekly(owner_id: int, week_str: str | None = None) -> dict:
-    """
-    Aggregate weekly stats for a user.
-    """
-    if week_str is None:
-        now = datetime.utcnow()
-        week_str = f"{now.year}{now.isocalendar()[1]:02d}"
-
-    # Sum daily stats for the week
-    now = datetime.utcnow()
-    start_of_week = now - timedelta(days=now.weekday())
-
-    total = {
-        "total_sent": 0,
-        "total_success": 0,
-        "total_failed": 0,
-        "flood_events": 0,
-        "active_accounts": 0,
-        "active_campaigns": 0,
-    }
-
-    for day_offset in range(7):
-        day = start_of_week + timedelta(days=day_offset)
-        if day > now:
-            break
-        date_str = day.strftime("%Y%m%d")
-        daily = await analytics_repo.get_daily_stats(owner_id, date_str)
-        for key in ("total_sent", "total_success", "total_failed", "flood_events"):
-            total[key] += daily.get(key, 0)
-        total["active_accounts"] = max(
-            total["active_accounts"], daily.get("active_accounts", 0)
-        )
-        total["active_campaigns"] = max(
-            total["active_campaigns"], daily.get("active_campaigns", 0)
-        )
-
-    await analytics_repo.upsert_weekly(owner_id, week_str, total)
-    return total
-
 
 async def update_top_performers(owner_id: int) -> None:
     """Refresh top accounts and top campaigns caches."""

@@ -125,7 +125,7 @@ async def enforce_join(event, bot):
         "━━━━━━━━━━━━━━━━━━━━\n\n"
         "<b>Welcome to Lucid Ads Bot!</b>\n\n"
         "<b>To unlock full access to all bot features, you must be an active member of our official community.</b>\n\n"
-        "<b><tg-emoji emoji-id=\"5406745015365943482\">👇</tg-emoji> Please join the required channel and group below, then click <tg-emoji emoji-id=\"6147460667281511517\">✅</tg-emoji> Joined to verify your account!</b>"
+        "<b><tg-emoji emoji-id=\"5406745015365943482\">👇</tg-emoji> Please join the required channel and group below, then click <tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Joined to verify your account!</b>"
     )
     if settings.bot_image_url:
         await event.respond(file=settings.bot_image_url, message=caption, buttons=buttons, parse_mode="html")
@@ -150,12 +150,17 @@ def _register_handlers(bot: TelegramClient) -> None:
 
         user_id = event.sender_id
 
-        # Get or create user
-        await users_repo.get_or_create(
+        user = await users_repo.get_or_create(
             user_id=user_id,
             username=username,
             first_name=getattr(sender, "first_name", None),
         )
+
+        is_admin = False
+        if settings.admin_user_ids and user_id in settings.admin_user_ids:
+            is_admin = True
+        elif settings.admin_username and username and username.lower() == settings.admin_username.lower().replace("@", ""):
+            is_admin = True
 
         # Show Dashboard directly instead of welcome message
         from cache import dashboard_cache
@@ -172,15 +177,80 @@ def _register_handlers(bot: TelegramClient) -> None:
             await event.respond(
                 file=settings.bot_image_url,
                 message=text,
-                buttons=keyboards.main_menu_keyboard(),
+                buttons=keyboards.build_dashboard_keyboard(is_admin),
                 parse_mode="html",
             )
         else:
             await event.respond(
                 text,
-                buttons=keyboards.main_menu_keyboard(),
+                buttons=keyboards.build_dashboard_keyboard(is_admin),
                 parse_mode="html",
             )
+
+    @bot.on(events.NewMessage(pattern=r"^/grant"))
+    async def on_grant(event: events.NewMessage.Event) -> None:
+        """Handle /grant command for admin."""
+        settings = get_settings()
+        sender = await event.get_sender()
+        is_admin = (event.sender_id in settings.admin_user_ids) or (getattr(sender, "username", "") and sender.username.lower() == settings.admin_username.lower().replace("@", ""))
+        if not is_admin:
+            return
+            
+        parts = event.text.split()
+        if len(parts) < 3:
+            await event.respond("<b>Usage:</b> <code>/grant [user_id] [weekly|monthly|yearly]</code>", parse_mode="html")
+            return
+            
+        try:
+            target_id = int(parts[1])
+            plan = parts[2].upper()
+        except ValueError:
+            await event.respond("Invalid User ID format.")
+            return
+            
+        days = 7 if plan == "WEEKLY" else 30 if plan == "MONTHLY" else 365 if plan == "YEARLY" else 0
+        if days == 0:
+            await event.respond("Invalid plan. Use weekly, monthly, or yearly.")
+            return
+            
+        from datetime import datetime, timedelta
+        ends_at = datetime.utcnow() + timedelta(days=days)
+        
+        success = await users_repo.update(target_id, {"plan_type": plan, "subscription_ends_at": ends_at})
+        if success:
+            await event.respond(f"<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Granted {plan} plan to <code>{target_id}</code>. Expires: {ends_at.strftime('%Y-%m-%d')}", parse_mode="html")
+            try:
+                await event.client.send_message(target_id, f"🎉 <b>Good news!</b> Your <b>{plan}</b> subscription has been activated by the Admin!\n\nUse /start to view your new plan features.", parse_mode="html")
+            except Exception:
+                pass
+        else:
+            await event.respond("<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> User not found in DB.")
+
+    @bot.on(events.NewMessage(pattern=r"^/revoke"))
+    async def on_revoke(event: events.NewMessage.Event) -> None:
+        """Handle /revoke command for admin."""
+        settings = get_settings()
+        sender = await event.get_sender()
+        is_admin = (event.sender_id in settings.admin_user_ids) or (getattr(sender, "username", "") and sender.username.lower() == settings.admin_username.lower().replace("@", ""))
+        if not is_admin:
+            return
+            
+        parts = event.text.split()
+        if len(parts) < 2:
+            await event.respond("<b>Usage:</b> <code>/revoke [user_id]</code>", parse_mode="html")
+            return
+            
+        try:
+            target_id = int(parts[1])
+        except ValueError:
+            await event.respond("Invalid User ID format.")
+            return
+            
+        success = await users_repo.update(target_id, {"plan_type": "FREE_TRIAL", "subscription_ends_at": None})
+        if success:
+            await event.respond(f"<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Revoked subscription for <code>{target_id}</code>.", parse_mode="html")
+        else:
+            await event.respond("<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> User not found in DB.")
 
     @bot.on(events.NewMessage(pattern=r"^/bd$"))
     async def on_broadcast(event: events.NewMessage.Event) -> None:
@@ -200,7 +270,7 @@ def _register_handlers(bot: TelegramClient) -> None:
             return
             
         if not event.is_reply:
-            await event.reply("⚠️ Please reply to a message with /bd to broadcast it.")
+            await event.reply("<tg-emoji emoji-id='5420323339723881652'>⚠️</tg-emoji> Please reply to a message with /bd to broadcast it.")
             return
             
         reply_msg = await event.get_reply_message()
@@ -224,9 +294,9 @@ def _register_handlers(bot: TelegramClient) -> None:
                 await asyncio.sleep(0.05) # Prevent global flood limit
                 
             await status_msg.edit(
-                f"✅ <b>Broadcast Complete!</b>\n\n"
+                f"<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> <b>Broadcast Complete!</b>\n\n"
                 f"🎯 <b>Successfully sent to:</b> {success_count} users\n"
-                f"❌ <b>Failed:</b> {fail_count} users", 
+                f"<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> <b>Failed:</b> {fail_count} users", 
                 parse_mode="html"
             )
 
@@ -322,7 +392,7 @@ def _register_handlers(bot: TelegramClient) -> None:
         if awaiting == "session_upload" and event.document:
             filename = event.document.attributes[0].file_name
             if not (filename.lower().endswith(".session") or filename.lower().endswith(".zip")):
-                await event.respond("❌ Please send a <b>.session</b> file or a <b>.zip</b> archive.", parse_mode="html")
+                await event.respond("<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> Please send a <b>.session</b> file or a <b>.zip</b> archive.", parse_mode="html")
                 return
 
             # Download file
@@ -333,9 +403,9 @@ def _register_handlers(bot: TelegramClient) -> None:
                 "📂 <b>SESSIONS IMPORT</b>\n"
                 "━━━━━━━━━━━━━━━━━━━━\n\n"
                 "⏳ <b>Status: Importing Sessions</b>\n\n"
-                "✅ <b>Added: 0</b>\n"
-                "❌ <b>Failed: 0</b>\n"
-                "📊 <b>Total Found: 0</b>",
+                "<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> <b>Added: 0</b>\n"
+                "<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> <b>Failed: 0</b>\n"
+                "<tg-emoji emoji-id='5231200819986047254'>📊</tg-emoji> <b>Total Found: 0</b>",
                 parse_mode="html"
             )
 
@@ -346,9 +416,9 @@ def _register_handlers(bot: TelegramClient) -> None:
                         f"📂 <b>SESSIONS IMPORT</b>\n"
                         f"━━━━━━━━━━━━━━━━━━━━\n\n"
                         f"⏳ <b>Status: {status}</b>\n\n"
-                        f"✅ <b>Added: {joined}</b>\n"
-                        f"❌ <b>Failed: {failed}</b>\n"
-                        f"📊 <b>Total Found: {total}</b>"
+                        f"<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> <b>Added: {joined}</b>\n"
+                        f"<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> <b>Failed: {failed}</b>\n"
+                        f"<tg-emoji emoji-id='5231200819986047254'>📊</tg-emoji> <b>Total Found: {total}</b>"
                     )
                     await progress_msg.edit(text, parse_mode="html")
                 except Exception:
@@ -380,7 +450,7 @@ def _register_handlers(bot: TelegramClient) -> None:
                     text = menus.render_ai_action(action_data.get("description", "Unknown Action"))
                     await msg.edit(text, buttons=keyboards.ai_action_keyboard(action_id), parse_mode="html")
                 else:
-                    await msg.edit("⚠️ Failed to enqueue action.", parse_mode="html")
+                    await msg.edit("<tg-emoji emoji-id='5420323339723881652'>⚠️</tg-emoji> Failed to enqueue action.", parse_mode="html")
             else:
                 # Normal chat response
                 text = f"🤖 <b>AI:</b>\n\n{response}"
@@ -411,7 +481,7 @@ def _register_handlers(bot: TelegramClient) -> None:
             elif event.document:
                 filename = event.document.attributes[0].file_name if event.document.attributes else ""
                 if not filename.lower().endswith(".txt"):
-                    await event.respond("❌ Please send a <b>.txt</b> file.", parse_mode="html")
+                    await event.respond("<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> Please send a <b>.txt</b> file.", parse_mode="html")
                     return
                 
                 file_bytes = await event.download_media(bytes)
@@ -419,11 +489,11 @@ def _register_handlers(bot: TelegramClient) -> None:
                     content = file_bytes.decode("utf-8")
                     links = [line.strip() for line in content.split("\n") if line.strip()]
                 except:
-                    await event.respond("❌ Invalid file encoding. Must be UTF-8 txt.")
+                    await event.respond("<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> Invalid file encoding. Must be UTF-8 txt.")
                     return
                 
                 if not links:
-                    await event.respond("❌ No links found in the file.")
+                    await event.respond("<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> No links found in the file.")
                     return
                     
                 await set_context(user_id, "awaiting_input", None)
@@ -438,7 +508,7 @@ def _register_handlers(bot: TelegramClient) -> None:
                 asyncio.create_task(group_worker.bulk_join_links(user_id, links, update_progress))
                 return
             else:
-                await event.respond("❌ Please send a <b>.txt file</b> or a <b>t.me/addlist/</b> link.", parse_mode="html")
+                await event.respond("<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> Please send a <b>.txt file</b> or a <b>t.me/addlist/</b> link.", parse_mode="html")
                 return
 
         # Interactive Handlers (Phone, OTP, etc.)
@@ -478,7 +548,7 @@ def _register_handlers(bot: TelegramClient) -> None:
             elif awaiting == "bulk_2fa_set":
                 await _handle_bulk_2fa_set(event)
         except Exception as exc:
-            await event.respond(f"❌ Error: {str(exc)}", parse_mode="html")
+            await event.respond(f"<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> Error: {str(exc)}", parse_mode="html")
             await set_context(user_id, "awaiting_input", None)
 
 
@@ -497,7 +567,7 @@ def _register_handlers(bot: TelegramClient) -> None:
         m = await metrics.stats()
         pool = await client_pool.stats()
 
-        lines = ["📊 <b>System Stats</b>\n"]
+        lines = ["<tg-emoji emoji-id='5231200819986047254'>📊</tg-emoji> <b>System Stats</b>\n"]
         for k, v in m.items():
             lines.append(f"  {k}: <b>{v}</b>")
         lines.append("\n🔌 <b>Client Pool</b>")
@@ -514,7 +584,7 @@ async def _handle_auth_phone_input(event: events.NewMessage.Event) -> None:
     """Handle phone number input for auth."""
     phone = event.text.strip()
     if not phone.startswith("+") or len(phone) < 8:
-        await event.respond("❌ Invalid phone number. It must start with '+' and include the country code.")
+        await event.respond("<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> Invalid phone number. It must start with '+' and include the country code.")
         await set_context(event.sender_id, "awaiting_input", None)
         return
         
@@ -525,14 +595,14 @@ async def _handle_auth_phone_input(event: events.NewMessage.Event) -> None:
         await auth_service.start_auth(event.sender_id, phone)
         await set_context(event.sender_id, "awaiting_input", "auth_otp")
         await msg.edit(
-            f"✅ OTP requested for <b>{phone}</b>.\n\n"
+            f"<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> OTP requested for <b>{phone}</b>.\n\n"
             f"Please send the <b>5-digit code</b> you received in the Telegram app.\n"
             f"<i>You have 5 minutes to enter it.</i>",
             parse_mode="html"
         )
     except Exception as exc:
         await set_context(event.sender_id, "awaiting_input", None)
-        await msg.edit(f"❌ Failed to request code: {str(exc)}", parse_mode="html")
+        await msg.edit(f"<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> Failed to request code: {str(exc)}", parse_mode="html")
 
 
 async def _handle_auth_otp_input(event: events.NewMessage.Event) -> None:
@@ -561,7 +631,7 @@ async def _handle_auth_otp_input(event: events.NewMessage.Event) -> None:
         
         await set_context(event.sender_id, "awaiting_input", None)
         await msg.edit(
-            f"✅ <b>Account Added Successfully!</b>\n\n"
+            f"<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> <b>Account Added Successfully!</b>\n\n"
             f"👤 Name: <b>{summary['name']}</b>\n"
             f"🔗 Username: <b>{summary['username']}</b>\n"
             f"📝 Bio: <i>{summary['bio']}</i>\n"
@@ -570,7 +640,7 @@ async def _handle_auth_otp_input(event: events.NewMessage.Event) -> None:
         )
     except Exception as exc:
         await set_context(event.sender_id, "awaiting_input", None)
-        await msg.edit(f"❌ OTP verification failed: {str(exc)}", parse_mode="html")
+        await msg.edit(f"<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> OTP verification failed: {str(exc)}", parse_mode="html")
         
     try:
         await event.delete()
@@ -596,7 +666,7 @@ async def _handle_auth_password_input(event: events.NewMessage.Event) -> None:
         
         await set_context(event.sender_id, "awaiting_input", None)
         await msg.edit(
-            f"✅ <b>Account Added Successfully!</b>\n\n"
+            f"<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> <b>Account Added Successfully!</b>\n\n"
             f"👤 Name: <b>{summary['name']}</b>\n"
             f"🔗 Username: <b>{summary['username']}</b>\n"
             f"📝 Bio: <i>{summary['bio']}</i>\n"
@@ -605,7 +675,7 @@ async def _handle_auth_password_input(event: events.NewMessage.Event) -> None:
         )
     except Exception as exc:
         await set_context(event.sender_id, "awaiting_input", None)
-        await msg.edit(f"❌ Password verification failed: {str(exc)}", parse_mode="html")
+        await msg.edit(f"<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> Password verification failed: {str(exc)}", parse_mode="html")
         
     try:
         await event.delete()
@@ -638,7 +708,7 @@ async def _handle_campaign_name_input(event: events.NewMessage.Event) -> None:
         await event.respond(text, buttons=buttons, parse_mode="html")
         
     except Exception as exc:
-        await event.respond(f"❌ {str(exc)}", parse_mode="html")
+        await event.respond(f"<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> {str(exc)}", parse_mode="html")
 
 
 # We don't need _handle_campaign_message_input anymore, but we can leave it or remove it.
@@ -652,7 +722,7 @@ async def _handle_duplicate_campaign_input(event: events.NewMessage.Event) -> No
     source_id = await get_context(event.sender_id, "duplicate_source")
 
     if not source_id:
-        await event.respond("❌ Source campaign not found. Please try again.")
+        await event.respond("<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> Source campaign not found. Please try again.")
         return
 
     try:
@@ -663,11 +733,11 @@ async def _handle_duplicate_campaign_input(event: events.NewMessage.Event) -> No
         )
         await set_context(event.sender_id, "awaiting_input", None)
         await event.respond(
-            f"✅ Campaign duplicated as <b>{new_campaign.name}</b>!",
+            f"<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Campaign duplicated as <b>{new_campaign.name}</b>!",
             parse_mode="html",
         )
     except Exception as exc:
-        await event.respond(f"❌ Error: {str(exc)}", parse_mode="html")
+        await event.respond(f"<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> Error: {str(exc)}", parse_mode="html")
 
 
 async def _handle_account_notes_input(event: events.NewMessage.Event) -> None:
@@ -678,15 +748,15 @@ async def _handle_account_notes_input(event: events.NewMessage.Event) -> None:
     account_id = await get_context(event.sender_id, "notes_account_id")
 
     if not account_id:
-        await event.respond("❌ Account not found. Please try again.")
+        await event.respond("<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> Account not found. Please try again.")
         return
 
     try:
         await account_service.update_notes(account_id, event.sender_id, notes)
         await set_context(event.sender_id, "awaiting_input", None)
-        await event.respond("✅ Notes updated!", parse_mode="html")
+        await event.respond("<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Notes updated!", parse_mode="html")
     except Exception as exc:
-        await event.respond(f"❌ Error: {str(exc)}", parse_mode="html")
+        await event.respond(f"<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> Error: {str(exc)}", parse_mode="html")
 
 
 async def _handle_autoreply_text_input(event: events.NewMessage.Event) -> None:
@@ -702,13 +772,13 @@ async def _handle_autoreply_text_input(event: events.NewMessage.Event) -> None:
         from telegram import keyboards
         
         await event.respond(
-            "✅ <b>Custom auto-reply message saved!</b>\n\n"
+            "<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> <b>Custom auto-reply message saved!</b>\n\n"
             f"<code>{text}</code>",
             parse_mode="html",
             buttons=keyboards.back_keyboard(CB.SETTINGS_AUTOREPLY)
         )
     except Exception as exc:
-        await event.respond(f"❌ Error saving message: {str(exc)}", parse_mode="html")
+        await event.respond(f"<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> Error saving message: {str(exc)}", parse_mode="html")
 async def _handle_cmp_ad_custom(event, campaign_id: str):
     from services import campaign_service
     from telegram.menus import render_campaign_detail
@@ -718,7 +788,7 @@ async def _handle_cmp_ad_custom(event, campaign_id: str):
     await campaign_service.update_campaign(campaign_id, ad_type="custom", message=event.text.strip(), forward_link=None)
     await set_context(event.sender_id, "awaiting_input", None)
     
-    await event.respond("✅ <b>Custom message saved!</b>", parse_mode="html")
+    await event.respond("<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> <b>Custom message saved!</b>", parse_mode="html")
     
     from workers.cache_worker import warm_user_cache
     await warm_user_cache(event.sender_id)
@@ -736,7 +806,7 @@ async def _handle_cmp_ad_forward(event, campaign_id: str):
     await campaign_service.update_campaign(campaign_id, ad_type="forward", forward_link=event.text.strip())
     await set_context(event.sender_id, "awaiting_input", None)
     
-    await event.respond("✅ <b>Forward link saved!</b>", parse_mode="html")
+    await event.respond("<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> <b>Forward link saved!</b>", parse_mode="html")
     
     from workers.cache_worker import warm_user_cache
     await warm_user_cache(event.sender_id)
@@ -755,7 +825,7 @@ async def _handle_cmp_int_group(event, campaign_id: str):
         await campaign_service.update_campaign(campaign_id, group_delay_seconds=val)
         await set_context(event.sender_id, "awaiting_input", None)
         
-        await event.respond("✅ <b>Group delay saved!</b>", parse_mode="html")
+        await event.respond("<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> <b>Group delay saved!</b>", parse_mode="html")
         
         from workers.cache_worker import warm_user_cache
         await warm_user_cache(event.sender_id)
@@ -764,7 +834,7 @@ async def _handle_cmp_int_group(event, campaign_id: str):
         buttons = campaign_detail_keyboard(campaign_id, data.get("status", "UNKNOWN") if data else "UNKNOWN")
         await event.respond(text, buttons=buttons, parse_mode="html")
     except ValueError:
-        await event.respond("❌ Invalid number. Try again.")
+        await event.respond("<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> Invalid number. Try again.")
 
 async def _handle_cmp_int_round(event, campaign_id: str):
     from services import campaign_service
@@ -776,7 +846,7 @@ async def _handle_cmp_int_round(event, campaign_id: str):
         await campaign_service.update_campaign(campaign_id, round_delay_seconds=val)
         await set_context(event.sender_id, "awaiting_input", None)
         
-        await event.respond("✅ <b>Round delay saved!</b>", parse_mode="html")
+        await event.respond("<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> <b>Round delay saved!</b>", parse_mode="html")
         
         from workers.cache_worker import warm_user_cache
         await warm_user_cache(event.sender_id)
@@ -785,7 +855,7 @@ async def _handle_cmp_int_round(event, campaign_id: str):
         buttons = campaign_detail_keyboard(campaign_id, data.get("status", "UNKNOWN") if data else "UNKNOWN")
         await event.respond(text, buttons=buttons, parse_mode="html")
     except ValueError:
-        await event.respond("❌ Invalid number. Try again.")
+        await event.respond("<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> Invalid number. Try again.")
 
 async def _handle_cmp_rounds_max(event, campaign_id: str):
     from services import campaign_service
@@ -797,7 +867,7 @@ async def _handle_cmp_rounds_max(event, campaign_id: str):
         await campaign_service.update_campaign(campaign_id, max_rounds=val)
         await set_context(event.sender_id, "awaiting_input", None)
         
-        await event.respond("✅ <b>Max rounds saved!</b>", parse_mode="html")
+        await event.respond("<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> <b>Max rounds saved!</b>", parse_mode="html")
         
         from workers.cache_worker import warm_user_cache
         await warm_user_cache(event.sender_id)
@@ -806,7 +876,7 @@ async def _handle_cmp_rounds_max(event, campaign_id: str):
         buttons = campaign_detail_keyboard(campaign_id, data.get("status", "UNKNOWN") if data else "UNKNOWN")
         await event.respond(text, buttons=buttons, parse_mode="html")
     except ValueError:
-        await event.respond("❌ Invalid number. Try again.")
+        await event.respond("<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> Invalid number. Try again.")
 
 
 async def _handle_bulk_name_first(event: events.NewMessage.Event) -> None:
@@ -817,7 +887,7 @@ async def _handle_bulk_name_first(event: events.NewMessage.Event) -> None:
     from telegram.keyboards import back_keyboard
     from core.constants import CB
     await event.respond(
-        f"✅ First name set to: <b>{text}</b>\n\n"
+        f"<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> First name set to: <b>{text}</b>\n\n"
         f"Now, please send the <b>new Last Name</b> for all accounts.\n"
         f"<i>(Send a dot `.` or space to leave it blank)</i>", 
         buttons=back_keyboard(CB.BULK_MANAGER), parse_mode="html"
@@ -843,7 +913,7 @@ async def _handle_bulk_name_last(event: events.NewMessage.Event) -> None:
             except Exception: pass
         success, failed = await bulk_service.bulk_update_profile(event.sender_id, first_name=first_name, last_name=last_name, progress_callback=update_progress)
         try:
-            await msg.edit(render_bulk_progress("Change Name", success, failed, success+failed, "✅ Completed!"), buttons=bulk_manager_keyboard(), parse_mode="html")
+            await msg.edit(render_bulk_progress("Change Name", success, failed, success+failed, "<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Completed!"), buttons=bulk_manager_keyboard(), parse_mode="html")
         except Exception: pass
 
     import asyncio
@@ -853,7 +923,7 @@ async def _handle_bulk_name_last(event: events.NewMessage.Event) -> None:
 async def _handle_bulk_bio(event: events.NewMessage.Event) -> None:
     text = event.text.strip()
     if len(text) > 70:
-        await event.respond("❌ <b>Bio too long!</b>\nTelegram only allows a maximum of 70 characters.\n\nPlease send a shorter one.", parse_mode="html")
+        await event.respond("<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> <b>Bio too long!</b>\nTelegram only allows a maximum of 70 characters.\n\nPlease send a shorter one.", parse_mode="html")
         return
         
     from telegram.menus import render_bulk_progress
@@ -868,7 +938,7 @@ async def _handle_bulk_bio(event: events.NewMessage.Event) -> None:
             except Exception: pass
         success, failed = await bulk_service.bulk_update_profile(event.sender_id, about=text, progress_callback=update_progress)
         try:
-            await msg.edit(render_bulk_progress("Change Bio", success, failed, success+failed, "✅ Completed!"), buttons=bulk_manager_keyboard(), parse_mode="html")
+            await msg.edit(render_bulk_progress("Change Bio", success, failed, success+failed, "<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Completed!"), buttons=bulk_manager_keyboard(), parse_mode="html")
         except Exception: pass
 
     import asyncio
@@ -877,7 +947,7 @@ async def _handle_bulk_bio(event: events.NewMessage.Event) -> None:
 
 async def _handle_bulk_photo(event: events.NewMessage.Event) -> None:
     if not event.photo:
-        await event.respond("❌ Please send a photo.")
+        await event.respond("<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> Please send a photo.")
         return
         
     msg = await event.respond("Downloading photo... ⏳")
@@ -899,7 +969,7 @@ async def _handle_bulk_photo(event: events.NewMessage.Event) -> None:
         if os.path.exists(filename):
             os.remove(filename)
         try:
-            await msg.edit(render_bulk_progress("Change Photo", success, failed, success+failed, "✅ Completed!"), buttons=bulk_manager_keyboard(), parse_mode="html")
+            await msg.edit(render_bulk_progress("Change Photo", success, failed, success+failed, "<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Completed!"), buttons=bulk_manager_keyboard(), parse_mode="html")
         except Exception: pass
 
     import asyncio
@@ -920,7 +990,7 @@ async def _handle_bulk_2fa_set(event: events.NewMessage.Event) -> None:
             except Exception: pass
         success, failed = await bulk_service.bulk_manage_2fa(event.sender_id, text, progress_callback=update_progress)
         try:
-            await msg.edit(render_bulk_progress("Set 2FA", success, failed, success+failed, "✅ Completed!"), buttons=bulk_manager_keyboard(), parse_mode="html")
+            await msg.edit(render_bulk_progress("Set 2FA", success, failed, success+failed, "<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Completed!"), buttons=bulk_manager_keyboard(), parse_mode="html")
         except Exception: pass
 
     import asyncio
