@@ -121,7 +121,7 @@ async def on_account_resume(event: events.CallbackQuery.Event, account_id: str) 
 async def on_account_delete(event: events.CallbackQuery.Event, account_id: str) -> None:
     """Confirm account deletion."""
     await event.answer()  # LINE 1. Non-negotiable.
-    text = "🗑️ Are you sure you want to <b>delete</b> this account?\n\n<tg-emoji emoji-id='5420323339723881652'>⚠️</tg-emoji> This action cannot be undone."
+    text = "<tg-emoji emoji-id='5445267414562389170'>🗑️</tg-emoji> Are you sure you want to <b>delete</b> this account?\n\n<tg-emoji emoji-id='5420323339723881652'>⚠️</tg-emoji> This action cannot be undone."
     buttons = keyboards.confirm_keyboard("delete_account", account_id)
     await event.edit(text, buttons=buttons, parse_mode="html")
 
@@ -131,7 +131,7 @@ async def on_accounts_delete_all(event: events.CallbackQuery.Event) -> None:
     await event.answer()  # LINE 1. Non-negotiable.
     await push_screen(event.sender_id, "accounts")
     text = (
-        "🗑️ <b>REMOVE ALL ACCOUNTS</b>\n"
+        "<tg-emoji emoji-id='5445267414562389170'>🗑️</tg-emoji> <b>REMOVE ALL ACCOUNTS</b>\n"
         "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         "Are you sure you want to remove <b>ALL</b> accounts from the bot?\n\n"
         "<tg-emoji emoji-id='5420323339723881652'>⚠️</tg-emoji> This action <b>CANNOT</b> be undone and will delete all session data."
@@ -160,7 +160,7 @@ async def on_account_upload_sessions(event: events.CallbackQuery.Event) -> None:
         "📂 <b>UPLOAD SESSIONS</b>\n"
         "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         "Please send a <b>.session</b> file or a <b>.zip</b> archive containing sessions.\n\n"
-        "ℹ️ <b>Tips:</b>\n"
+        "<tg-emoji emoji-id='5458603043203327669'>ℹ️</tg-emoji> <b>Tips:</b>\n"
         "├ 1. Sessions will be automatically validated.\n"
         "├ 2. Valid accounts will be added to your list.\n"
         "└ 3. All sessions are securely encrypted."
@@ -201,7 +201,7 @@ async def on_account_stats(event: events.CallbackQuery.Event, account_id: str) -
             f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
             f"<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Success: <b>{format_number(data.get('success_count', 0))}</b>\n"
             f"<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> Failed: <b>{format_number(data.get('failure_count', 0))}</b>\n"
-            f"📈 Success Rate: <b>{format_percentage(data.get('success_rate', 0))}</b>\n\n"
+            f"<tg-emoji emoji-id='5244837092042750681'>📈</tg-emoji> Success Rate: <b>{format_percentage(data.get('success_rate', 0))}</b>\n\n"
             f"🎯 Rotation Score: <b>{data.get('rotation_score', 0):.4f}</b>\n"
             f"🕐 Last Used: <b>{menus._format_iso_date(data.get('last_used_at'))}</b>"
         )
@@ -268,7 +268,7 @@ async def on_campaign_set_ad(event: events.CallbackQuery.Event, action: str, cam
         link = getattr(camp, "forward_link", "") or "None"
         
         text = (
-            "📝 <b>Set Ad Type</b>\n\n"
+            "<tg-emoji emoji-id='5395444784611480792'>📝</tg-emoji> <b>Set Ad Type</b>\n\n"
             "Choose the type of advertisement for this campaign:\n\n"
             "<b>Current Settings:</b>\n"
             f"🔹 Custom Message: <i>{msg_disp}</i>\n"
@@ -455,7 +455,7 @@ async def on_campaign_acc_detail(event: events.CallbackQuery.Event, account_id: 
     phone = account.phone or "Unknown"
     
     text = (
-        f"👤 <b>Account Details</b>\n"
+        f"<tg-emoji emoji-id='5461117441612462242'>👤</tg-emoji> <b>Account Details</b>\n"
         f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         f"📱 Phone: <b>{phone}</b>\n"
         f"🏘 Total Groups in Account: <b>{total_groups}</b>\n\n"
@@ -555,7 +555,7 @@ async def on_campaign_create(event: events.CallbackQuery.Event) -> None:
     await event.answer()  # LINE 1. Non-negotiable.
     await set_context(event.sender_id, "awaiting_input", "campaign_name")
     text = (
-        "📢 <b>Create Campaign</b>\n"
+        "<tg-emoji emoji-id='5424818078833715060'>📢</tg-emoji> <b>Create Campaign</b>\n"
         "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         "Please send the <b>campaign name</b>."
     )
@@ -581,7 +581,7 @@ async def on_campaign_resume(event: events.CallbackQuery.Event, campaign_id: str
 async def on_campaign_delete(event: events.CallbackQuery.Event, campaign_id: str) -> None:
     """Confirm campaign deletion."""
     await event.answer()  # LINE 1. Non-negotiable.
-    text = "🗑️ Are you sure you want to <b>delete</b> this campaign?\n\n<tg-emoji emoji-id='5420323339723881652'>⚠️</tg-emoji> This action cannot be undone."
+    text = "<tg-emoji emoji-id='5445267414562389170'>🗑️</tg-emoji> Are you sure you want to <b>delete</b> this campaign?\n\n<tg-emoji emoji-id='5420323339723881652'>⚠️</tg-emoji> This action cannot be undone."
     buttons = keyboards.confirm_keyboard("delete_campaign", campaign_id)
     await event.edit(text, buttons=buttons, parse_mode="html")
 
@@ -940,7 +940,7 @@ async def on_page_next(event: events.CallbackQuery.Event, screen: str, page: int
         data = await campaign_cache.get_page(event.sender_id, page)
         campaigns_list = data.get("campaigns", []) if data else []
         pagination = data.get("pagination", {}) if data else {}
-        text = "📢 <b>Campaigns</b>\n━━━━━━━━━━━━━━━━━━━━━━━━"
+        text = "<tg-emoji emoji-id='5424818078833715060'>📢</tg-emoji> <b>Campaigns</b>\n━━━━━━━━━━━━━━━━━━━━━━━━"
         buttons = keyboards.campaign_list_keyboard(campaigns_list, pagination)
         await event.edit(text, buttons=buttons, parse_mode="html")
     elif screen == "cmp_acc":
@@ -1255,7 +1255,7 @@ async def on_bulk_action(event: events.CallbackQuery.Event, action: str) -> None
         await event.edit("Please send the <b>new Profile Photo</b>.", buttons=keyboards.back_keyboard(CB.BULK_MANAGER), parse_mode="html")
     elif action == "rm_photo":
         buttons = keyboards.confirm_keyboard("bulk_rm_photo", "all")
-        await event.edit("🗑️ Remove all profile photos from all accounts?", buttons=buttons, parse_mode="html")
+        await event.edit("<tg-emoji emoji-id='5445267414562389170'>🗑️</tg-emoji> Remove all profile photos from all accounts?", buttons=buttons, parse_mode="html")
     elif action == "clean_dms":
         buttons = keyboards.confirm_keyboard("bulk_clean_dms", "all")
         await event.edit("💬 Delete all private chat history from all accounts?", buttons=buttons, parse_mode="html")

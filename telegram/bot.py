@@ -436,7 +436,7 @@ def _register_handlers(bot: TelegramClient) -> None:
             from telegram import menus, keyboards
             
             # Show typing...
-            msg = await event.respond("⏳ <i>Thinking...</i>", parse_mode="html")
+            msg = await event.respond("<tg-emoji emoji-id='5291969869875522399'>⏳</tg-emoji> <i>Thinking...</i>", parse_mode="html")
             
             # Call AI
             response = await chat_with_ai(user_id, event.text)
@@ -453,7 +453,7 @@ def _register_handlers(bot: TelegramClient) -> None:
                     await msg.edit("<tg-emoji emoji-id='5420323339723881652'>⚠️</tg-emoji> Failed to enqueue action.", parse_mode="html")
             else:
                 # Normal chat response
-                text = f"🤖 <b>AI:</b>\n\n{response}"
+                text = f"<tg-emoji emoji-id='6256032707470428424'>🤖</tg-emoji> <b>AI:</b>\n\n{response}"
                 await msg.edit(text, buttons=keyboards.ai_chat_keyboard(), parse_mode="html")
                 
             return
@@ -632,9 +632,9 @@ async def _handle_auth_otp_input(event: events.NewMessage.Event) -> None:
         await set_context(event.sender_id, "awaiting_input", None)
         await msg.edit(
             f"<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> <b>Account Added Successfully!</b>\n\n"
-            f"👤 Name: <b>{summary['name']}</b>\n"
+            f"<tg-emoji emoji-id='5461117441612462242'>👤</tg-emoji> Name: <b>{summary['name']}</b>\n"
             f"🔗 Username: <b>{summary['username']}</b>\n"
-            f"📝 Bio: <i>{summary['bio']}</i>\n"
+            f"<tg-emoji emoji-id='5395444784611480792'>📝</tg-emoji> Bio: <i>{summary['bio']}</i>\n"
             f"👥 Total Groups: <b>{summary['groups_count']}</b>",
             parse_mode="html"
         )
@@ -667,9 +667,9 @@ async def _handle_auth_password_input(event: events.NewMessage.Event) -> None:
         await set_context(event.sender_id, "awaiting_input", None)
         await msg.edit(
             f"<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> <b>Account Added Successfully!</b>\n\n"
-            f"👤 Name: <b>{summary['name']}</b>\n"
+            f"<tg-emoji emoji-id='5461117441612462242'>👤</tg-emoji> Name: <b>{summary['name']}</b>\n"
             f"🔗 Username: <b>{summary['username']}</b>\n"
-            f"📝 Bio: <i>{summary['bio']}</i>\n"
+            f"<tg-emoji emoji-id='5395444784611480792'>📝</tg-emoji> Bio: <i>{summary['bio']}</i>\n"
             f"👥 Total Groups: <b>{summary['groups_count']}</b>",
             parse_mode="html"
         )
@@ -701,11 +701,25 @@ async def _handle_campaign_name_input(event: events.NewMessage.Event) -> None:
         from cache import campaign_cache
         from telegram.menus import render_campaign_detail
         from telegram.keyboards import campaign_detail_keyboard
+        from core.config import get_settings
         
-        data = await campaign_cache.get_summary(campaign.id)
+        # Build immediate payload so we don't wait for background cache
+        data = campaign.model_dump(mode="json")
+        data["account_count"] = len(campaign.account_ids)
+        data["group_count"] = len(campaign.group_ids)
+        data["success_count"] = 0
+        data["failure_count"] = 0
+        
+        await campaign_cache.set_summary(campaign.id, data)
+        
         text = render_campaign_detail(data)
         buttons = campaign_detail_keyboard(campaign.id, campaign.status)
-        await event.respond(text, buttons=buttons, parse_mode="html")
+        
+        settings = get_settings()
+        if settings.bot_image_url:
+            await event.respond(file=settings.bot_image_url, message=text, buttons=buttons, parse_mode="html")
+        else:
+            await event.respond(text, buttons=buttons, parse_mode="html")
         
     except Exception as exc:
         await event.respond(f"<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> {str(exc)}", parse_mode="html")

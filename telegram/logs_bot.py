@@ -151,7 +151,7 @@ async def send_campaign_start_log(owner_id: int, campaign: Any) -> None:
     if ad_type == "custom":
         msg = campaign.message or "None"
         msg_disp = f"{msg[:30]}..." if len(msg) > 30 else msg
-        ad_disp = f"📝 Custom ({msg_disp})"
+        ad_disp = f"<tg-emoji emoji-id='5395444784611480792'>📝</tg-emoji> Custom ({msg_disp})"
     else:
         ad_disp = f"🔗 Forward ({campaign.forward_link})"
 

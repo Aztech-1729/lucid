@@ -77,8 +77,8 @@ def _time_ago(iso_str: str | None) -> str:
 def _status_dot(status: str) -> str:
     """Get colored dot for account status."""
     dots = {
-        "ACTIVE": "🟢",
-        "HEALTHY": "🟢",
+        "ACTIVE": "<tg-emoji emoji-id='5416081784641168838'>🟢</tg-emoji>",
+        "HEALTHY": "<tg-emoji emoji-id='5416081784641168838'>🟢</tg-emoji>",
         "WARNING": "🟡",
         "PAUSED": "🟡",
         "LIMITED": "🟠",
@@ -215,14 +215,14 @@ def render_account_detail(data: dict | None) -> str:
         f"📱 <b>ACCOUNT DETAILS</b>\n"
         f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         f"📞 <b>{phone}</b>  <b>{status_disp}</b>\n\n"
-        f"ℹ️ <b>INFO:</b>\n"
+        f"<tg-emoji emoji-id='5458603043203327669'>ℹ️</tg-emoji> <b>INFO:</b>\n"
         f"├ <b>Health Score: {health}/100</b>\n"
         f"├ <b>Status: {status_disp}</b>\n"
         f"├ <b>Flood Risk: {flood_risk}</b>\n"
         f"├ <b>SpamBot Check: {_time_ago(data.get('last_checked_at'))}</b>\n"
         f"├ <b>Last Active: {_time_ago(data.get('last_used_at'))}</b>\n"
         f"└ <b>Added On: {_format_iso_date(data.get('created_at'))}</b>\n\n"
-        f"📈 <b>STATS:</b>\n"
+        f"<tg-emoji emoji-id='5244837092042750681'>📈</tg-emoji> <b>STATS:</b>\n"
         f"├ <b>Total Forwarded: {total}</b>\n"
         f"├ <b>Successful: {success_count} ({rate:.2f}%)</b>\n"
         f"├ <b>Failed: {failure_count} ({100-rate:.2f}%)</b>\n"
@@ -237,7 +237,7 @@ def render_campaign_list(data: dict | None) -> str:
     """Render the campaign list page."""
     if not data:
         return (
-            "📢 <b>CAMPAIGNS</b>\n"
+            "<tg-emoji emoji-id='5424818078833715060'>📢</tg-emoji> <b>CAMPAIGNS</b>\n"
             "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
             "No campaigns found.\n"
             "Press ➕ <b>New Campaign</b> to create one."
@@ -249,14 +249,14 @@ def render_campaign_list(data: dict | None) -> str:
     campaigns = data.get("campaigns", [])
 
     lines = [
-        f"📢 <b>CAMPAIGNS</b> (Page {page}/{total_pages})",
+        f"<tg-emoji emoji-id='5424818078833715060'>📢</tg-emoji> <b>CAMPAIGNS</b> (Page {page}/{total_pages})",
         "━━━━━━━━━━━━━━━━━━━━━━━━\n",
     ]
 
     for c in campaigns:
         name = c.get("name", "Untitled")
         status = c.get("status", "DRAFT")
-        status_emoji = {"ACTIVE": "🟢", "PAUSED": "🟡", "DRAFT": "📝", "COMPLETED": "<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji>"}.get(status, "⚫")
+        status_emoji = {"ACTIVE": "<tg-emoji emoji-id='5416081784641168838'>🟢</tg-emoji>", "PAUSED": "🟡", "DRAFT": "<tg-emoji emoji-id='5395444784611480792'>📝</tg-emoji>", "COMPLETED": "<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji>"}.get(status, "⚫")
         status_label = f"<code>{status}</code>"
         accounts = c.get("account_count", 0)
         groups = c.get("group_count", 0)
@@ -275,7 +275,7 @@ def render_campaign_detail(data: dict | None) -> str:
     """Render campaign detail view in tree style."""
     if not data:
         return (
-            "📢 <b>CAMPAIGN DETAILS</b>\n"
+            "<tg-emoji emoji-id='5424818078833715060'>📢</tg-emoji> <b>CAMPAIGN DETAILS</b>\n"
             "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
             "<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> Campaign data not available."
         )
@@ -294,7 +294,7 @@ def render_campaign_detail(data: dict | None) -> str:
     rate = (success / total_sent * 100) if total_sent > 0 else 0
     fail_rate = (failed / total_sent * 100) if total_sent > 0 else 0
 
-    status_badge = {"ACTIVE": "🟢 Active", "PAUSED": "🟡 Paused", "DRAFT": "📝 Draft", "COMPLETED": "<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Done"}.get(status, status)
+    status_badge = {"ACTIVE": "<tg-emoji emoji-id='5416081784641168838'>🟢</tg-emoji> Active", "PAUSED": "🟡 Paused", "DRAFT": "<tg-emoji emoji-id='5395444784611480792'>📝</tg-emoji> Draft", "COMPLETED": "<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Done"}.get(status, status)
 
     ad_type = data.get("ad_type", "custom")
     if ad_type == "custom":
@@ -306,19 +306,19 @@ def render_campaign_detail(data: dict | None) -> str:
         ad_disp = f"<b>Forward ({link})</b>"
 
     return (
-        f"📢 <b>CAMPAIGN DETAILS</b>\n"
+        f"<tg-emoji emoji-id='5424818078833715060'>📢</tg-emoji> <b>CAMPAIGN DETAILS</b>\n"
         f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        f"📢 <b>{name}</b>  {status_badge}\n\n"
-        f"ℹ️ <b>INFO:</b>\n"
+        f"<tg-emoji emoji-id='5424818078833715060'>📢</tg-emoji> <b>{name}</b>  {status_badge}\n\n"
+        f"<tg-emoji emoji-id='5458603043203327669'>ℹ️</tg-emoji> <b>INFO:</b>\n"
         f"├ <b>ID: {campaign_id[:12]}</b>\n"
         f"├ <b>Accounts: {accounts}</b>\n"
         f"├ <b>Groups: {groups}</b>\n"
         f"└ <b>Created: {_format_iso_date(created)}</b>\n\n"
-        f"📈 <b>STATS:</b>\n"
+        f"<tg-emoji emoji-id='5244837092042750681'>📈</tg-emoji> <b>STATS:</b>\n"
         f"├ <b>Total Forwarded: {total_sent}</b>\n"
         f"├ <b>Successful: {success} ({rate:.2f}%)</b>\n"
         f"└ <b>Failed: {failed} ({fail_rate:.2f}%)</b>\n\n"
-        f"⚙️ <b>SETTINGS:</b>\n"
+        f"<tg-emoji emoji-id='5341715473882955310'>⚙️</tg-emoji> <b>SETTINGS:</b>\n"
         f"├ <b>Ad Type: {ad_disp}</b>\n"
         f"├ <b>Interval: {data.get('group_delay_seconds', 15)}s / {data.get('round_delay_seconds', 600)}s</b>\n"
         f"└ <b>Max Rounds: {'24/7' if data.get('max_rounds', 0) == 0 else data.get('max_rounds')}</b>"
@@ -348,7 +348,7 @@ def render_analytics(data: dict | None) -> str:
         f"<tg-emoji emoji-id='5231200819986047254'>📊</tg-emoji> <b>ANALYTICS OVERVIEW</b>\n"
         f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         f"📅 Period: <b>All Time</b>\n\n"
-        f"📈 <b>PERFORMANCE:</b>\n"
+        f"<tg-emoji emoji-id='5244837092042750681'>📈</tg-emoji> <b>PERFORMANCE:</b>\n"
         f"├ <b>Total Messages: {total_sent}</b>\n"
         f"├ <b>Successful: {successful}</b>\n"
         f"├ <b>Failed: {failed}</b>\n"
@@ -363,13 +363,13 @@ def render_analytics_detailed(data: dict | None) -> str:
     """Render detailed analytics view."""
     if not data:
         return (
-            "📈 <b>DETAILED ANALYTICS</b>\n"
+            "<tg-emoji emoji-id='5244837092042750681'>📈</tg-emoji> <b>DETAILED ANALYTICS</b>\n"
             "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
             "No detailed data available yet."
         )
 
     return (
-        "📈 <b>DETAILED ANALYTICS</b>\n"
+        "<tg-emoji emoji-id='5244837092042750681'>📈</tg-emoji> <b>DETAILED ANALYTICS</b>\n"
         f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         f"Detailed metrics and graphs will be displayed here.\n\n"
         f"<i>Coming soon in the next update!</i>"
@@ -409,7 +409,7 @@ def render_health_overview(data: dict | None) -> str:
 def render_health_settings() -> str:
     """Render health settings."""
     return (
-        "⚙️ <b>HEALTH SETTINGS</b>\n"
+        "<tg-emoji emoji-id='5341715473882955310'>⚙️</tg-emoji> <b>HEALTH SETTINGS</b>\n"
         "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         "Configure how the bot handles account health.\n\n"
         "<b>Auto-Pause Unhealthy:</b> If ON, the bot will automatically pause ad forwarding for accounts that drop into the WARNING state, protecting them from bans."
@@ -460,11 +460,11 @@ def render_groups_list(phone: str, selected_count: int, total_count: int) -> str
 def render_autojoin_prompt() -> str:
     """Render the auto-join instructions."""
     return (
-        "🤖 <b>AUTO JOIN GROUPS</b>\n"
+        "<b><tg-emoji emoji-id='6256032707470428424'>🤖</tg-emoji> AUTO JOIN GROUPS</b>\n"
         "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        "👇 <b>No buttons needed! Just do ONE of the following right here in the chat:</b>\n\n"
-        "📁 <b>Option 1:</b> Paste your <code>t.me/addlist/...</code> folder link (Instant Join)\n"
-        "📄 <b>Option 2:</b> Upload a <code>.txt</code> file containing group links (Slower Join)"
+        "<b>👇 No buttons needed! Just do ONE of the following right here in the chat:</b>\n\n"
+        "<b>📁 Option 1: Paste your <code>t.me/addlist/...</code> folder link (Instant Join)</b>\n\n"
+        "<b>📄 Option 2: Upload a <code>.txt</code> file containing group links (Slower Join)</b>"
     )
 
 
@@ -474,7 +474,7 @@ def render_autojoin_progress(joined: int, failed: int, total: int, status: str =
     pct = (progress / total * 100) if total > 0 else 0
     
     return (
-        f"🤖 <b>AUTO JOIN PROGRESS</b>\n"
+        f"<tg-emoji emoji-id='6256032707470428424'>🤖</tg-emoji> <b>AUTO JOIN PROGRESS</b>\n"
         f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         f"⏳ <b>Status: {status}</b>\n\n"
         f"<tg-emoji emoji-id='5231200819986047254'>📊</tg-emoji> <b>STATS:</b>\n"
@@ -483,7 +483,7 @@ def render_autojoin_progress(joined: int, failed: int, total: int, status: str =
         f"├ <b>Joined: {joined}</b>\n"
         f"├ <b>Failed: {failed}</b>\n"
         f"└ <b>Target Joins: {total}</b>\n\n"
-        f"📈 <b>Progress: {progress}/{total} ({pct:.1f}%)</b>\n"
+        f"<tg-emoji emoji-id='5244837092042750681'>📈</tg-emoji> <b>Progress: {progress}/{total} ({pct:.1f}%)</b>\n"
         f"{_bar(progress, total, 16)}"
     )
 
@@ -499,7 +499,7 @@ def render_autoreply_menu(enabled: bool, has_custom: bool) -> str:
         f"💬 <b>AUTO REPLY SETTINGS</b>\n"
         f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         f"Automatically reply to direct messages sent to your accounts.\n\n"
-        f"ℹ️ <b>CONFIG:</b>\n"
+        f"<tg-emoji emoji-id='5458603043203327669'>ℹ️</tg-emoji> <b>CONFIG:</b>\n"
         f"├ <b>Status: {status}</b>\n"
         f"└ <b>Message: {msg_status}</b>\n\n"
         f"Use the buttons below to configure."
@@ -519,12 +519,12 @@ def render_autoreply_view(text: str) -> str:
 def render_ai_welcome() -> str:
     """Render the AI welcome screen."""
     return (
-        "🤖 <b>PERSONAL AI ASSISTANT</b>\n"
+        "<tg-emoji emoji-id='6256032707470428424'>🤖</tg-emoji> <b>PERSONAL AI ASSISTANT</b>\n"
         "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         "Hello! I am your intelligent agent.\n\n"
         "I can fetch live statistics, diagnose campaign issues, or securely perform actions for you.\n\n"
-        "<b>What would you like me to do?</b>\n"
-        "<i>(Just type your message below)</i>"
+        "What would you like me to do?\n"
+        "(Just type your message below)"
     )
 
 def render_ai_action(description: str) -> str:
@@ -543,7 +543,7 @@ def render_profile(user_data: dict, is_active: bool) -> str:
     plan = user_data.get("plan_type", "FREE_TRIAL")
     ends_at = user_data.get("subscription_ends_at")
     
-    status = "🟢 ACTIVE" if is_active else "🔴 INACTIVE (Trial Expired)"
+    status = "<tg-emoji emoji-id='5416081784641168838'>🟢</tg-emoji> ACTIVE" if is_active else "🔴 INACTIVE (Trial Expired)"
     if plan != "FREE_TRIAL" and not is_active:
         status = "🔴 EXPIRED"
         
@@ -552,11 +552,11 @@ def render_profile(user_data: dict, is_active: bool) -> str:
         expiry_str = ends_at.strftime("%Y-%m-%d %H:%M UTC")
 
     return (
-        f"👤 <b>USER PROFILE</b>\n"
+        f"<tg-emoji emoji-id='5461117441612462242'>👤</tg-emoji> <b>USER PROFILE</b>\n"
         f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         f"<b>User ID:</b> <code>{user_data.get('user_id')}</code>\n"
         f"<b>Status:</b> {status}\n\n"
-        f"💳 <b>CURRENT PLAN</b>\n"
+        f"<tg-emoji emoji-id='5438496463044752972'>💳</tg-emoji> <b>CURRENT PLAN</b>\n"
         f"├ <b>Tier:</b> {plan}\n"
         f"└ <b>Expires:</b> {expiry_str}\n\n"
         f"<i>Tap the button below to purchase or upgrade your plan.</i>"

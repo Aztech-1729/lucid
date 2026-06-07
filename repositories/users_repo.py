@@ -26,6 +26,13 @@ async def get_or_create(
     """Get an existing user or create a new one with default plan."""
     doc = await _coll().find_one({"user_id": user_id})
     if doc:
+        if doc.get("username") != username or doc.get("first_name") != first_name:
+            await _coll().update_one(
+                {"user_id": user_id},
+                {"$set": {"username": username, "first_name": first_name}}
+            )
+            doc["username"] = username
+            doc["first_name"] = first_name
         doc["_id"] = str(doc["_id"])
         return User.model_validate(doc)
 

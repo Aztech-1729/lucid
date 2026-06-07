@@ -27,10 +27,10 @@ def main_menu_keyboard() -> list[list[Button]]:
     """Main menu buttons — 2-column grid + full-width My Plan."""
     
     btn_accounts = Button.inline(_b("Accounts"), CB.ACCOUNTS)
-    btn_accounts.style = KeyboardButtonStyle(bg_primary=True, icon=6296218646284863141)
+    btn_accounts.style = KeyboardButtonStyle(bg_success=True, icon=6296218646284863141)
     
     btn_campaigns = Button.inline(_b("Campaigns"), CB.CAMPAIGNS)
-    btn_campaigns.style = KeyboardButtonStyle(bg_primary=True, icon=5424818078833715060)
+    btn_campaigns.style = KeyboardButtonStyle(bg_success=True, icon=5424818078833715060)
     
     btn_analytics = Button.inline(_b("Analytics"), CB.ANALYTICS)
     btn_analytics.style = KeyboardButtonStyle(bg_primary=True, icon=5231200819986047254)
@@ -67,7 +67,7 @@ def build_dashboard_keyboard(is_admin: bool = False) -> list[list[Button]]:
     admin_url = f"https://t.me/{settings.admin_username.replace('@', '')}"
     
     if is_admin:
-        btn_admin = Button.inline(_b("Admin Panel 👑"), "admin:panel")
+        btn_admin = Button.inline(_b("Admin Panel"), "admin:panel")
         btn_admin.style = KeyboardButtonStyle(bg_primary=True, icon=5231200819986047254)
         grid.append([btn_admin])
         
@@ -94,13 +94,24 @@ def account_list_keyboard(
         acc_id = acc.get("id", "")
         phone = acc.get("phone", "???")
         health = acc.get("health_score", 0)
-        dot = "🟢" if health >= 80 else "🟡" if health >= 50 else "🔴"
+        if health >= 80:
+            dot_icon = 5416081784641168838
+            btn_text = f"{phone}  •  Health: {health}"
+        elif health >= 50:
+            dot_icon = None
+            btn_text = f"🟡 {phone}  •  Health: {health}"
+        else:
+            dot_icon = None
+            btn_text = f"🔴 {phone}  •  Health: {health}"
+            
         btn_style = "success" if health >= 80 else "primary" if health >= 50 else "danger"
         rows.append([
             Button.inline(
-                f"{dot} {phone}  •  Health: {health}",
+                btn_text,
                 f"{action_prefix}:{acc_id}",
-            style=btn_style)
+                style=btn_style,
+                icon=dot_icon
+            )
         ])
 
     # Pagination row
@@ -124,8 +135,8 @@ def account_list_keyboard(
             Button.inline(_b("Bulk Account Manager"), CB.BULK_MANAGER, style="primary", icon=5210956306952758910),
         ])
         rows.append([
-            Button.inline(_b("Add Account"), CB.ACCOUNT_ADD, style="primary", icon=5397916757333654639),
-            Button.inline(_b("Upload Sessions"), CB.ACCOUNT_UPLOAD_SESSIONS, style="primary", icon=5282843764451195532),
+            Button.inline(_b("Add Account"), CB.ACCOUNT_ADD, style="success", icon=5397916757333654639),
+            Button.inline(_b("Upload Sessions"), CB.ACCOUNT_UPLOAD_SESSIONS, style="success", icon=5282843764451195532),
         ])
         rows.append([
             Button.inline(_b("Remove Limited"), CB.ACCOUNT_DELETE_LIMITED, style="danger", icon=5445267414562389170),
@@ -174,7 +185,7 @@ def bulk_manager_keyboard() -> list[list[Button]]:
     """Bulk actions for all accounts."""
     return [
         [
-            Button.inline(_b("📝 Change Name"), CB.BULK_NAME, style="primary"),
+            Button.inline(_b("Change Name"), CB.BULK_NAME, style="primary", icon=5395444784611480792),
             Button.inline(_b("📄 Change Bio"), CB.BULK_BIO, style="primary"),
         ],
         [
@@ -231,14 +242,26 @@ def campaign_list_keyboard(
         cmp_id = c.get("id", "")
         name = c.get("name", "Untitled")
         status = c.get("status", "DRAFT")
-        emoji = {"ACTIVE": "🟢", "PAUSED": "🟡", "DRAFT": "📝", "COMPLETED": "✅"}.get(status, "⚫")
+        if status == "DRAFT":
+            btn_text = f"{name} • {status}"
+            btn_icon = 5395444784611480792
+        elif status == "ACTIVE":
+            btn_text = f"{name} • {status}"
+            btn_icon = 5416081784641168838
+        else:
+            emoji = {"PAUSED": "🟡", "COMPLETED": "✅"}.get(status, "⚫")
+            btn_text = f"{emoji} {name} • {status}"
+            btn_icon = None
+            
         btn_style = "success" if status in ("ACTIVE", "COMPLETED") else "primary" if status == "DRAFT" else "danger"
 
         rows.append([
             Button.inline(
-                f"{emoji} {name}  •  {status}",
+                btn_text,
                 f"cmp:view:{cmp_id}",
-            style=btn_style)
+                style=btn_style,
+                icon=btn_icon
+            )
         ])
 
     # Pagination
@@ -258,7 +281,7 @@ def campaign_list_keyboard(
 
     # Actions
     rows.append([
-        Button.inline(_b("➕ New Campaign"), CB.CAMPAIGN_CREATE, style="primary"),
+        Button.inline(_b("New Campaign"), CB.CAMPAIGN_CREATE, style="success", icon=5397916757333654639),
         Button.inline(_b("Refresh"), CB.CAMPAIGNS, style="primary", icon=5386367538735104399),
     ])
 
@@ -285,7 +308,7 @@ def campaign_detail_keyboard(campaign_id: str, status: str) -> list[list[Button]
 
     # Configuration
     rows.append([
-        Button.inline(_b("📝 Set Ad"), f"cmp:set_ad:{campaign_id}", style="primary"),
+        Button.inline(_b("Set Ad"), f"cmp:set_ad:{campaign_id}", style="primary", icon=5395444784611480792),
         Button.inline(_b("⏱ Set Interval"), f"cmp:set_interval:{campaign_id}", style="primary"),
     ])
     rows.append([
@@ -311,7 +334,7 @@ def campaign_set_ad_keyboard(campaign_id: str, current_ad_type: str = "custom") 
     f_mark = "✅ " if current_ad_type == "forward" else ""
     return [
         [
-            Button.inline(f"{c_mark}📝 Custom Message", f"cmp:set_ad:custom:{campaign_id}", style="primary"),
+            Button.inline(f"{c_mark}Custom Message", f"cmp:set_ad:custom:{campaign_id}", style="primary", icon=5395444784611480792),
             Button.inline(f"{f_mark}🔗 Forward Post", f"cmp:set_ad:forward:{campaign_id}", style="primary"),
         ],
         [Button.inline("← Back", f"cmp:view:{campaign_id}", style="danger")],
@@ -422,13 +445,23 @@ def campaign_account_groups_keyboard(
     for g in groups:
         group_id_str = str(g.get("_id") or g.get("id", ""))
         icon_val = 5206607081334906820 if group_id_str in assigned_group_ids else 5260293700088511294
+        is_assigned = group_id_str in assigned_group_ids
         title = g.get("title", "Unknown")
         # Truncate title
         if len(title) > 15:
             title = title[:13] + ".."
             
+        if is_assigned:
+            btn_text = title
+            btn_icon = 5416081784641168838
+        else:
+            btn_text = f"🔴 {title}"
+            btn_icon = None
+            
         page = pagination.get("page", 1)
-        current_row.append(Button.inline(title, f"cmp:toggle_grp:{group_id_str}", style="primary", icon=icon_val))
+        current_row.append(
+            Button.inline(btn_text, f"cmp:grp_tg:{account_id}:{group_id_str}", style="primary" if is_assigned else "secondary", icon=btn_icon)
+        )
         
         if len(current_row) == 2:
             rows.append(current_row)
@@ -503,7 +536,7 @@ def health_overview_keyboard() -> list[list[Button]]:
             Button.inline(_b("👁 View All"), CB.HEALTH_VIEW_ALL, style="primary"),
         ],
         [
-            Button.inline(_b("⚙️ Health Settings"), CB.HEALTH_SETTINGS, style="primary"),
+            Button.inline(_b("Health Settings"), CB.HEALTH_SETTINGS, style="primary", icon=5341715473882955310),
         ],
         [Button.inline(_b("← Back"), CB.DASHBOARD, style="danger")],
     ]
@@ -581,7 +614,7 @@ def confirm_keyboard(action: str, target_id: str) -> list[list[Button]]:
 def logs_bot_activation_keyboard(bot_username: str, campaign_id: str) -> list[list[Button]]:
     """Keyboard shown when user hasn't started the logs bot."""
     return [
-        [Button.url(_b("🤖 Start Logs Bot"), f"https://t.me/{bot_username}")],
+        [Button.url(_b("Start Logs Bot"), f"https://t.me/{bot_username}")],
         [Button.inline(_b("🔄 I have started it"), f"confirm:yes:resume_campaign:{campaign_id}", style="primary")],
         [Button.inline(_b("← Back"), f"cmp:view:{campaign_id}", style="danger")],
     ]
@@ -589,7 +622,7 @@ def logs_bot_activation_keyboard(bot_username: str, campaign_id: str) -> list[li
 def profile_keyboard() -> list[list[Button]]:
     """User profile and subscription info."""
     return [
-        [Button.inline(_b("💳 Buy / Upgrade Plan"), "pay:options", style="success")],
+        [Button.inline(_b("Buy / Upgrade Plan"), "pay:options", style="success", icon=5438496463044752972)],
         [Button.inline(_b("← Back"), CB.DASHBOARD, style="danger")]
     ]
 
