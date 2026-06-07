@@ -312,7 +312,6 @@ async def on_campaign_set_rounds(event: events.CallbackQuery.Event, action: str,
 
 async def on_campaign_manage_accounts(event: events.CallbackQuery.Event, campaign_id: str, page: int = 1) -> None:
     """Display the accounts management screen for a campaign with pagination."""
-    await event.answer()
     from cache import account_cache, campaign_cache
 
     data = await account_cache.get_page(event.sender_id, page)
@@ -432,7 +431,6 @@ async def on_campaign_refresh_all_groups(event: events.CallbackQuery.Event, camp
 async def on_campaign_acc_detail(event: events.CallbackQuery.Event, account_id: str) -> None:
 
     """Show details for an account inside a campaign context."""
-    await event.answer()
     from services import campaign_service
     from repositories import accounts_repo, account_groups_repo
     
@@ -448,7 +446,7 @@ async def on_campaign_acc_detail(event: events.CallbackQuery.Event, account_id: 
     
     account = await accounts_repo.get(account_id)
     if not account:
-        await event.answer("Account not found", alert=True)
+        await event.edit("Account not found.")
         return
         
     # Check if we have groups, if not, fetch them
@@ -1413,6 +1411,7 @@ async def route_callback(event: events.CallbackQuery.Event) -> None:
         else:
             await on_campaign_set_rounds(event, parts[2], parts[3])
     elif data.startswith("cmp:manage_acc:"):
+        await event.answer()
         campaign_id = data.split(":")[2]
         await on_campaign_manage_accounts(event, campaign_id)
     elif data.startswith("cmp:all_acc:"):
@@ -1427,6 +1426,7 @@ async def route_callback(event: events.CallbackQuery.Event) -> None:
         campaign_id = data.split(":")[2]
         await on_campaign_refresh_all_groups(event, campaign_id)
     elif data.startswith("cmp:acc_detail:"):
+        await event.answer()
         _, _, account_id = data.split(":")
         await on_campaign_acc_detail(event, account_id)
     elif data.startswith("cmp:acc_groups:"):

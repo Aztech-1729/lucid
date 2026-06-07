@@ -373,7 +373,8 @@ def _register_handlers(bot: TelegramClient) -> None:
             await callbacks.route_callback(event)
         except Exception as exc:
             from telethon.errors import MessageNotModifiedError
-            if isinstance(exc, MessageNotModifiedError):
+            from telethon.errors.rpcerrorlist import QueryIdInvalidError
+            if isinstance(exc, (MessageNotModifiedError, QueryIdInvalidError)):
                 return
             await log.aerror(
                 "callback.error",
