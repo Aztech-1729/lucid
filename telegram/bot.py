@@ -149,6 +149,9 @@ def _register_handlers(bot: TelegramClient) -> None:
     @bot.on(events.NewMessage(pattern="/start"))
     async def on_start(event: events.NewMessage.Event) -> None:
         """Handle /start command — entry point for all users."""
+        from cache.redis_client import cache_delete
+        await cache_delete(f"force_join:{event.sender_id}")
+        
         missing = await get_missing_force_joins(event, bot)
         if missing:
             await enforce_join(event, bot)
