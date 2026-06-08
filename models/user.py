@@ -35,6 +35,9 @@ class User(BaseModel):
         if admin_username and self.username and self.username.lower() == admin_username.lower().replace("@", ""):
             return True
             
+        if self.plan_type == "FREE_TRIAL":
+            return True
+            
         if not self.subscription_ends_at:
             return False
             
