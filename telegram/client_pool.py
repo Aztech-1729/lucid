@@ -39,7 +39,7 @@ class PoolSlot:
     lock: asyncio.Lock = field(default_factory=asyncio.Lock)
     last_used: float = field(default_factory=time.monotonic)
     error_count: int = 0
-    is_borrowed: bool = False
+    borrow_count: int = 0
 
 
 class ClientPool:
@@ -109,59 +109,62 @@ class ClientPool:
                     # Slot was evicted. Retry acquisition from the beginning.
                     continue
                     
-                try:
-                    # Reconnect if disconnected
-                    if not slot.client.is_connected():
-                        await asyncio.wait_for(slot.client.connect(), timeout=15.0)
-    
-                    slot.is_borrowed = True
-                    slot.last_used = time.monotonic()
-    
-                    yield slot.client
-    
-                    # Success — reset error count
-                    slot.error_count = 0
-                    await self._update_circuit(account_id, success=True)
-    
-                except Exception as exc:
-                    slot.error_count += 1
-                    await self._update_circuit(account_id, success=False)
-                    
-                    # Force disconnect or auto-delete on fatal connection/session errors
-                    err_str = str(exc).lower()
-                    if any(x in err_str for x in ["authkey", "deactivated", "authorization key"]):
-                        # Only auto-delete after 3 consecutive auth failures to avoid
-                        # false positives from Telegram rate-limiting during bulk operations
-                        if slot.error_count >= 3:
-                            try:
-                                from services import account_service
-                                asyncio.create_task(account_service.handle_unauthorized_account(account_id))
-                                await log.aerror("pool.account_revoked", account_id=account_id, error=str(exc))
-                            except Exception:
-                                pass
-                        else:
-                            await log.awarning("pool.auth_error_transient", account_id=account_id, attempt=slot.error_count, error=str(exc))
-                            try:
-                                await slot.client.disconnect()
-                            except Exception:
-                                pass
-                    elif "wrong session id" in err_str or "connection" in err_str or "closed" in err_str or "unpacking" in err_str:
+                # Reconnect if disconnected
+                if not slot.client.is_connected():
+                    await asyncio.wait_for(slot.client.connect(), timeout=15.0)
+
+                slot.borrow_count += 1
+                slot.last_used = time.monotonic()
+
+            try:
+                yield slot.client
+
+                # Success — reset error count
+                slot.error_count = 0
+                await self._update_circuit(account_id, success=True)
+
+            except Exception as exc:
+                slot.error_count += 1
+                await self._update_circuit(account_id, success=False)
+                
+                # Force disconnect or auto-delete on fatal connection/session errors
+                err_str = str(exc).lower()
+                if any(x in err_str for x in ["authkey", "deactivated", "authorization key"]):
+                    # Only auto-delete after 3 consecutive auth failures to avoid
+                    # false positives from Telegram rate-limiting during bulk operations
+                    if slot.error_count >= 3:
                         try:
-                            await slot.client.disconnect()
+                            from services import account_service
+                            asyncio.create_task(account_service.handle_unauthorized_account(account_id))
+                            await log.aerror("pool.account_revoked", account_id=account_id, error=str(exc))
                         except Exception:
                             pass
-                            
-                    raise
-    
-                finally:
-                    slot.is_borrowed = False
+                    else:
+                        await log.awarning("pool.auth_error_transient", account_id=account_id, attempt=slot.error_count, error=str(exc))
+                        try:
+                            async with slot.lock:
+                                await slot.client.disconnect()
+                        except Exception:
+                            pass
+                elif "wrong session id" in err_str or "connection" in err_str or "closed" in err_str or "unpacking" in err_str:
+                    try:
+                        async with slot.lock:
+                            await slot.client.disconnect()
+                    except Exception:
+                        pass
+                        
+                raise
+
+            finally:
+                async with slot.lock:
+                    slot.borrow_count -= 1
                     slot.last_used = time.monotonic()
-    
-                    # Update last-used in Redis
-                    r = get_redis()
-                    key = make_key(RedisKeys.POOL_LAST_USED, account_id=account_id)
-                    await r.set(key, str(time.time()))
-                    
+
+                # Update last-used in Redis
+                r = get_redis()
+                key = make_key(RedisKeys.POOL_LAST_USED, account_id=account_id)
+                await r.set(key, str(time.time()))
+                
             # Break the retry loop on successful yield/finally completion
             break
 
@@ -202,7 +205,7 @@ class ClientPool:
         # ASYNC FIX: Use a list snapshot to prevent dictionary size mutation errors
         slots_snapshot = list(self._slots.values())
         total = len(slots_snapshot)
-        borrowed = sum(1 for s in slots_snapshot if s.is_borrowed)
+        borrowed = sum(1 for s in slots_snapshot if s.borrow_count > 0)
         idle = total - borrowed
 
         # Get circuit states
@@ -266,7 +269,7 @@ class ClientPool:
         """Evict the least-recently-used idle client."""
         idle_slots = [
             (aid, s) for aid, s in self._slots.items()
-            if not s.is_borrowed
+            if s.borrow_count == 0
         ]
         if not idle_slots:
             await log.awarning("pool.no_idle_to_evict")
@@ -301,7 +304,7 @@ class ClientPool:
                 for account_id, slot in list(self._slots.items()):
                     if account_id in self.keep_alive_accounts:
                         continue
-                    if not slot.is_borrowed and (now - slot.last_used) > eviction_seconds:
+                    if slot.borrow_count == 0 and (now - slot.last_used) > eviction_seconds:
                         to_evict.append(account_id)
 
                 for account_id in to_evict:
