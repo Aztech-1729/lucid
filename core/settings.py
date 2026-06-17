@@ -7,6 +7,7 @@ Uses pydantic-settings v2 with SettingsConfigDict.
 from __future__ import annotations
 
 from typing import Optional
+from pydantic import Field
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
