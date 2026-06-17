@@ -27,15 +27,15 @@ class Settings(BaseSettings):
     logs_bot_username: Optional[str] = None
     api_id: int
     api_hash: str
-    admin_username: str = "@LucidDeveloper"
+    admin_username: str
 
     # ── MongoDB ─────────────────────────────────────────────
-    mongo_uri: str = "mongodb://localhost:27017"
-    mongo_db: str = "lucidads"
+    mongo_uri: str
+    mongo_db: str
 
     # ── Redis ───────────────────────────────────────────────
-    redis_uri: str = "redis://localhost:6379/0"
-    redis_prefix: str = "lucidads"
+    redis_uri: str
+    redis_prefix: str
 
     # ── Workers ─────────────────────────────────────────────
     health_check_interval_seconds: int = 300
