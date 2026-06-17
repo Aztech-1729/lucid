@@ -69,7 +69,7 @@ async def update(user_id: int, data: dict) -> bool:
         {"user_id": user_id},
         {"$set": data},
     )
-    return result.modified_count > 0
+    return result.matched_count > 0
 
 
 async def set_admin(user_id: int, is_admin: bool = True) -> bool:
