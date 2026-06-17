@@ -9,7 +9,6 @@ from __future__ import annotations
 
 from core.config import get_settings
 from core.logging import get_logger, setup_logging
-from database.indexes import apply_indexes
 from database.mongo import init_mongo
 from cache.redis_client import init_redis
 
@@ -37,7 +36,6 @@ async def startup() -> None:
     # 2. MongoDB
     await log.ainfo("startup.mongo_connecting")
     await init_mongo(settings.mongo_uri, settings.mongo_db)
-    await apply_indexes()
     await log.ainfo("startup.mongo_ready")
 
     # 3. Redis
