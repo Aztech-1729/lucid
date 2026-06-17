@@ -200,44 +200,47 @@ def _register_handlers(bot: TelegramClient) -> None:
                 parse_mode="html",
             )
 
-    @bot.on(events.NewMessage(pattern=r"^/grant"))
+    @bot.on(events.NewMessage(pattern=r"(?i)^/grant"))
     async def on_grant(event: events.NewMessage.Event) -> None:
         """Handle /grant command for admin."""
-        settings = get_settings()
-        sender = await event.get_sender()
-        is_admin = (event.sender_id in settings.admin_user_ids) or (getattr(sender, "username", "") and sender.username.lower() == settings.admin_username.lower().replace("@", ""))
-        if not is_admin:
-            return
-            
-        parts = event.text.split()
-        if len(parts) < 3:
-            await event.respond("<b>Usage:</b> <code>/grant [user_id] [weekly|monthly|yearly]</code>", parse_mode="html")
-            return
-            
         try:
-            target_id = int(parts[1])
-            plan = parts[2].upper()
-        except ValueError:
-            await event.respond("Invalid User ID format.")
-            return
-            
-        days = 7 if plan == "WEEKLY" else 30 if plan == "MONTHLY" else 365 if plan == "YEARLY" else 0
-        if days == 0:
-            await event.respond("Invalid plan. Use weekly, monthly, or yearly.")
-            return
-            
-        from datetime import datetime, timedelta
-        ends_at = datetime.utcnow() + timedelta(days=days)
-        
-        success = await users_repo.update(target_id, {"plan_type": plan, "subscription_ends_at": ends_at})
-        if success:
-            await event.respond(f"<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Granted {plan} plan to <code>{target_id}</code>. Expires: {ends_at.strftime('%Y-%m-%d')}", parse_mode="html")
+            settings = get_settings()
+            sender = await event.get_sender()
+            is_admin = (event.sender_id in settings.admin_user_ids) or (getattr(sender, "username", "") and sender.username.lower() == settings.admin_username.lower().replace("@", ""))
+            if not is_admin:
+                return
+                
+            parts = event.text.split()
+            if len(parts) < 3:
+                await event.respond("<b>Usage:</b> <code>/grant [user_id] [weekly|monthly|yearly]</code>", parse_mode="html")
+                return
+                
             try:
-                await event.client.send_message(target_id, f"🎉 <b>Good news!</b> Your <b>{plan}</b> subscription has been activated by the Admin!\n\nUse /start to view your new plan features.", parse_mode="html")
-            except Exception:
-                pass
-        else:
-            await event.respond("<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> User not found in DB.")
+                target_id = int(parts[1])
+                plan = parts[2].upper()
+            except ValueError:
+                await event.respond("Invalid User ID format.")
+                return
+                
+            days = 7 if plan == "WEEKLY" else 30 if plan == "MONTHLY" else 365 if plan == "YEARLY" else 0
+            if days == 0:
+                await event.respond("Invalid plan. Use weekly, monthly, or yearly.")
+                return
+                
+            from datetime import datetime, timedelta
+            ends_at = datetime.utcnow() + timedelta(days=days)
+            
+            success = await users_repo.update(target_id, {"plan_type": plan, "subscription_ends_at": ends_at})
+            if success:
+                await event.respond(f"<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Granted {plan} plan to <code>{target_id}</code>. Expires: {ends_at.strftime('%Y-%m-%d')}", parse_mode="html")
+                try:
+                    await event.client.send_message(target_id, f"🎉 <b>Good news!</b> Your <b>{plan}</b> subscription has been activated by the Admin!\n\nUse /start to view your new plan features.", parse_mode="html")
+                except Exception as e:
+                    await event.respond(f"⚠️ Could not send notification to user: {e}")
+            else:
+                await event.respond("<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> User not found in DB.")
+        except Exception as exc:
+            await event.respond(f"🚨 <b>Error in /grant:</b> {exc}", parse_mode="html")
 
     @bot.on(events.NewMessage(pattern=r"^/revoke"))
     async def on_revoke(event: events.NewMessage.Event) -> None:
