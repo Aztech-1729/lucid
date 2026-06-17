@@ -202,11 +202,11 @@ async def get_health_summary(owner_id: int) -> dict:
 
     return {
         "counts": {
-            HealthState.HEALTHY: counts.get(HealthState.HEALTHY, 0),
-            HealthState.WARNING: counts.get(HealthState.WARNING, 0),
-            HealthState.LIMITED: counts.get(HealthState.LIMITED, 0),
-            HealthState.BANNED: counts.get(HealthState.BANNED, 0),
-            HealthState.UNKNOWN: counts.get(HealthState.UNKNOWN, 0),
+            HealthState.HEALTHY.value: counts.get(HealthState.HEALTHY, 0),
+            HealthState.WARNING.value: counts.get(HealthState.WARNING, 0),
+            HealthState.LIMITED.value: counts.get(HealthState.LIMITED, 0),
+            HealthState.BANNED.value: counts.get(HealthState.BANNED, 0),
+            HealthState.UNKNOWN.value: counts.get(HealthState.UNKNOWN, 0),
         },
         "total_accounts": total,
         "overall_health_pct": overall_pct,

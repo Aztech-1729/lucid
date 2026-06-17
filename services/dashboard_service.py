@@ -31,7 +31,7 @@ async def build_dashboard(user_id: int) -> dict:
     accounts = await accounts_repo.list_by_owner(user_id)
     total_accounts = len(accounts)
     # Active = anything not BANNED or DISABLED
-    from core.constants import AccountStatus
+    from core.constants import AccountStatus, HealthState
     active_count = sum(1 for a in accounts if a.status not in (AccountStatus.BANNED, AccountStatus.DISABLED))
 
     # Campaign counts
@@ -52,7 +52,7 @@ async def build_dashboard(user_id: int) -> dict:
 
     # Health summary
     total_health = sum(health_counts.values()) if health_counts else 0
-    healthy_count = health_counts.get("HEALTHY", 0) if health_counts else 0
+    healthy_count = health_counts.get(HealthState.HEALTHY, 0) if health_counts else 0
     overall_health = round((healthy_count / total_health) * 100) if total_health > 0 else 100
 
     # Flat payload matching menus.render_dashboard() expected keys
@@ -67,9 +67,9 @@ async def build_dashboard(user_id: int) -> dict:
         "success_rate": success_rate,
         "uptime": 99.9,
         "healthy_accounts": healthy_count,
-        "warning_accounts": health_counts.get("WARNING", 0) if health_counts else 0,
-        "limited_accounts": health_counts.get("LIMITED", 0) if health_counts else 0,
-        "banned_accounts": health_counts.get("BANNED", 0) if health_counts else 0,
+        "warning_accounts": health_counts.get(HealthState.WARNING, 0) if health_counts else 0,
+        "limited_accounts": health_counts.get(HealthState.LIMITED, 0) if health_counts else 0,
+        "banned_accounts": health_counts.get(HealthState.BANNED, 0) if health_counts else 0,
         "overall_health": overall_health,
         "updated_at": datetime.utcnow().isoformat(),
     }
