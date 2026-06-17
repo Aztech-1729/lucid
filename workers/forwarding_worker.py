@@ -229,7 +229,7 @@ async def forward_for_account(
         await log.awarning(
             "forwarding_worker.account_error",
             account_id=account_id,
-            error=str(exc),
+            error=str(exc) or repr(exc),
         )
         return {"success": 0, "failed": len(groups), "total": len(groups)}
 
