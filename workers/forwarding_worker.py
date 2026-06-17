@@ -30,8 +30,16 @@ async def run_forwarding_cycle() -> None:
     Start a background task for any new ACTIVE campaign.
     Stop any background task if its campaign is no longer ACTIVE.
     """
-    campaigns = await campaigns_repo.get_active()
-    active_ids = {c.id for c in campaigns}
+    active_ids = set()
+    started_count = 0
+
+    async for campaign in campaigns_repo.get_active():
+        active_ids.add(campaign.id)
+        if campaign.id not in _active_campaign_tasks or _active_campaign_tasks[campaign.id].done():
+            # Start background loop for this campaign
+            task = asyncio.create_task(process_campaign_safe(campaign))
+            _active_campaign_tasks[campaign.id] = task
+            started_count += 1
 
     # Stop tasks for campaigns that were paused or deleted
     for camp_id, task in list(_active_campaign_tasks.items()):
@@ -39,17 +47,6 @@ async def run_forwarding_cycle() -> None:
             if not task.done():
                 task.cancel()
             _active_campaign_tasks.pop(camp_id, None)
-
-    if not campaigns:
-        return
-
-    started_count = 0
-    for campaign in campaigns:
-        if campaign.id not in _active_campaign_tasks or _active_campaign_tasks[campaign.id].done():
-            # Start background loop for this campaign
-            task = asyncio.create_task(process_campaign_safe(campaign))
-            _active_campaign_tasks[campaign.id] = task
-            started_count += 1
 
     if started_count > 0:
         await log.ainfo("forwarding_worker.campaigns_started", new_started=started_count, total_running=len(_active_campaign_tasks))

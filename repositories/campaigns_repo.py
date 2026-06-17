@@ -72,14 +72,14 @@ async def count_by_owner(owner_id: int) -> int:
     return await _coll().count_documents({"owner_id": owner_id})
 
 
-async def get_active() -> list[Campaign]:
+from typing import AsyncGenerator
+
+async def get_active() -> AsyncGenerator[Campaign, None]:
     """Get all active campaigns (for forwarding worker)."""
     cursor = _coll().find({"status": CampaignStatus.ACTIVE})
-    campaigns = []
     async for doc in cursor:
         doc["_id"] = str(doc["_id"])
-        campaigns.append(Campaign.model_validate(doc))
-    return campaigns
+        yield Campaign.model_validate(doc)
 
 
 async def update_status(campaign_id: str, status: CampaignStatus) -> bool:

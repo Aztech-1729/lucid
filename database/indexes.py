@@ -1,68 +1,45 @@
 """
-MongoDB index definitions, auto-applied on startup.
-
-All indexes use background creation to avoid blocking operations.
+MongoDB Index Setup
 """
 
-from __future__ import annotations
-
-from pymongo import ASCENDING, DESCENDING
-
+from typing import Any
+from pymongo.asynchronous.database import AsyncDatabase
+import pymongo
 from core.logging import get_logger
-from database import collections
-from database.mongo import get_db
 
-log = get_logger("indexes")
-
-# Index definitions: (collection_name, index_keys, optional kwargs)
-INDEX_DEFINITIONS: list[tuple[str, list[tuple[str, int]], dict]] = [
-    # ── users ───────────────────────────────────────────────
-    (collections.USERS, [("user_id", ASCENDING)], {"unique": True}),
-
-    # ── accounts ────────────────────────────────────────────
-    (collections.ACCOUNTS, [("owner_id", ASCENDING)], {}),
-    (collections.ACCOUNTS, [("status", ASCENDING)], {}),
-    (collections.ACCOUNTS, [("health_score", ASCENDING)], {}),
-    (collections.ACCOUNTS, [("next_check_at", ASCENDING)], {}),
-
-    # ── campaigns ───────────────────────────────────────────
-    (collections.CAMPAIGNS, [("owner_id", ASCENDING)], {}),
-    (collections.CAMPAIGNS, [("status", ASCENDING)], {}),
-
-    # ── health_records ──────────────────────────────────────
-    (collections.HEALTH_RECORDS, [("account_id", ASCENDING), ("checked_at", DESCENDING)], {}),
-    (collections.HEALTH_RECORDS, [("owner_id", ASCENDING)], {}),
-
-    # ── forwarding_logs ─────────────────────────────────────
-    (collections.FORWARDING_LOGS, [("campaign_id", ASCENDING), ("sent_at", DESCENDING)], {}),
-    (collections.FORWARDING_LOGS, [("account_id", ASCENDING), ("sent_at", DESCENDING)], {}),
-    (collections.FORWARDING_LOGS, [("owner_id", ASCENDING), ("sent_at", DESCENDING)], {}),
-
-    # ── analytics_daily ─────────────────────────────────────
-    (collections.ANALYTICS_DAILY, [("date", ASCENDING)], {}),
-    (collections.ANALYTICS_DAILY, [("owner_id", ASCENDING), ("date", DESCENDING)], {}),
-
-    # ── worker_records ──────────────────────────────────────
-    (collections.WORKER_RECORDS, [("worker_id", ASCENDING)], {}),
-]
+log = get_logger("mongo.indexes")
 
 
-async def apply_indexes() -> None:
-    """Create all indexes. Safe to call multiple times (idempotent)."""
-    db = get_db()
-    created = 0
+async def setup_indexes(db: AsyncDatabase) -> None:
+    """
+    Create necessary indexes for performance.
+    """
+    try:
+        # 1. users
+        await db.users.create_index([("user_id", pymongo.ASCENDING)], unique=True)
+        await db.users.create_index([("subscription_ends_at", pymongo.ASCENDING)])
 
-    for coll_name, keys, kwargs in INDEX_DEFINITIONS:
-        collection = db[coll_name]
-        try:
-            await collection.create_index(keys, **kwargs)
-            created += 1
-        except Exception as exc:
-            await log.awarning(
-                "index.create_failed",
-                collection=coll_name,
-                keys=str(keys),
-                error=str(exc),
-            )
+        # 2. accounts
+        await db.accounts.create_index([("owner_id", pymongo.ASCENDING)])
+        await db.accounts.create_index([("phone", pymongo.ASCENDING)])
+        await db.accounts.create_index([("is_active", pymongo.ASCENDING)])
 
-    await log.ainfo("indexes.applied", count=created)
+        # 3. campaigns
+        await db.campaigns.create_index([("owner_id", pymongo.ASCENDING)])
+        await db.campaigns.create_index([("status", pymongo.ASCENDING)])
+
+        # 4. account_groups
+        await db.account_groups.create_index([("account_id", pymongo.ASCENDING)])
+        await db.account_groups.create_index([("account_id", pymongo.ASCENDING), ("group_id", pymongo.ASCENDING)], unique=True)
+
+        # 5. health & group_health
+        await db.health.create_index([("account_id", pymongo.ASCENDING)], unique=True)
+        await db.group_health.create_index([("group_id", pymongo.ASCENDING)], unique=True)
+
+        # 6. analytics
+        await db.analytics.create_index([("owner_id", pymongo.ASCENDING)])
+        await db.analytics.create_index([("date", pymongo.DESCENDING)])
+
+        await log.ainfo("mongo.indexes.setup_complete")
+    except Exception as e:
+        await log.aerror("mongo.indexes.setup_failed", error=str(e))

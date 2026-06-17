@@ -186,6 +186,14 @@ async def safe_forward(
             )
 
             wait_time = e.seconds + random.uniform(1, 5)
+            
+            # Global FloodWait Tracking
+            try:
+                from cache.redis_client import cache_set
+                await cache_set(f"floodwait:{account_id}", {"wait": wait_time}, ttl=int(wait_time))
+            except Exception:
+                pass
+
             settings = get_settings()
             if wait_time > settings.max_flood_wait_seconds:
                 await log.awarning(

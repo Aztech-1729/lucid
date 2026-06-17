@@ -44,6 +44,10 @@ async def init_mongo(uri: str, db_name: str) -> None:
     await _client.admin.command("ping")
     await log.ainfo("mongo.connected", db=db_name)
 
+    # Setup indexes
+    from database.indexes import setup_indexes
+    await setup_indexes(_db)
+
 
 async def close_mongo() -> None:
     """Close the MongoDB client and release all connections."""

@@ -6,7 +6,7 @@ Uses redis.asyncio (the successor to aioredis).
 
 from __future__ import annotations
 
-import json
+import orjson
 from typing import Any, Optional
 
 import redis.asyncio as redis
@@ -78,14 +78,14 @@ async def cache_get(key: str) -> Optional[dict]:
     if raw is None:
         return None
     try:
-        return json.loads(raw)
-    except (json.JSONDecodeError, TypeError):
+        return orjson.loads(raw)
+    except orjson.JSONDecodeError:
         return None
 
 
 async def cache_set(key: str, value: Any, ttl: int | None = None) -> None:
     """Set a JSON-serialized value in Redis with optional TTL."""
-    raw = json.dumps(value, default=str)
+    raw = orjson.dumps(value, default=str).decode("utf-8")
     if ttl:
         await get_redis().setex(key, ttl, raw)
     else:
@@ -100,8 +100,11 @@ async def cache_delete(key: str) -> None:
 async def cache_delete_pattern(pattern: str) -> int:
     """Delete all keys matching a pattern. Returns count deleted."""
     r = get_redis()
-    count = 0
+    keys = []
     async for key in r.scan_iter(match=pattern, count=100):
-        await r.delete(key)
-        count += 1
-    return count
+        keys.append(key)
+    
+    if keys:
+        await r.delete(*keys)
+        return len(keys)
+    return 0

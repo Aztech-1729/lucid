@@ -7,3 +7,4 @@ structlog==25.5.0
 cryptography==46.0.5
 python-dotenv==1.0.0
 openai==2.40.0
+orjson==3.10.15

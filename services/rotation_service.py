@@ -124,8 +124,16 @@ async def select_accounts(
         raw = await r.hget(key, aid)
         weights[aid] = float(raw) if raw else 0.5
 
-    # Filter out zero-weight accounts
-    eligible = {aid: w for aid, w in weights.items() if w > 0}
+    # Filter out zero-weight accounts AND accounts on FloodWait cooldown
+    from cache.redis_client import cache_get
+    eligible = {}
+    for aid, w in weights.items():
+        if w > 0:
+            if await cache_get(f"floodwait:{aid}"):
+                await log.ainfo("rotation.skipping_floodwait", account_id=aid)
+                continue
+            eligible[aid] = w
+
     if not eligible:
         return []
 
