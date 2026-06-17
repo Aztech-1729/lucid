@@ -85,7 +85,7 @@ async def cache_get(key: str) -> Optional[dict]:
 
 async def cache_set(key: str, value: Any, ttl: int | None = None) -> None:
     """Set a JSON-serialized value in Redis with optional TTL."""
-    raw = orjson.dumps(value, default=str).decode("utf-8")
+    raw = orjson.dumps(value, default=str, option=orjson.OPT_NON_STR_KEYS).decode("utf-8")
     if ttl:
         await get_redis().setex(key, ttl, raw)
     else:

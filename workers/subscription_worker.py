@@ -16,11 +16,10 @@ async def run_subscription_cycle() -> None:
     """Check all active campaigns, and pause them if the owner's subscription has expired."""
     await log.ainfo("subscription_worker.cycle_start")
     
-    active_campaigns = await campaigns_repo.get_active()
     users_cache = {}
     paused_count = 0
     
-    for camp in active_campaigns:
+    async for camp in campaigns_repo.get_active():
         owner_id = camp.owner_id
         if owner_id not in users_cache:
             users_cache[owner_id] = await users_repo.get(owner_id)
