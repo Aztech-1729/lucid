@@ -96,8 +96,8 @@ async def update_all_weights(owner_id: int | None = None) -> int:
 
     for account in accounts:
         weight = compute_rotation_weight(account)
-        await accounts_repo.update_rotation_score(account.id, weight)
-        await r.hset(key, account.id, str(weight))
+        await accounts_repo.update_rotation_score(str(account.id), weight)
+        await r.hset(key, str(account.id), str(weight))  # type: ignore
         updated += 1
 
     return updated
@@ -121,7 +121,7 @@ async def select_accounts(
     # Get weights from Redis
     weights: dict[str, float] = {}
     for aid in account_ids:
-        raw = await r.hget(key, aid)
+        raw = await r.hget(key, aid)  # type: ignore
         weights[aid] = float(raw) if raw else 0.5
 
     # Filter out zero-weight accounts AND accounts on FloodWait cooldown
