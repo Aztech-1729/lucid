@@ -239,7 +239,7 @@ def _register_handlers(bot: TelegramClient) -> None:
                     caption = (
                         f"<tg-emoji emoji-id='5461151367559141950'>🎉</tg-emoji> <b>LUCID ADS PREMIUM ACTIVATED</b>\n"
                         f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-                        f"✅ Your premium plan has been activated successfully.\n\n"
+                        f"<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Your premium plan has been activated successfully.\n\n"
                         f"<b>Plan:</b> Lucid Ads Premium - {plan.capitalize()}\n"
                         f"<b>Duration:</b> {days} Days\n"
                         f"<b>Expires:</b> {ends_at.strftime('%B %d, %Y')}\n"
