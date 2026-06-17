@@ -6,7 +6,7 @@ Uses redis.asyncio (the successor to aioredis).
 
 from __future__ import annotations
 
-import orjson
+import orjson  # type: ignore
 from typing import Any, Optional
 
 import redis.asyncio as redis
