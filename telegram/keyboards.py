@@ -618,7 +618,7 @@ def confirm_keyboard(action: str, target_id: str) -> list[list[Button]]:
 def logs_bot_activation_keyboard(bot_username: str, campaign_id: str) -> list[list[Button]]:
     """Keyboard shown when user hasn't started the logs bot."""
     return [
-        [Button.url(_b("Start Logs Bot"), f"https://t.me/{bot_username}")],
+        [Button.url(_b("Start Logs Bot"), f"https://t.me/{bot_username.replace('@', '')}")],
         [Button.inline(_b("🔄 I have started it"), f"confirm:yes:resume_campaign:{campaign_id}", style="primary")],
         [Button.inline(_b("← Back"), f"cmp:view:{campaign_id}", style="danger")],
     ]
