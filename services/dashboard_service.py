@@ -65,13 +65,9 @@ async def build_dashboard(user_id: int) -> dict:
         "successful": total_success,
         "failed": total_failed,
         "success_rate": success_rate,
-        "uptime": 99.9,
         "healthy_accounts": healthy_count,
-        "warning_accounts": health_counts.get(HealthState.WARNING, 0) if health_counts else 0,
         "limited_accounts": health_counts.get(HealthState.LIMITED, 0) if health_counts else 0,
-        "banned_accounts": health_counts.get(HealthState.BANNED, 0) if health_counts else 0,
         "overall_health": overall_health,
-        "updated_at": datetime.utcnow().isoformat(),
     }
 
     await dashboard_cache.set(user_id, payload)
