@@ -24,7 +24,7 @@ async def build_dashboard(user_id: int) -> dict:
     """
     # User info
     user = await users_repo.get(user_id)
-    username = user.username if user else "User"
+    username = user.username if (user and user.username) else "User"
 
     # Account counts by status
     # We use a broad filter to ensure everything is counted
