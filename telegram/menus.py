@@ -10,7 +10,6 @@ UI design matches the Lucid Ads Bot premium dark-mode interface.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Optional
 from zoneinfo import ZoneInfo
 
 
@@ -144,19 +143,17 @@ def render_dashboard(data: dict | None) -> str:
     successful = data.get("successful", 0)
     failed = data.get("failed", 0)
     success_rate = data.get("success_rate", 0)
-    uptime = data.get("uptime", 99.9)
 
     healthy = data.get("healthy_accounts", 0)
-    warning = data.get("warning_accounts", 0)
     limited = data.get("limited_accounts", 0)
     overall_health = data.get("overall_health", 0)
     health_total = max(healthy + limited, 1)
 
     return (
-        f"<b><tg-emoji emoji-id=\"5447410659077661506\">🏠</tg-emoji> DASHBOARD</b>\n"
+        "<b><tg-emoji emoji-id=\"5447410659077661506\">🏠</tg-emoji> DASHBOARD</b>\n"
         f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        f"<b><tg-emoji emoji-id=\"5461117441612462242\">👤</tg-emoji> User: @{username}</b>\n\n"
-        f"<b><tg-emoji emoji-id='5231200819986047254'>📊</tg-emoji> OVERVIEW:</b>\n"
+        "<b><tg-emoji emoji-id=\"5461117441612462242\">👤</tg-emoji> User: @{username}</b>\n\n"
+        "<b><tg-emoji emoji-id='5231200819986047254'>📊</tg-emoji> OVERVIEW:</b>\n"
         f"├ <b>Total Accounts: {total_accs}</b>\n"
         f"├ <b>Active Accounts: {active_accs}</b>\n"
         f"├ <b>Active Campaigns: {active_camps}</b>\n"
@@ -164,7 +161,7 @@ def render_dashboard(data: dict | None) -> str:
         f"├ <b>Successful: {successful}</b>\n"
         f"├ <b>Failed: {failed}</b>\n"
         f"└ <b>Success Rate: {success_rate:.2f}%</b>\n\n"
-        f"<b><tg-emoji emoji-id=\"5289562446216835198\">🛡️</tg-emoji> HEALTH:</b>\n"
+        "<b><tg-emoji emoji-id=\"5289562446216835198\">🛡️</tg-emoji> HEALTH:</b>\n"
         f"├ <b><tg-emoji emoji-id=\"5416081784641168838\">🟢</tg-emoji> Healthy: {healthy} ({healthy/health_total*100:.1f}%)</b>\n"
         f"├ <b><tg-emoji emoji-id=\"5411225014148014586\">🟠</tg-emoji> Limited: {limited} ({limited/health_total*100:.1f}%)</b>\n"
         f"└ <b><tg-emoji emoji-id=\"5438496463044752972\">⭐</tg-emoji> Overall Score: {overall_health}%</b>"
@@ -397,12 +394,12 @@ def render_health_overview(data: dict | None) -> str:
     overall = data.get("overall_health_pct", 0)
 
     return (
-        f"<b><tg-emoji emoji-id=\"5289562446216835198\">🛡️</tg-emoji> ACCOUNTS HEALTH</b>\n"
+        "<b><tg-emoji emoji-id=\"5289562446216835198\">🛡️</tg-emoji> ACCOUNTS HEALTH</b>\n"
         f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        f"<b><tg-emoji emoji-id='5231200819986047254'>📊</tg-emoji> STATUS:</b>\n"
+        "<b><tg-emoji emoji-id='5231200819986047254'>📊</tg-emoji> STATUS:</b>\n"
         f"├ <b><tg-emoji emoji-id=\"5416081784641168838\">🟢</tg-emoji> Healthy: {healthy} ({healthy/total*100:.1f}%)</b>\n"
         f"└ <b><tg-emoji emoji-id=\"5411225014148014586\">🟠</tg-emoji> Limited: {limited} ({limited/total*100:.1f}%)</b>\n\n"
-        f"<b><tg-emoji emoji-id=\"5438496463044752972\">⭐</tg-emoji> Overall Health Score: {overall}%</b>"
+        "<b><tg-emoji emoji-id=\"5438496463044752972\">⭐</tg-emoji> Overall Health Score: {overall}%</b>"
     )
 
 

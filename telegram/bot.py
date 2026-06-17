@@ -206,7 +206,7 @@ def _register_handlers(bot: TelegramClient) -> None:
         try:
             settings = get_settings()
             sender = await event.get_sender()
-            is_admin = (event.sender_id in settings.admin_user_ids) or (getattr(sender, "username", "") and sender.username.lower() == settings.admin_username.lower().replace("@", ""))
+            is_admin = bool((event.sender_id in settings.admin_user_ids) or (getattr(sender, "username", "") and sender.username.lower() == settings.admin_username.lower().replace("@", "")))
             if not is_admin:
                 return
                 
@@ -274,7 +274,7 @@ def _register_handlers(bot: TelegramClient) -> None:
         """Handle /revoke command for admin."""
         settings = get_settings()
         sender = await event.get_sender()
-        is_admin = (event.sender_id in settings.admin_user_ids) or (getattr(sender, "username", "") and sender.username.lower() == settings.admin_username.lower().replace("@", ""))
+        is_admin = bool((event.sender_id in settings.admin_user_ids) or (getattr(sender, "username", "") and sender.username.lower() == settings.admin_username.lower().replace("@", "")))
         if not is_admin:
             return
             
@@ -522,13 +522,13 @@ def _register_handlers(bot: TelegramClient) -> None:
                 
                 msg = await event.respond("⏳ <b>Processing Folder Link...</b>", parse_mode="html")
                 
-                async def update_progress(text: str):
+                async def update_progress_folder(text: str):
                     try:
                         await msg.edit(text, parse_mode="html")
                     except: pass
                 
                 import asyncio
-                asyncio.create_task(group_worker.bulk_join_folder(user_id, slug, update_progress))
+                asyncio.create_task(group_worker.bulk_join_folder(user_id, slug, update_progress_folder))
                 return
             
             # Handle TXT File
@@ -553,13 +553,13 @@ def _register_handlers(bot: TelegramClient) -> None:
                 await set_context(user_id, "awaiting_input", None)
                 msg = await event.respond(f"⏳ <b>Processing {len(links)} links from file...</b>", parse_mode="html")
                 
-                async def update_progress(text: str):
+                async def update_progress_links(text: str):
                     try:
                         await msg.edit(text, parse_mode="html")
                     except: pass
                 
                 import asyncio
-                asyncio.create_task(group_worker.bulk_join_links(user_id, links, update_progress))
+                asyncio.create_task(group_worker.bulk_join_links(user_id, links, update_progress_links))
                 return
             else:
                 await event.respond("<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> Please send a <b>.txt file</b> or a <b>t.me/addlist/</b> link.", parse_mode="html")
@@ -681,7 +681,7 @@ async def _handle_auth_otp_input(event: events.NewMessage.Event) -> None:
         account = await account_service.add_account(event.sender_id, summary["raw_session"])
         
         from repositories import account_groups_repo
-        await account_groups_repo.save_groups(account.id, summary["groups"])
+        await account_groups_repo.save_groups(str(account.id), summary["groups"])
         
         await set_context(event.sender_id, "awaiting_input", None)
         await msg.edit(
@@ -716,7 +716,7 @@ async def _handle_auth_password_input(event: events.NewMessage.Event) -> None:
         account = await account_service.add_account(event.sender_id, summary["raw_session"])
         
         from repositories import account_groups_repo
-        await account_groups_repo.save_groups(account.id, summary["groups"])
+        await account_groups_repo.save_groups(str(account.id), summary["groups"])
         
         await set_context(event.sender_id, "awaiting_input", None)
         await msg.edit(
@@ -764,10 +764,10 @@ async def _handle_campaign_name_input(event: events.NewMessage.Event) -> None:
         data["success_count"] = 0
         data["failure_count"] = 0
         
-        await campaign_cache.set_summary(campaign.id, data)
+        await campaign_cache.set_summary(str(campaign.id), data)
         
         text = render_campaign_detail(data)
-        buttons = campaign_detail_keyboard(campaign.id, campaign.status)
+        buttons = campaign_detail_keyboard(str(campaign.id), campaign.status)
         
         settings = get_settings()
         if settings.bot_image_url:
