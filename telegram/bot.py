@@ -237,14 +237,24 @@ def _register_handlers(bot: TelegramClient) -> None:
                     price = "$10.00" if plan == "WEEKLY" else "$35.00" if plan == "MONTHLY" else "$250.00"
                     
                     caption = (
-                        f"🧾 <b>LUCID ADS PREMIUM | RECEIPT</b>\n"
-                        f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                        f"🎉 <b>LUCID ADS PREMIUM ACTIVATED</b>\n"
+                        f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                        f"✅ Your premium plan has been activated successfully.\n\n"
                         f"<b>Plan:</b> Lucid Ads Premium - {plan.capitalize()}\n"
-                        f"<b>Price:</b> {price}\n"
                         f"<b>Duration:</b> {days} Days\n"
-                        f"<b>Status:</b> 🟢 <b>PAID</b>\n"
-                        f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                        f"<i>🎉 Your subscription is now active! Use /start to begin automating your success.</i>"
+                        f"<b>Price:</b> {price}\n"
+                        f"<b>Status:</b> 🟢 <b>PAID</b>\n\n"
+                        f"🚀 <b>Premium Features Unlocked</b>\n\n"
+                        f"• Unlimited Accounts\n"
+                        f"• Unlimited Campaigns\n"
+                        f"• Health Monitoring & Auto Pause\n"
+                        f"• Advanced Anti-Ban Delays\n"
+                        f"• Auto-Join & Auto-Reply\n"
+                        f"• Personal AI Assistant\n\n"
+                        f"⚡ <i>Your account is now ready to automate, scale, and optimize your Telegram marketing campaigns.</i>\n\n"
+                        f"Thank you for choosing Lucid Ads Premium.\n\n"
+                        f"🔥 <b>Advertise • Grow • Succeed</b>\n"
+                        f"━━━━━━━━━━━━━━━━━━━━━━━━"
                     )
                     
                     if settings.plan_image_url:
