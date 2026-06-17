@@ -45,6 +45,12 @@ async def run_health_check_cycle() -> None:
                 account_id=account.id,
                 error=str(exc),
             )
+        finally:
+            # ALWAYS schedule the next check, even if the check fails due to rate limits or timeout
+            from datetime import datetime, timedelta
+            settings = get_settings()
+            next_check = datetime.utcnow() + timedelta(seconds=settings.health_check_interval_seconds)
+            await accounts_repo.set_next_check(account.id, next_check)
 
         # Stagger checks to avoid burst
         await asyncio.sleep(2)
@@ -126,12 +132,7 @@ async def check_single_account(account) -> None:
     summary = await health_service.get_health_summary(account.owner_id)
     await health_cache.set_summary(account.owner_id, summary)
 
-    # Schedule the next check
-    from datetime import datetime, timedelta
-    settings = get_settings()
-    next_check = datetime.utcnow() + timedelta(seconds=settings.health_check_interval_seconds)
-    await accounts_repo.set_next_check(account.id, next_check)
-
+    # Cache updated
 
 async def run(stop_event: asyncio.Event | None = None) -> None:
     """
