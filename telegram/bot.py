@@ -259,7 +259,7 @@ def _register_handlers(bot: TelegramClient) -> None:
             await event.respond("Invalid User ID format.")
             return
             
-        success = await users_repo.update(target_id, {"plan_type": "FREE_TRIAL", "subscription_ends_at": None})
+        success = await users_repo.update(target_id, {"plan_type": "NONE", "subscription_ends_at": None})
         if success:
             await event.respond(f"<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Revoked subscription for <code>{target_id}</code>.", parse_mode="html")
         else:
@@ -373,9 +373,16 @@ def _register_handlers(bot: TelegramClient) -> None:
             await callbacks.route_callback(event)
         except Exception as exc:
             from telethon.errors import MessageNotModifiedError
-            from telethon.errors.rpcerrorlist import QueryIdInvalidError
+            from telethon.errors.rpcerrorlist import QueryIdInvalidError, FloodWaitError
             if isinstance(exc, (MessageNotModifiedError, QueryIdInvalidError)):
                 return
+            if isinstance(exc, FloodWaitError):
+                try:
+                    await event.answer("Too many requests! Please type /start to get a fresh menu.", alert=True)
+                except Exception:
+                    pass
+                return
+                
             await log.aerror(
                 "callback.error",
                 user_id=event.sender_id,

@@ -642,19 +642,19 @@ def paywall_keyboard(user=None) -> list[list[Button]]:
     uid = user.user_id if user else "Unknown"
     uname = user.username if user and user.username else "NoUsername"
     
-    w_text = urllib.parse.quote(base_text.format(plan="Weekly", price="5", uid=uid, uname=uname))
-    m_text = urllib.parse.quote(base_text.format(plan="Monthly", price="15", uid=uid, uname=uname))
-    y_text = urllib.parse.quote(base_text.format(plan="Yearly", price="120", uid=uid, uname=uname))
+    w_text = urllib.parse.quote(base_text.format(plan="Weekly", price="10", uid=uid, uname=uname))
+    m_text = urllib.parse.quote(base_text.format(plan="Monthly", price="35", uid=uid, uname=uname))
+    y_text = urllib.parse.quote(base_text.format(plan="Yearly", price="250", uid=uid, uname=uname))
     
     from telethon.tl.types import KeyboardButtonStyle
     
-    btn_w = Button.url(_b("Buy Weekly - $5"), f"{admin_url}?text={w_text}")
+    btn_w = Button.url(_b("Buy Weekly - $10"), f"{admin_url}?text={w_text}")
     btn_w.style = KeyboardButtonStyle(bg_success=True, icon=5409048419211682843)
     
-    btn_m = Button.url(_b("Buy Monthly - $15"), f"{admin_url}?text={m_text}")
+    btn_m = Button.url(_b("Buy Monthly - $35"), f"{admin_url}?text={m_text}")
     btn_m.style = KeyboardButtonStyle(bg_primary=True, icon=5409048419211682843)
     
-    btn_y = Button.url(_b("Buy Yearly - $120"), f"{admin_url}?text={y_text}")
+    btn_y = Button.url(_b("Buy Yearly - $250"), f"{admin_url}?text={y_text}")
     btn_y.style = KeyboardButtonStyle(bg_danger=True, icon=5409048419211682843)
     
     return [

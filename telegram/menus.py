@@ -540,15 +540,13 @@ def render_ai_action(description: str) -> str:
 
 def render_profile(user_data: dict, is_active: bool) -> str:
     """Render the user profile and subscription status."""
-    plan = user_data.get("plan_type", "FREE_TRIAL")
+    plan = user_data.get("plan_type", "NONE")
     ends_at = user_data.get("subscription_ends_at")
     
-    status = "<tg-emoji emoji-id='5416081784641168838'>🟢</tg-emoji> ACTIVE" if is_active else "🔴 INACTIVE (Trial Expired)"
-    if plan != "FREE_TRIAL" and not is_active:
-        status = "🔴 EXPIRED"
+    status = "<tg-emoji emoji-id='5416081784641168838'>🟢</tg-emoji> ACTIVE" if is_active else "🔴 EXPIRED"
         
-    expiry_str = "Never" if plan == "FREE_TRIAL" and is_active else "Expired"
-    if ends_at:
+    expiry_str = "Expired"
+    if is_active and ends_at:
         expiry_str = ends_at.strftime("%Y-%m-%d %H:%M UTC")
 
     return (

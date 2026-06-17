@@ -23,7 +23,7 @@ class User(BaseModel):
     autoreply_text: Optional[str] = None
     health_auto_pause: bool = True
     has_started_logs_bot: bool = False
-    plan_type: str = "FREE_TRIAL"           # FREE_TRIAL, WEEKLY, MONTHLY, YEARLY
+    plan_type: str = "NONE"           # NONE, WEEKLY, MONTHLY, YEARLY
     subscription_ends_at: Optional[datetime] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
@@ -33,9 +33,6 @@ class User(BaseModel):
         if admin_user_ids and self.user_id in admin_user_ids:
             return True
         if admin_username and self.username and self.username.lower() == admin_username.lower().replace("@", ""):
-            return True
-            
-        if self.plan_type == "FREE_TRIAL":
             return True
             
         if not self.subscription_ends_at:
