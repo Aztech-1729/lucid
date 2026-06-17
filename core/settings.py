@@ -78,9 +78,11 @@ class Settings(BaseSettings):
     log_format: str = "json"  # "json" or "console"
 
     # ── Admin ───────────────────────────────────────────────
-    admin_user_ids: list[int] = []
+    admin_user_ids: list[int] = Field(default_factory=list)
+    admin_username: str = ""
 
-    # ── Bot Branding ────────────────────────────────────────
+    # Bot Branding
     bot_image_url: str = ""
     logs_bot_image_url: str = ""
+    plan_image_url: str = ""
     bot_username: str = ""

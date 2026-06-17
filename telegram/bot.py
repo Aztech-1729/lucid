@@ -234,7 +234,23 @@ def _register_handlers(bot: TelegramClient) -> None:
             if success:
                 await event.respond(f"<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Granted {plan} plan to <code>{target_id}</code>. Expires: {ends_at.strftime('%Y-%m-%d')}", parse_mode="html")
                 try:
-                    await event.client.send_message(target_id, f"🎉 <b>Good news!</b> Your <b>{plan}</b> subscription has been activated by the Admin!\n\nUse /start to view your new plan features.", parse_mode="html")
+                    price = "$10.00" if plan == "WEEKLY" else "$35.00" if plan == "MONTHLY" else "$250.00"
+                    
+                    caption = (
+                        f"🧾 <b>LUCID ADS PREMIUM | RECEIPT</b>\n"
+                        f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                        f"<b>Plan:</b> Lucid Ads Premium - {plan.capitalize()}\n"
+                        f"<b>Price:</b> {price}\n"
+                        f"<b>Duration:</b> {days} Days\n"
+                        f"<b>Status:</b> 🟢 <b>PAID</b>\n"
+                        f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                        f"<i>🎉 Your subscription is now active! Use /start to begin automating your success.</i>"
+                    )
+                    
+                    if settings.plan_image_url:
+                        await event.client.send_message(target_id, message=caption, file=settings.plan_image_url, parse_mode="html")
+                    else:
+                        await event.client.send_message(target_id, message=caption, parse_mode="html")
                 except Exception as e:
                     await event.respond(f"⚠️ Could not send notification to user: {e}")
             else:
