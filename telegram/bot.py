@@ -242,6 +242,7 @@ def _register_handlers(bot: TelegramClient) -> None:
                         f"✅ Your premium plan has been activated successfully.\n\n"
                         f"<b>Plan:</b> Lucid Ads Premium - {plan.capitalize()}\n"
                         f"<b>Duration:</b> {days} Days\n"
+                        f"<b>Expires:</b> {ends_at.strftime('%B %d, %Y')}\n"
                         f"<b>Price:</b> {price}\n"
                         f"<b>Status:</b> 🟢 <b>PAID</b>\n\n"
                         f"🚀 <b>Premium Features Unlocked</b>\n\n"
