@@ -152,7 +152,7 @@ def render_dashboard(data: dict | None) -> str:
     return (
         "<b><tg-emoji emoji-id=\"5447410659077661506\">🏠</tg-emoji> DASHBOARD</b>\n"
         f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        "<b><tg-emoji emoji-id=\"5461117441612462242\">👤</tg-emoji> User: @{username}</b>\n\n"
+        f"<b><tg-emoji emoji-id=\"5461117441612462242\">👤</tg-emoji> User: @{username}</b>\n\n"
         "<b><tg-emoji emoji-id='5231200819986047254'>📊</tg-emoji> OVERVIEW:</b>\n"
         f"├ <b>Total Accounts: {total_accs}</b>\n"
         f"├ <b>Active Accounts: {active_accs}</b>\n"
