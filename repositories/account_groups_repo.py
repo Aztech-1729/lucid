@@ -47,7 +47,7 @@ async def sync_groups_from_telegram(account_id: str) -> None:
             dialogs = await client.get_dialogs()
             groups = []
             for d in dialogs:
-                if d.is_group or d.is_channel:
+                if d.is_group and not getattr(d.entity, "broadcast", False):
                     access_hash = getattr(d.entity, "access_hash", 0) if d.entity else 0
                     groups.append({
                         "id": d.id, 
