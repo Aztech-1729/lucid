@@ -56,6 +56,10 @@ async def sync_groups_from_telegram(account_id: str) -> None:
                         "is_selected": False
                     })
             await save_groups(account_id, groups)
+            
+            # Remove stale groups (like broadcast channels) that were previously synced
+            fetched_ids = [g["id"] for g in groups]
+            await _coll().delete_many({"account_id": account_id, "group_id": {"$nin": fetched_ids}})
     except Exception as e:
         import logging
         logging.getLogger("account_groups_repo").error(f"Failed to sync groups: {e}")
@@ -152,7 +156,7 @@ async def fetch_groups_if_missing(account_id: str) -> None:
             dialogs = await client.get_dialogs()
             groups = []
             for d in dialogs:
-                if d.is_group or d.is_channel:
+                if d.is_group and not getattr(d.entity, "broadcast", False):
                     access_hash = getattr(d.entity, "access_hash", 0) if d.entity else 0
                     groups.append({
                         "id": d.id, 
