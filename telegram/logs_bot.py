@@ -203,7 +203,7 @@ async def send_batch_summary(owner_id: int, campaign_name: str, batch_id: str, c
         f"<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> <b>Batch Success Report</b>\n"
         f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
         f"<b>Campaign:</b> {campaign_name}\n"
-        f"<b>Successful Sends:</b> {count} (last 1m)"
+        f"<b>Successful Sends:</b> {count} (last 30s)"
     )
     
     buttons = [[Button.inline("📄 View All Logs", f"view_batch:{batch_id}:0")]]

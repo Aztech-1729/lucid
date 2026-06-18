@@ -64,4 +64,4 @@ async def run(stop_event: asyncio.Event = None):
         except Exception as e:
             log.error("log_worker.error", error=str(e))
             
-        await asyncio.sleep(60.0)
+        await asyncio.sleep(30.0)
