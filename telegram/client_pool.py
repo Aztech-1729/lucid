@@ -200,6 +200,36 @@ class ClientPool:
                 client=client,
             )
 
+    async def pre_warm(self, account_ids: list[str]) -> None:
+        """
+        Pre-establish TCP connections for the given accounts concurrently.
+        """
+        if not account_ids:
+            return
+            
+        await log.ainfo("pool.pre_warming_started", total_accounts=len(account_ids))
+        
+        sem = asyncio.Semaphore(10)
+        
+        async def _warm(aid: str, offset: float):
+            if offset > 0:
+                await asyncio.sleep(offset)
+            async with sem:
+                try:
+                    slot = await self._get_or_create_slot(aid)
+                    async with slot.lock:
+                        if not slot.client.is_connected():
+                            await asyncio.wait_for(slot.client.connect(), timeout=15.0)
+                except Exception as exc:
+                    await log.awarning("pool.pre_warm_failed", account_id=aid, error=str(exc))
+                    
+        tasks = []
+        for i, aid in enumerate(account_ids):
+            tasks.append(_warm(str(aid), i * 0.1))
+            
+        await asyncio.gather(*tasks, return_exceptions=True)
+        await log.ainfo("pool.pre_warming_completed")
+
     async def stats(self) -> dict:
         """Return pool statistics."""
         # ASYNC FIX: Use a list snapshot to prevent dictionary size mutation errors

@@ -35,25 +35,37 @@ async def run_health_check_cycle() -> None:
 
     await log.ainfo("health_worker.cycle_start", accounts=len(accounts))
 
-    for account in accounts:
-        try:
-            await check_single_account(account)
-            await metrics.increment(HEALTH_CHECKS)
-        except Exception as exc:
-            await log.awarning(
-                "health_worker.check_failed",
-                account_id=account.id,
-                error=str(exc),
-            )
-        finally:
-            # ALWAYS schedule the next check, even if the check fails due to rate limits or timeout
-            from datetime import datetime, timedelta
-            settings = get_settings()
-            next_check = datetime.utcnow() + timedelta(seconds=settings.health_check_interval_seconds)
-            await accounts_repo.set_next_check(account.id, next_check)
+    # Semaphore to process up to 10 accounts concurrently
+    sem = asyncio.Semaphore(10)
 
-        # Stagger checks to avoid burst
-        await asyncio.sleep(2)
+    async def _safe_check(account, offset: float):
+        # Stagger startups slightly to avoid identical millisecond requests
+        if offset > 0:
+            await asyncio.sleep(offset)
+            
+        async with sem:
+            try:
+                await check_single_account(account)
+                await metrics.increment(HEALTH_CHECKS)
+            except Exception as exc:
+                await log.awarning(
+                    "health_worker.check_failed",
+                    account_id=account.id,
+                    error=str(exc),
+                )
+            finally:
+                # ALWAYS schedule the next check, even if the check fails
+                from datetime import datetime, timedelta
+                settings = get_settings()
+                next_check = datetime.utcnow() + timedelta(seconds=settings.health_check_interval_seconds)
+                await accounts_repo.set_next_check(account.id, next_check)
+
+    tasks = []
+    for i, account in enumerate(accounts):
+        # Stagger checks by 0.5s to avoid burst
+        tasks.append(_safe_check(account, i * 0.5))
+
+    await asyncio.gather(*tasks, return_exceptions=True)
 
     await log.ainfo("health_worker.cycle_complete", checked=len(accounts))
 

@@ -47,6 +47,14 @@ async def startup() -> None:
     await log.ainfo("startup.pool_init")
     from telegram.client_pool import client_pool
     await client_pool.start()
+    
+    # Pre-warm pool for all active accounts
+    from repositories import accounts_repo
+    active_accounts = await accounts_repo.get_all_active()
+    account_ids = [acc.id for acc in active_accounts]
+    if account_ids:
+        await client_pool.pre_warm(account_ids)
+        
     await log.ainfo("startup.pool_ready")
 
     # 5. Pre-warm caches
