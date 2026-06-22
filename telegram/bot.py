@@ -346,9 +346,23 @@ def _register_handlers(bot: TelegramClient) -> None:
         import asyncio
         asyncio.create_task(run_broadcast())
 
+    # Per-user button spam throttle (in-memory, no Redis overhead)
+    import time as _time
+    _button_cooldowns: dict[int, float] = {}
+    _BUTTON_COOLDOWN_SECS = 1.5
+
     @bot.on(events.CallbackQuery)
     async def on_callback(event: events.CallbackQuery.Event) -> None:
         """Handle all inline button presses."""
+        
+        # ── Anti-spam throttle ──────────────────────────────────
+        now = _time.monotonic()
+        last_press = _button_cooldowns.get(event.sender_id, 0.0)
+        if now - last_press < _BUTTON_COOLDOWN_SECS:
+            await event.answer("⏳ Please slow down! Wait a moment...", alert=False)
+            return
+        _button_cooldowns[event.sender_id] = now
+        # ────────────────────────────────────────────────────────
         
         if event.data == b"force_join_check":
             from cache.redis_client import cache_delete
