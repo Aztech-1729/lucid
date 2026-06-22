@@ -35,6 +35,22 @@ async def log_interaction(group_id: str, success: bool, is_flood: bool = False) 
         upsert=True
     )
 
+async def mark_restricted(group_id: str, reason: str = "") -> None:
+    """Permanently mark a group as restricted (messaging not allowed)."""
+    now = datetime.utcnow()
+    await _coll().update_one(
+        {"group_id": group_id},
+        {
+            "$set": {
+                "restricted": True,
+                "restricted_reason": reason,
+                "restricted_at": now,
+            },
+            "$setOnInsert": {"created_at": now}
+        },
+        upsert=True
+    )
+
 async def get_health_score(group_id: str) -> int:
     """
     Calculate health score (0-100) for a group.
@@ -61,7 +77,12 @@ async def get_health_score(group_id: str) -> int:
     return final_score
 
 async def is_toxic(group_id: str, threshold: int = 15) -> bool:
-    """Check if a group should be avoided. Only truly dead groups score below 15."""
+    """Check if a group is restricted or has a critically low health score."""
+    # Fast path: check if group is permanently restricted
+    doc = await _coll().find_one({"group_id": group_id})
+    if doc and doc.get("restricted"):
+        return True
+    # Slow path: score-based check
     score = await get_health_score(group_id)
     return score < threshold
 

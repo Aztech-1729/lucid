@@ -14,12 +14,18 @@ from typing import Optional
 from telethon.errors import (
     ChatAdminRequiredError,
     ChatWriteForbiddenError,
+    ChannelPrivateError,
     FloodWaitError,
     UserBannedInChannelError,
     SlowModeWaitError,
     UserDeactivatedError,
     AuthKeyUnregisteredError,
 )
+
+try:
+    from telethon.errors import PeerIdInvalidError
+except ImportError:
+    PeerIdInvalidError = None  # Older Telethon versions
 from telethon.errors.common import TypeNotFoundError
 
 from core.config import get_settings
@@ -222,8 +228,8 @@ async def safe_forward(
             )
             await asyncio.sleep(wait_time)
 
-        except (ChatWriteForbiddenError, UserBannedInChannelError, ChatAdminRequiredError) as e:
-            # Permanent failures — don't retry
+        except (ChatWriteForbiddenError, UserBannedInChannelError, ChatAdminRequiredError, ChannelPrivateError) as e:
+            # Permanent failures — don't retry, mark group as restricted
             await accounts_repo.increment_counters(account_id, failure=1)
             await analytics_repo.log_forward(
                 campaign_id=campaign_id,
@@ -234,6 +240,13 @@ async def safe_forward(
                 error_message=str(e),
             )
             await metrics.increment(MESSAGES_FAILED)
+            
+            # Mark this group as permanently restricted so we never try again
+            try:
+                from repositories import group_health_repo
+                await group_health_repo.mark_restricted(str(target), reason=type(e).__name__)
+            except Exception:
+                pass
             return False
 
         except (UserDeactivatedError, AuthKeyUnregisteredError) as e:
@@ -269,6 +282,21 @@ async def safe_forward(
                 error_message=str(e),
             )
             await metrics.increment(MESSAGES_FAILED)
+            
+            # Detect permanent peer/entity errors and mark as restricted
+            err_str = str(e).lower()
+            is_permanent = any(keyword in err_str for keyword in [
+                "peer", "entity", "invalid peer", "not found", 
+                "channel private", "chat restricted", "payment required",
+            ])
+            if is_permanent:
+                try:
+                    from repositories import group_health_repo
+                    await group_health_repo.mark_restricted(str(target), reason=str(e)[:200])
+                except Exception:
+                    pass
+                return False
+            
             await log.awarning(
                 "forward.error",
                 account_id=account_id,
