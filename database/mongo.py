@@ -32,10 +32,11 @@ async def init_mongo(uri: str, db_name: str) -> None:
     _client = AsyncMongoClient(
         uri,
         maxPoolSize=300,
-        minPoolSize=10,
+        minPoolSize=0,
         connectTimeoutMS=10_000,
         serverSelectionTimeoutMS=10_000,
         waitQueueTimeoutMS=15_000,
+        maxIdleTimeMS=300_000,
     )
 
     _db = _client[db_name]
