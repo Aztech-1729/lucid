@@ -48,12 +48,14 @@ async def startup() -> None:
     from telegram.client_pool import client_pool
     await client_pool.start()
     
-    # Pre-warm pool for all active accounts
+    # Pre-warm pool for only up to MAX_CLIENTS accounts to prevent startup storms
     from repositories import accounts_repo
     active_accounts = await accounts_repo.get_all_active()
     account_ids = [acc.id for acc in active_accounts]
     if account_ids:
-        await client_pool.pre_warm(account_ids)
+        # Don't try to prewarm 50 accounts if our pool max is 15 (causes thrashing)
+        warm_limit = settings.pool_max_clients
+        await client_pool.pre_warm(account_ids[:warm_limit])
         
     await log.ainfo("startup.pool_ready")
 
