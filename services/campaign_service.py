@@ -46,6 +46,10 @@ async def create_campaign(
         "group_ids": group_ids or [],
     })
 
+    # Trigger forwarding worker wakeup so it picks up new campaigns instantly
+    from services.forwarding_trigger import trigger_forwarding
+    trigger_forwarding()
+
     await _invalidate_caches(owner_id)
     await log.ainfo("campaign.created", campaign_id=campaign.id, name=name)
     return campaign

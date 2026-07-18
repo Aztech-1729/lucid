@@ -37,13 +37,10 @@ async def run_health_check_cycle() -> None:
     await log.ainfo("health_worker.cycle_start", accounts=len(accounts))
 
     # Semaphore to process up to 10 accounts concurrently
+    # No stagger needed — semaphore naturally throttles startup burst
     sem = asyncio.Semaphore(10)
 
-    async def _safe_check(account, offset: float):
-        # Stagger startups to avoid burst — clamp at 30s max offset
-        if offset > 0:
-            await asyncio.sleep(min(offset, 30.0))
-            
+    async def _safe_check(account):
         async with sem:
             try:
                 await check_single_account(account)
@@ -63,8 +60,7 @@ async def run_health_check_cycle() -> None:
 
     tasks = []
     for i, account in enumerate(accounts):
-        # Stagger checks by 0.5s to avoid burst
-        tasks.append(_safe_check(account, i * 0.5))
+        tasks.append(_safe_check(account))
 
     await asyncio.gather(*tasks, return_exceptions=True)
 

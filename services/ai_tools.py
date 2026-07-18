@@ -405,10 +405,14 @@ async def propose_create_campaign(user_id: int, kwargs: dict) -> str:
     except ValueError as e:
         return json.dumps({"error": str(e)})
     
+    # Trigger forwarding worker wakeup
+    from services.forwarding_trigger import trigger_forwarding
+    trigger_forwarding()
+
     # Invalidate caches so UI shows the new campaign instantly
     from cache import campaign_cache
     await campaign_cache.invalidate_list(user_id)
-    
+
     return json.dumps({
         "success": True,
         "message": f"Campaign '{name}' created with {len(account_ids)} accounts and {len(all_group_ids)} groups assigned."

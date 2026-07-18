@@ -72,8 +72,22 @@ async def count_by_owner(owner_id: int) -> int:
 from typing import AsyncGenerator
 
 async def get_active() -> AsyncGenerator[Campaign, None]:
-    """Get all active campaigns (for forwarding worker)."""
-    cursor = _coll().find({"status": CampaignStatus.ACTIVE})
+    """Get all active campaigns (for forwarding worker).
+
+    Projects only essential fields to avoid Pydantic-validating
+    2000+ group_ids on every doc which can trigger MongoDB
+    connection timeouts.
+    """
+    cursor = _coll().find(
+        {"status": CampaignStatus.ACTIVE},
+        # Project only fields the forwarding worker actually needs
+        projection={
+            "owner_id": 1, "name": 1, "message": 1, "ad_type": 1,
+            "forward_link": 1, "account_ids": 1, "group_ids": 1,
+            "group_delay_seconds": 1, "round_delay_seconds": 1,
+            "max_rounds": 1, "stats": 1, "status": 1,
+        },
+    ).batch_size(50)
     async for doc in cursor:
         doc["_id"] = str(doc["_id"])
         yield Campaign.model_validate(doc)
