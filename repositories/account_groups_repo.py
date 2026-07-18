@@ -6,8 +6,10 @@ from __future__ import annotations
 
 from database.mongo import get_db
 from pymongo import UpdateOne
+from core.logging import get_logger
 
 GROUPS_COL = "account_groups"
+log = get_logger("account_groups_repo")
 
 def _coll():
     return get_db()[GROUPS_COL]
@@ -61,8 +63,7 @@ async def sync_groups_from_telegram(account_id: str) -> None:
             fetched_ids = [g["id"] for g in groups]
             await _coll().delete_many({"account_id": account_id, "group_id": {"$nin": fetched_ids}})
     except Exception as e:
-        import logging
-        logging.getLogger("account_groups_repo").error(f"Failed to sync groups: {e}")
+        await log.aerror("account_groups.sync_failed", error=str(e))
 
 
 async def get_groups_paginated(account_id: str, page: int = 1, limit: int = 10) -> tuple[list[dict], dict]:

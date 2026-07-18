@@ -7,6 +7,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Optional
 
+from utils.helpers import now_utc_naive
+
 from bson import ObjectId
 
 from database import collections
@@ -36,7 +38,7 @@ async def get_or_create(
         doc["_id"] = str(doc["_id"])
         return User.model_validate(doc)
 
-    now = datetime.utcnow()
+    now = now_utc_naive()
     new_doc = {
         "user_id": user_id,
         "username": username,
@@ -64,7 +66,7 @@ async def get(user_id: int) -> Optional[User]:
 
 async def update(user_id: int, data: dict) -> bool:
     """Update user fields. Returns True if a document was modified."""
-    data["updated_at"] = datetime.utcnow()
+    data["updated_at"] = now_utc_naive()
     result = await _coll().update_one(
         {"user_id": user_id},
         {"$set": data},
@@ -89,7 +91,7 @@ async def get_all_active_user_ids() -> list[int]:
 async def get_stats() -> dict:
     """Return stats for the Admin panel."""
     total_users = await _coll().count_documents({})
-    now = datetime.utcnow()
+    now = now_utc_naive()
     active_subs = await _coll().count_documents({"subscription_ends_at": {"$gt": now}})
     return {
         "total_users": total_users,
@@ -98,7 +100,7 @@ async def get_stats() -> dict:
 
 async def get_active_subscribers() -> list[User]:
     """Return a list of all users with active subscriptions."""
-    now = datetime.utcnow()
+    now = now_utc_naive()
     cursor = _coll().find({"subscription_ends_at": {"$gt": now}})
     users = []
     async for doc in cursor:

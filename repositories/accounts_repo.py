@@ -9,6 +9,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Optional
 
+from utils.helpers import now_utc_naive
+
 from bson import ObjectId
 
 from core.constants import AccountStatus
@@ -29,7 +31,7 @@ async def create(
     telegram_id: Optional[int] = None,
 ) -> Account:
     """Create a new account record (matches existing DB schema)."""
-    now = datetime.utcnow()
+    now = now_utc_naive()
     doc = {
         "owner_id": owner_id,
         "phone": phone,
@@ -78,19 +80,14 @@ async def list_by_owner(owner_id: int) -> list[Account]:
 
 async def count_by_owner(owner_id: int) -> int:
     """Count accounts owned by a user."""
-    return await _coll().count_documents({
-        "$or": [
-            {"owner_id": int(owner_id)},
-            {"owner_id": str(owner_id)},
-        ]
-    })
+    return await _coll().count_documents({"owner_id": owner_id})
 
 
 async def update_status(account_id: str, status: str) -> bool:
     """Update account status."""
     result = await _coll().update_one(
         {"_id": ObjectId(account_id)},
-        {"$set": {"status": status, "updated_at": datetime.utcnow()}},
+        {"$set": {"status": status, "updated_at": now_utc_naive()}},
     )
     return result.modified_count > 0
 
@@ -103,8 +100,8 @@ async def update_health(
     """Update health score and optionally status."""
     update_doc: dict = {
         "health_score": health_score,
-        "last_checked_at": datetime.utcnow(),
-        "updated_at": datetime.utcnow(),
+        "last_checked_at": now_utc_naive(),
+        "updated_at": now_utc_naive(),
     }
     if status is not None:
         update_doc["status"] = status
@@ -119,7 +116,7 @@ async def update_name(account_id: str, name: str) -> bool:
     """Update account display name."""
     result = await _coll().update_one(
         {"_id": ObjectId(account_id)},
-        {"$set": {"name": name, "updated_at": datetime.utcnow()}},
+        {"$set": {"name": name, "updated_at": now_utc_naive()}},
     )
     return result.modified_count > 0
 
@@ -139,7 +136,7 @@ async def increment_counters(
     failure: int = 0,
 ) -> None:
     """Atomically increment success/failure counters."""
-    update_doc: dict = {"$set": {"last_used_at": datetime.utcnow()}}
+    update_doc: dict = {"$set": {"last_used_at": now_utc_naive()}}
     inc_doc: dict = {}
     if success:
         inc_doc["success_count"] = success
@@ -152,7 +149,7 @@ async def increment_counters(
 
 async def add_flood_event(account_id: str, seconds: int) -> None:
     """Push a flood event to history."""
-    event = {"seconds": seconds, "occurred_at": datetime.utcnow()}
+    event = {"seconds": seconds, "occurred_at": now_utc_naive()}
     await _coll().update_one(
         {"_id": ObjectId(account_id)},
         {"$push": {"flood_wait_history": {"$each": [event], "$slice": -50}}},
@@ -200,7 +197,7 @@ async def get_all_active() -> list[Account]:
 
 async def get_due_for_check(limit: int = 50) -> list[Account]:
     """Get accounts due for a health check, ordered by next_check_at."""
-    now = datetime.utcnow()
+    now = now_utc_naive()
     cursor = (
         _coll()
         .find({
@@ -231,11 +228,8 @@ async def set_next_check(account_id: str, next_check_at: datetime) -> None:
 async def get_by_phone(owner_id: int, phone: str) -> Optional[Account]:
     """Get an account by exact phone number for a specific owner."""
     doc = await _coll().find_one({
-        "$or": [
-            {"owner_id": int(owner_id)},
-            {"owner_id": str(owner_id)}
-        ],
-        "phone": phone
+        "owner_id": owner_id,
+        "phone": phone,
     })
     if doc is None:
         return None
@@ -246,11 +240,8 @@ async def get_by_phone(owner_id: int, phone: str) -> Optional[Account]:
 async def get_by_telegram_id(owner_id: int, telegram_id: int) -> Optional[Account]:
     """Get an account by exact telegram_id for a specific owner."""
     doc = await _coll().find_one({
-        "$or": [
-            {"owner_id": int(owner_id)},
-            {"owner_id": str(owner_id)}
-        ],
-        "telegram_id": telegram_id
+        "owner_id": owner_id,
+        "telegram_id": telegram_id,
     })
     if doc is None:
         return None

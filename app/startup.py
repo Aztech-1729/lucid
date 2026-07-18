@@ -73,6 +73,10 @@ async def startup() -> None:
     await ensure_autoreply_clients()
     await log.ainfo("startup.autoreply_ready")
 
+    # Clear any stale in-memory auth sessions from previous runs
+    from services.auth_service import cleanup_auth_sessions
+    await cleanup_auth_sessions()
+
     # 6. Launch workers
     await log.ainfo("startup.workers_launching")
     from workers.scheduler_worker import worker_manager

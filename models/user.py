@@ -7,6 +7,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Optional
 
+from utils.helpers import now_utc_naive
+
 from pydantic import BaseModel, Field
 
 
@@ -25,8 +27,8 @@ class User(BaseModel):
     has_started_logs_bot: bool = False
     plan_type: str = "NONE"           # NONE, WEEKLY, MONTHLY, YEARLY
     subscription_ends_at: Optional[datetime] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=now_utc_naive)
+    updated_at: datetime = Field(default_factory=now_utc_naive)
 
     def is_active(self, admin_user_ids: list[int] = None, admin_username: str = None) -> bool:
         """Check if user has an active subscription or trial. Admins are always active."""
@@ -38,7 +40,7 @@ class User(BaseModel):
         if not self.subscription_ends_at:
             return False
             
-        return datetime.utcnow() < self.subscription_ends_at
+        return now_utc_naive() < self.subscription_ends_at
 
     model_config = {"populate_by_name": True}
 

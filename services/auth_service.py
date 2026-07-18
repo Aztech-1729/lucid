@@ -162,3 +162,15 @@ async def cleanup_auth(user_id: int) -> None:
             await client.disconnect()
         except Exception:
             pass
+
+
+async def cleanup_auth_sessions() -> None:
+    """
+    Disconnect and clean up ALL in-memory auth sessions.
+
+    Called during startup to clear any stale sessions from a previous
+    process lifetime. Auth sessions are in-memory only and do not
+    survive restarts.
+    """
+    for user_id in list(_auth_sessions.keys()):
+        await cleanup_auth(user_id)

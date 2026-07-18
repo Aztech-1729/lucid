@@ -80,7 +80,12 @@ async def cache_get(key: str) -> Optional[dict]:
     try:
         return orjson.loads(raw)
     except orjson.JSONDecodeError:
-        return None
+        # Fallback to stdlib json for values stored by non-orjson clients
+        try:
+            import json
+            return json.loads(raw)
+        except (json.JSONDecodeError, TypeError):
+            return None
 
 
 async def cache_set(key: str, value: Any, ttl: int | None = None) -> None:

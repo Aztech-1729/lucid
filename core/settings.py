@@ -70,6 +70,7 @@ class Settings(BaseSettings):
     ai_provider: str = "openai"
     ai_api_key: Optional[str] = None
     ai_base_url: Optional[str] = None
+    ai_model: str = "deepseek-v4-flash-free"
 
     # ── Pagination ──────────────────────────────────────────
     default_page_size: int = 20
@@ -80,7 +81,6 @@ class Settings(BaseSettings):
 
     # ── Admin ───────────────────────────────────────────────
     admin_user_ids: list[int] = Field(default_factory=list)
-    admin_username: str = ""
 
     # Bot Branding
     bot_image_url: str = ""

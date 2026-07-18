@@ -16,7 +16,7 @@ class Paginator(Generic[T]):
     """
     Page-based paginator for any list of items.
 
-    Default page size is 20 items (non-configurable per spec).
+    Default page size is 10 items, hard-capped at 20.
     """
 
     def __init__(

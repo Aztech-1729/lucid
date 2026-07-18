@@ -7,6 +7,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Optional
 
+from utils.helpers import now_utc_naive
+
 from pydantic import BaseModel, Field
 
 
@@ -21,8 +23,8 @@ class Group(BaseModel):
     topic_id: Optional[int] = None          # Forum topic ID (for topic-based sends)
     is_active: bool = True
     member_count: Optional[int] = None
-    added_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    added_at: datetime = Field(default_factory=now_utc_naive)
+    updated_at: datetime = Field(default_factory=now_utc_naive)
 
     model_config = {"populate_by_name": True}
 

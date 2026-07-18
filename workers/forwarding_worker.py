@@ -10,6 +10,8 @@ from __future__ import annotations
 import asyncio
 from datetime import datetime
 
+from utils.helpers import now_utc_naive
+
 from core.config import get_settings
 from core.logging import get_logger
 from repositories import campaigns_repo, account_groups_repo
@@ -196,7 +198,7 @@ async def execute_single_round(campaign) -> None:
         "total_sent": latest_camp.stats.total_sent + total_success + total_failed,
         "total_success": latest_camp.stats.total_success + total_success,
         "total_failed": latest_camp.stats.total_failed + total_failed,
-        "last_run_at": datetime.utcnow(),
+        "last_run_at": now_utc_naive(),
     })
     
     # Invalidate cache so UI shows fresh stats

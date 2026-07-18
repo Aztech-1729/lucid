@@ -6,6 +6,8 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 
+from utils.helpers import now_utc_naive
+
 
 def format_number(n: int | float) -> str:
     """Format a number with commas: 1234567 → '1,234,567'."""
@@ -24,7 +26,7 @@ def format_time_ago(dt: datetime | None) -> str:
     if dt is None:
         return "Never"
 
-    now = datetime.utcnow()
+    now = now_utc_naive()
     delta = now - dt
 
     if delta.total_seconds() < 60:

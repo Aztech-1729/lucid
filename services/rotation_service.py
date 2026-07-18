@@ -11,6 +11,7 @@ import random
 from datetime import datetime, timedelta
 
 from cache.redis_client import get_redis, make_key
+from utils.helpers import now_utc_naive
 from core.constants import AccountStatus, RedisKeys, ROTATION_WEIGHT_FLOOD, ROTATION_WEIGHT_HEALTH, ROTATION_WEIGHT_SUCCESS
 from core.logging import get_logger
 from models.account import Account
@@ -28,7 +29,7 @@ def compute_flood_penalty(flood_history: list) -> float:
     if not flood_history:
         return 1.0
 
-    recent_cutoff = datetime.utcnow() - timedelta(days=7)
+    recent_cutoff = now_utc_naive() - timedelta(days=7)
     recent = [
         f for f in flood_history
         if hasattr(f, "occurred_at") and f.occurred_at > recent_cutoff
@@ -125,11 +126,12 @@ async def select_accounts(
         weights[aid] = float(raw) if raw else 0.5
 
     # Filter out zero-weight accounts AND accounts on FloodWait cooldown
-    from cache.redis_client import cache_get
+    from cache.redis_client import cache_get, make_key
     eligible = {}
     for aid, w in weights.items():
         if w > 0:
-            if await cache_get(f"floodwait:{aid}"):
+            flood_key = make_key(RedisKeys.FLOOD_LOCK, account_id=aid)
+            if await cache_get(flood_key):
                 await log.ainfo("rotation.skipping_floodwait", account_id=aid)
                 continue
             eligible[aid] = w

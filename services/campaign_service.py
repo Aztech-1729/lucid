@@ -13,6 +13,7 @@ from core.exceptions import CampaignInactiveError, CampaignNotFoundError
 from core.logging import get_logger
 from models.campaign import Campaign
 from repositories import campaigns_repo
+from utils.helpers import now_utc_naive
 from utils.pagination import Paginator
 from utils.validators import sanitize_campaign_name, validate_campaign_name
 
@@ -160,7 +161,7 @@ async def select_all_accounts(campaign_id: str, owner_id: int) -> None:
     await campaigns_repo.update_fields(campaign_id, {
         "account_ids": acc_ids,
         "group_ids": all_group_ids,
-        "updated_at": datetime.utcnow()
+        "updated_at": now_utc_naive()
     })
     
     await _invalidate_caches(owner_id, campaign_id)
@@ -174,7 +175,7 @@ async def unselect_all_accounts(campaign_id: str, owner_id: int) -> None:
     await campaigns_repo.update_fields(campaign_id, {
         "account_ids": [],
         "group_ids": [],
-        "updated_at": datetime.utcnow()
+        "updated_at": now_utc_naive()
     })
     
     await _invalidate_caches(owner_id, campaign_id)

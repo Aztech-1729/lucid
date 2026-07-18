@@ -28,7 +28,7 @@ async def cancel_campaign_tasks(campaign_id: str) -> None:
     if not tasks:
         return
 
-    log.info("task_manager.cancelling_tasks", campaign_id=campaign_id, task_count=len(tasks))
+    await log.ainfo("task_manager.cancelling_tasks", campaign_id=campaign_id, task_count=len(tasks))
     for task in tasks:
         if not task.done():
             task.cancel()

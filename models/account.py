@@ -12,6 +12,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Optional
 
+from utils.helpers import now_utc_naive
+
 from pydantic import BaseModel, Field
 
 from core.constants import AccountStatus
@@ -21,7 +23,7 @@ class FloodEvent(BaseModel):
     """Records a single FloodWait event."""
 
     seconds: int                            # Duration Telegram requested
-    occurred_at: datetime = Field(default_factory=datetime.utcnow)
+    occurred_at: datetime = Field(default_factory=now_utc_naive)
 
 
 class Account(BaseModel):
@@ -35,7 +37,7 @@ class Account(BaseModel):
     session: str = ""                       # Fernet-encrypted session string
     is_forwarding: bool = False             # Currently forwarding?
     two_fa_password: str = ""               # 2FA password if set
-    added_at: datetime = Field(default_factory=datetime.utcnow)
+    added_at: datetime = Field(default_factory=now_utc_naive)
     round_num: int = 0                      # Forwarding round counter
     telegram_id: Optional[int] = None       # Telegram User ID
 

@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 from cache import analytics_cache
 from core.logging import get_logger
 from repositories import analytics_repo
+from utils.helpers import now_utc_naive
 
 log = get_logger("analytics_service")
 
@@ -23,7 +24,7 @@ async def aggregate_daily(owner_id: int, date_str: str | None = None) -> dict:
     If no date_str is provided, uses today's date.
     """
     if date_str is None:
-        date_str = datetime.utcnow().strftime("%Y%m%d")
+        date_str = now_utc_naive().strftime("%Y%m%d")
 
     stats = await analytics_repo.get_daily_stats(owner_id, date_str)
 
@@ -50,7 +51,7 @@ async def build_dashboard(owner_id: int) -> dict:
     """
     Build the analytics dashboard payload for a user.
     """
-    today = datetime.utcnow().strftime("%Y%m%d")
+    today = now_utc_naive().strftime("%Y%m%d")
     daily = await analytics_repo.get_daily_stats(owner_id, today)
     top_accounts = await analytics_repo.get_top_accounts(owner_id, limit=5)
     top_campaigns = await analytics_repo.get_top_campaigns(owner_id, limit=5)
@@ -82,7 +83,7 @@ async def build_dashboard(owner_id: int) -> dict:
             }
             for c in top_campaigns
         ],
-        "updated_at": datetime.utcnow().isoformat(),
+        "updated_at": now_utc_naive().isoformat(),
     }
 
     await analytics_cache.set_dashboard(owner_id, payload)

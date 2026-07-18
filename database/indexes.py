@@ -32,13 +32,34 @@ async def setup_indexes(db: AsyncDatabase) -> None:
         await db.account_groups.create_index([("account_id", pymongo.ASCENDING)])
         await db.account_groups.create_index([("account_id", pymongo.ASCENDING), ("group_id", pymongo.ASCENDING)], unique=True)
 
-        # 5. health & group_health
-        await db.health.create_index([("account_id", pymongo.ASCENDING)], unique=True)
-        await db.group_health.create_index([("group_id", pymongo.ASCENDING)], unique=True)
+        # 5. health_records (collection name per database/collections.py)
+        await db.health_records.create_index([("account_id", pymongo.ASCENDING)])
+        await db.health_records.create_index([("account_id", pymongo.ASCENDING), ("checked_at", pymongo.DESCENDING)])
+        await db.health_records.create_index([("owner_id", pymongo.ASCENDING)])
 
-        # 6. analytics
-        await db.analytics.create_index([("owner_id", pymongo.ASCENDING)])
-        await db.analytics.create_index([("date", pymongo.DESCENDING)])
+        # 6. forwarding_logs
+        await db.forwarding_logs.create_index([("owner_id", pymongo.ASCENDING)])
+        await db.forwarding_logs.create_index([("sent_at", pymongo.DESCENDING)])
+        await db.forwarding_logs.create_index([("campaign_id", pymongo.ASCENDING)])
+
+        # 7. analytics_daily
+        await db.analytics_daily.create_index([("owner_id", pymongo.ASCENDING)])
+        await db.analytics_daily.create_index([("date", pymongo.DESCENDING)])
+
+        # ── owner_id type migration (run once to normalize all collections) ──
+        # Existing records may have owner_id as str or int. Run this migration once
+        # to convert all to int, then remove the $or: [int, str] fallback from repos.
+        try:
+            for coll_name in [collections.ACCOUNTS, collections.CAMPAIGNS, collections.HEALTH_RECORDS, collections.FORWARDING_LOGS, collections.WORKER_RECORDS]:
+                coll = db[coll_name]
+                result = await coll.update_many(
+                    {"owner_id": {"$type": "string"}},
+                    [{"$set": {"owner_id": {"$toInt": "$owner_id"}}}]
+                )
+                if result.modified_count > 0:
+                    await log.ainfo("mongo.migrated_owner_id", collection=coll_name, count=result.modified_count)
+        except Exception as mig_err:
+            await log.awarning("mongo.owner_id_migration_skipped", error=str(mig_err))
 
         await log.ainfo("mongo.indexes.setup_complete")
     except Exception as e:

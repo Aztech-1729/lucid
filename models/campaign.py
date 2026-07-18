@@ -7,6 +7,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Optional
 
+from utils.helpers import now_utc_naive
+
 from pydantic import BaseModel, Field
 
 from core.constants import CampaignStatus
@@ -57,7 +59,7 @@ class Campaign(BaseModel):
     group_delay_seconds: int = 15                   # Delay between sending to groups
     round_delay_seconds: int = 600                  # Delay after one full rotation
     max_rounds: int = 0                             # 0 = infinite/24-7
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=now_utc_naive)
+    updated_at: datetime = Field(default_factory=now_utc_naive)
 
     model_config = {"populate_by_name": True}

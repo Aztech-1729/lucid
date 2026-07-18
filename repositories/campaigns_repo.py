@@ -7,6 +7,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Optional
 
+from utils.helpers import now_utc_naive
+
 from bson import ObjectId
 
 from core.constants import CampaignStatus
@@ -33,7 +35,7 @@ async def create(data: dict) -> Campaign:
         if existing:
             raise ValueError(f"You already have a campaign named '{existing['name']}'. Please choose a different name.")
 
-    now = datetime.utcnow()
+    now = now_utc_naive()
     data.setdefault("status", CampaignStatus.DRAFT)
     data.setdefault("stats", {})
     data.setdefault("created_at", now)
@@ -54,12 +56,7 @@ async def get(campaign_id: str) -> Optional[Campaign]:
 
 async def list_by_owner(owner_id: int) -> list[Campaign]:
     """Get all campaigns for a user."""
-    cursor = _coll().find({
-        "$or": [
-            {"owner_id": int(owner_id)},
-            {"owner_id": str(owner_id)},
-        ]
-    }).sort("created_at", -1)
+    cursor = _coll().find({"owner_id": owner_id}).sort("created_at", -1)
     campaigns = []
     async for doc in cursor:
         doc["_id"] = str(doc["_id"])
@@ -86,7 +83,7 @@ async def update_status(campaign_id: str, status: CampaignStatus) -> bool:
     """Update campaign status."""
     result = await _coll().update_one(
         {"_id": ObjectId(campaign_id)},
-        {"$set": {"status": status, "updated_at": datetime.utcnow()}},
+        {"$set": {"status": status, "updated_at": now_utc_naive()}},
     )
     return result.modified_count > 0
 
@@ -95,14 +92,14 @@ async def update_stats(campaign_id: str, stats: dict) -> bool:
     """Update cached campaign stats."""
     result = await _coll().update_one(
         {"_id": ObjectId(campaign_id)},
-        {"$set": {"stats": stats, "updated_at": datetime.utcnow()}},
+        {"$set": {"stats": stats, "updated_at": now_utc_naive()}},
     )
     return result.modified_count > 0
 
 
 async def update_fields(campaign_id: str, data: dict) -> bool:
     """Update arbitrary campaign fields."""
-    data["updated_at"] = datetime.utcnow()
+    data["updated_at"] = now_utc_naive()
     result = await _coll().update_one(
         {"_id": ObjectId(campaign_id)},
         {"$set": data},
@@ -121,7 +118,7 @@ async def duplicate(campaign_id: str, new_name: str) -> Optional[Campaign]:
     original = await get(campaign_id)
     if original is None:
         return None
-    now = datetime.utcnow()
+    now = now_utc_naive()
     new_doc = original.model_dump(by_alias=False, exclude={"id"})
     new_doc["name"] = new_name
     new_doc["status"] = CampaignStatus.DRAFT

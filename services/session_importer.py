@@ -7,6 +7,7 @@ from __future__ import annotations
 import asyncio
 import io
 import os
+import tempfile
 import zipfile
 import sqlite3
 from typing import List, Dict, Any, Optional
@@ -41,12 +42,12 @@ async def _process_session_file(owner_id: int, file_bytes: bytes, filename: str,
     
     try:
         # We need to save it temporarily as a file for SQLite
-        temp_path = f"temp_{filename}"
-        with open(temp_path, "wb") as f:
-            f.write(file_bytes)
-            
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".session") as tmp:
+            tmp.write(file_bytes)
+            temp_path = tmp.name
+
         success = await _import_single_session_file(owner_id, temp_path)
-        
+
         # Cleanup
         if os.path.exists(temp_path):
             os.remove(temp_path)
@@ -78,21 +79,21 @@ async def _process_zip_file(owner_id: int, file_bytes: bytes, update_callback) -
             for i, filename in enumerate(session_files):
                 try:
                     # Extract single file to a temp path
-                    temp_path = f"temp_{os.path.basename(filename)}"
-                    with open(temp_path, "wb") as f:
-                        f.write(z.read(filename))
-                        
+                    with tempfile.NamedTemporaryFile(delete=False, suffix=".session") as tmp:
+                        tmp.write(z.read(filename))
+                        temp_path = tmp.name
+
                     if await _import_single_session_file(owner_id, temp_path):
                         joined += 1
                     else:
                         failed += 1
-                        
+
                     # Cleanup
                     if os.path.exists(temp_path):
                         os.remove(temp_path)
                         
                 except Exception as e:
-                    log.error("session_importer.file_error", file=filename, error=str(e))
+                    await log.aerror("session_importer.file_error", file=filename, error=str(e))
                     failed += 1
 
                 # Update progress outside the try/except to avoid double-counting
@@ -141,7 +142,7 @@ async def _import_single_session_file(owner_id: int, file_path: str) -> bool:
                 # Telethon check
                 c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='sessions'")
                 if not c.fetchone():
-                    log.warning("session_importer.unknown_schema", file=file_path)
+                    await log.awarning("session_importer.unknown_schema", file=file_path)
                     return False
                 else:
                     try:
@@ -151,7 +152,7 @@ async def _import_single_session_file(owner_id: int, file_path: str) -> bool:
                             dc_id, server_address, port, auth_key = row
                             is_telethon = True
                     except sqlite3.OperationalError:
-                        log.warning("session_importer.invalid_telethon_schema", file=file_path)
+                        await log.awarning("session_importer.invalid_telethon_schema", file=file_path)
                         return False
         finally:
             conn.close()
@@ -196,7 +197,7 @@ async def _import_single_session_file(owner_id: int, file_path: str) -> bool:
             raw_string = '1' + base64.urlsafe_b64encode(data).decode('ascii')
             
         else:
-            log.warning("session_importer.missing_data", file=file_path)
+            await log.awarning("session_importer.missing_data", file=file_path)
             return False
 
         # 3. Import using existing manager
@@ -205,7 +206,7 @@ async def _import_single_session_file(owner_id: int, file_path: str) -> bool:
         return True
             
     except Exception as e:
-        log.error("session_importer.import_failed", error=str(e))
+        await log.aerror("session_importer.import_failed", error=str(e))
         if client and client.is_connected():
             await client.disconnect()
         return False

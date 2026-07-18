@@ -7,6 +7,8 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from typing import Optional
 
+from utils.helpers import now_utc_naive
+
 from database.mongo import get_db
 from pymongo import UpdateOne
 
@@ -17,7 +19,7 @@ def _coll():
 
 async def log_interaction(group_id: str, success: bool, is_flood: bool = False) -> None:
     """Record an interaction with a group and update its health metrics."""
-    now = datetime.utcnow()
+    now = now_utc_naive()
     inc = {
         "total_attempts": 1,
         "success_count": 1 if success else 0,
@@ -37,7 +39,7 @@ async def log_interaction(group_id: str, success: bool, is_flood: bool = False) 
 
 async def mark_restricted(group_id: str, reason: str = "") -> None:
     """Permanently mark a group as restricted (messaging not allowed)."""
-    now = datetime.utcnow()
+    now = now_utc_naive()
     await _coll().update_one(
         {"group_id": group_id},
         {

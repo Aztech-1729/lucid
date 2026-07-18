@@ -7,6 +7,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Optional
 
+from utils.helpers import now_utc_naive
+
 from pydantic import BaseModel, Field
 
 from core.constants import HealthState
@@ -23,7 +25,7 @@ class HealthRecord(BaseModel):
     spambot_response: Optional[str] = None  # Raw response text from SpamBot
     previous_state: Optional[HealthState] = None
     details: Optional[str] = None           # Human-readable explanation
-    checked_at: datetime = Field(default_factory=datetime.utcnow)
+    checked_at: datetime = Field(default_factory=now_utc_naive)
 
     model_config = {"populate_by_name": True}
 

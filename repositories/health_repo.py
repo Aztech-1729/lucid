@@ -7,6 +7,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Optional
 
+from utils.helpers import now_utc_naive
+
 from bson import ObjectId
 
 from database import collections
@@ -20,7 +22,7 @@ def _coll():
 
 async def insert_record(record: dict) -> HealthRecord:
     """Insert a new health check record."""
-    record.setdefault("checked_at", datetime.utcnow())
+    record.setdefault("checked_at", now_utc_naive())
     result = await _coll().insert_one(record)
     record["_id"] = str(result.inserted_id)
     return HealthRecord.model_validate(record)
@@ -88,7 +90,7 @@ async def count_by_state(owner_id: int) -> dict[str, int]:
 
 async def cleanup_old_records(days: int = 90) -> int:
     """Delete health records older than N days. Returns deleted count."""
-    cutoff = datetime.utcnow()
+    cutoff = now_utc_naive()
     from datetime import timedelta
     cutoff = cutoff - timedelta(days=days)
     result = await _coll().delete_many({"checked_at": {"$lt": cutoff}})

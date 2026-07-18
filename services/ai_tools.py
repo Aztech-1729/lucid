@@ -11,6 +11,7 @@ import json
 
 from repositories import accounts_repo
 from repositories import campaigns_repo
+from utils.helpers import now_utc_naive
 
 # ── 1. Tool Schemas ──────────────────────────────────────────
 
@@ -327,7 +328,7 @@ async def execute_get_system_health(user_id: int, kwargs: dict) -> str:
         "action_queue_depth": 0,
         "average_send_latency_ms": 150,
         "error_rate_last_hour_percent": 0.0,
-        "last_health_check_at": datetime.utcnow().isoformat() + "Z"
+        "last_health_check_at": now_utc_naive().isoformat() + "Z"
     }
     return json.dumps(result)
 
@@ -337,23 +338,25 @@ async def execute_get_system_health(user_id: int, kwargs: dict) -> str:
 # that the AI service will catch and pass to the Action Queue.
 
 async def propose_delete_account(user_id: int, kwargs: dict) -> str:
-    """Propose an account deletion. Returns an action_request to the system."""
+    """Propose an account deletion. Returns an action_request for user confirmation."""
     phone = kwargs.get("phone")
     if not phone:
         return json.dumps({"error": "Phone number is required."})
-        
+
     accounts = await accounts_repo.list_by_owner(user_id)
     target = next((a for a in accounts if a.phone == phone), None)
-    
+
     if not target:
         return json.dumps({"error": f"You do not own an account with phone number {phone}."})
-        
-    from telegram.client_pool import client_pool
-    await client_pool.evict(target.id)
-    await accounts_repo.delete(target.id)
+
     return json.dumps({
-        "success": True,
-        "message": f"Account {phone} deleted successfully."
+        "_action_request": True,
+        "action_type": "delete_account",
+        "description": f"Delete account {phone} ({target.name or 'Unknown'})",
+        "payload": {
+            "account_id": str(target.id),
+            "phone": phone,
+        }
     })
 
 async def propose_create_campaign(user_id: int, kwargs: dict) -> str:

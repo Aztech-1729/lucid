@@ -12,6 +12,8 @@ from __future__ import annotations
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
+from utils.helpers import now_utc_naive
+
 
 def _bar(value: float, total: float, length: int = 12) -> str:
     """Create a progress bar using Unicode block characters."""
@@ -59,7 +61,7 @@ def _time_ago(iso_str: str | None) -> str:
         return "N/A"
     try:
         dt = datetime.fromisoformat(iso_str)
-        diff = datetime.utcnow() - dt
+        diff = now_utc_naive() - dt
         seconds = int(diff.total_seconds())
         if seconds < 60:
             return f"{seconds}s ago"

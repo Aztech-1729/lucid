@@ -12,6 +12,8 @@ dependencies = [
     "structlog>=25.0",
     "cryptography>=44.0",
     "python-dotenv>=1.1",
+    "orjson>=3.10",
+    "openai>=1.55",
 ]
 
 [project.optional-dependencies]

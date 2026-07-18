@@ -15,7 +15,7 @@ from core.constants import CRASH_RECOVERY_DELAY, WorkerStatus
 from core.logging import get_logger
 from database import collections
 from database.mongo import get_db
-from utils.helpers import generate_id
+from utils.helpers import generate_id, now_utc_naive
 from utils.metrics import WORKER_CRASHES, WORKER_RUNS, metrics
 from workers import (
     analytics_worker,
@@ -146,11 +146,11 @@ class WorkerManager:
                         "status": status,
                         "crash_reason": crash_reason,
                         "restart_count": restart_count,
-                        "last_heartbeat": datetime.utcnow(),
-                        "updated_at": datetime.utcnow(),
+                        "last_heartbeat": now_utc_naive(),
+                        "updated_at": now_utc_naive(),
                     },
                     "$setOnInsert": {
-                        "created_at": datetime.utcnow(),
+                        "created_at": now_utc_naive(),
                     },
                 },
                 upsert=True,

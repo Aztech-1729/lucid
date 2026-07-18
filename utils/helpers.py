@@ -18,8 +18,13 @@ def generate_id() -> str:
 
 
 def now_utc() -> datetime:
-    """Return the current UTC datetime."""
+    """Return the current UTC datetime (timezone-aware)."""
     return datetime.now(timezone.utc)
+
+
+def now_utc_naive() -> datetime:
+    """Return the current UTC datetime without tzinfo (compat with naive-only code)."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 def chunk_list(items: Sequence[T], chunk_size: int) -> list[list[T]]:

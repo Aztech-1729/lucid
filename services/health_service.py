@@ -25,6 +25,7 @@ from core.logging import get_logger
 from models.account import Account
 from models.health import HealthRecord
 from repositories import accounts_repo, health_repo
+from utils.helpers import now_utc_naive
 
 log = get_logger("health_service")
 
@@ -74,7 +75,7 @@ def compute_health_score(
     # FloodWait frequency factor — more floods = lower score
     recent_floods = sum(
         1 for f in account.flood_wait_history
-        if f.occurred_at > datetime.utcnow() - timedelta(days=7)
+        if f.occurred_at > now_utc_naive() - timedelta(days=7)
     )
     flood_factor = max(0.0, 1.0 - (recent_floods * 0.15))
 
@@ -86,7 +87,7 @@ def compute_health_score(
         success_factor = 1.0  # New account gets full score
 
     # Account age factor (older = more trusted)
-    age_days = (datetime.utcnow() - account.created_at).days
+    age_days = (now_utc_naive() - account.created_at).days
     if age_days > 365:
         age_factor = 1.0
     elif age_days > 90:
@@ -163,7 +164,7 @@ async def evaluate_account(
 
     # Schedule next check
     interval = settings.health_check_interval_seconds
-    next_check = datetime.utcnow() + timedelta(seconds=interval)
+    next_check = now_utc_naive() + timedelta(seconds=interval)
     await accounts_repo.set_next_check(account.id, next_check)
 
     # Log state changes

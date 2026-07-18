@@ -51,7 +51,7 @@ async def bulk_remove_folders(user_id: int, progress_callback: Callable[[int, in
                     
                 success += 1
         except Exception as e:
-            log.warning("rm_folders_failed", account_id=account.id, error=str(e))
+            await log.awarning("rm_folders_failed", account_id=account.id, error=str(e))
             failed += 1
             
         await progress_callback(success, failed, total_accounts)
@@ -102,7 +102,7 @@ async def bulk_join_folder(user_id: int, slug: str, progress_callback: Callable[
                     
                 success += 1
         except Exception as e:
-            log.warning("bulk_join_folder_failed", account_id=account.id, error=str(e))
+            await log.awarning("bulk_join_folder_failed", account_id=account.id, error=str(e))
             failed += 1
             
         await progress_callback(render_autojoin_progress(success, failed, total_accounts, "Processing", 0, total_accounts))

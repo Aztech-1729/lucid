@@ -7,6 +7,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Optional
 
+from utils.helpers import now_utc_naive
+
 from pydantic import BaseModel, Field
 
 
@@ -21,7 +23,7 @@ class ForwardingLog(BaseModel):
     success: bool
     error_message: Optional[str] = None
     flood_wait_seconds: Optional[int] = None
-    sent_at: datetime = Field(default_factory=datetime.utcnow)
+    sent_at: datetime = Field(default_factory=now_utc_naive)
 
     model_config = {"populate_by_name": True}
 
@@ -62,7 +64,7 @@ class AnalyticsDaily(BaseModel):
     active_campaigns: int = 0
     top_account_id: Optional[str] = None
     top_campaign_id: Optional[str] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=now_utc_naive)
 
     model_config = {"populate_by_name": True}
 
@@ -85,7 +87,7 @@ class AnalyticsWeekly(BaseModel):
     flood_events: int = 0
     active_accounts: int = 0
     active_campaigns: int = 0
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=now_utc_naive)
 
     model_config = {"populate_by_name": True}
 

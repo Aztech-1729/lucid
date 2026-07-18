@@ -5,14 +5,17 @@ Handles chat history (Redis) and OpenAI API interaction with strict user isolati
 """
 
 import json
+import os
 from typing import List, Dict, Any, Optional
 from openai import AsyncOpenAI
-import os
 
 from core.config import get_settings
+from core.logging import get_logger
 from cache.redis_client import cache_get, cache_set, make_key
 from core.constants import RedisKeys
 from services.ai_tools import TOOLS, TOOL_REGISTRY
+
+log = get_logger("ai_service")
 
 # We initialize the client dynamically to ensure it picks up changes
 def get_ai_client() -> Optional[AsyncOpenAI]:
@@ -77,12 +80,15 @@ async def chat_with_ai(user_id: int, user_message: str) -> str:
     
     # System prompt - always ensure the latest agent.md is used
     system_content = "You are the Lucid Ads Personal AI Assistant."
+    agent_path = os.path.join(os.path.dirname(__file__), "..", "agent.md") if "services" in __file__ else "agent.md"
     try:
         with open("agent.md", "r", encoding="utf-8") as f:
             system_content = f.read()
-    except Exception:
-        pass
-        
+    except FileNotFoundError:
+        await log.awarning("ai.agent_md_not_found", path="agent.md")
+    except Exception as exc:
+        await log.awarning("ai.agent_md_read_error", error=str(exc))
+
     if not history:
         history.append({"role": "system", "content": system_content})
     elif history[0]["role"] == "system":
@@ -93,10 +99,13 @@ async def chat_with_ai(user_id: int, user_message: str) -> str:
     history.append({"role": "user", "content": user_message})
     
     try:
+        from core.config import get_settings
+        settings = get_settings()
+
         MAX_TURNS = 5
         for _ in range(MAX_TURNS):
             response = await client.chat.completions.create(
-                model="deepseek-v4-flash-free",
+                model=settings.ai_model,
                 messages=history,
                 tools=TOOLS,
                 tool_choice="auto"

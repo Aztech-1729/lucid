@@ -10,6 +10,8 @@ import asyncio
 from collections import defaultdict
 from datetime import datetime
 
+from utils.helpers import now_utc_naive
+
 
 class Metrics:
     """Simple in-memory counter registry."""
@@ -17,7 +19,7 @@ class Metrics:
     def __init__(self) -> None:
         self._counters: dict[str, int] = defaultdict(int)
         self._lock = asyncio.Lock()
-        self._started_at = datetime.utcnow()
+        self._started_at = now_utc_naive()
 
     async def increment(self, name: str, value: int = 1) -> None:
         """Increment a counter."""
@@ -32,14 +34,14 @@ class Metrics:
         """Return all counters as a dictionary."""
         async with self._lock:
             result = dict(self._counters)
-        result["uptime_seconds"] = int((datetime.utcnow() - self._started_at).total_seconds())
+        result["uptime_seconds"] = int((now_utc_naive() - self._started_at).total_seconds())
         return result
 
     async def reset(self) -> None:
         """Reset all counters."""
         async with self._lock:
             self._counters.clear()
-            self._started_at = datetime.utcnow()
+            self._started_at = now_utc_naive()
 
 
 # ── Well-known counter names ────────────────────────────────

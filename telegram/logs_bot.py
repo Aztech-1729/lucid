@@ -25,7 +25,7 @@ async def init_logs_bot() -> None:
     settings = get_settings()
 
     if not settings.logs_bot_token:
-        log.info("logs_bot.disabled", reason="No LOGS_BOT_TOKEN provided")
+        await log.ainfo("logs_bot.disabled", reason="No LOGS_BOT_TOKEN provided")
         return
 
     _logs_bot = TelegramClient(
@@ -140,7 +140,7 @@ async def init_logs_bot() -> None:
 
     await _logs_bot.start(bot_token=settings.logs_bot_token) # type: ignore
     me = await _logs_bot.get_me()
-    log.info("logs_bot.started", bot_username=me.username)
+    await log.ainfo("logs_bot.started", bot_username=me.username)
 
 async def send_campaign_start_log(owner_id: int, campaign: Any) -> None:
     """Send a notification that a campaign started with details."""
@@ -168,7 +168,7 @@ async def send_campaign_start_log(owner_id: int, campaign: Any) -> None:
     try:
         await _logs_bot.send_message(owner_id, text, parse_mode="html")
     except Exception as e:
-        log.error("logs_bot.send_error", owner_id=owner_id, error=str(e))
+        await log.aerror("logs_bot.send_error", owner_id=owner_id, error=str(e))
 
 async def send_campaign_pause_log(owner_id: int, campaign_name: str) -> None:
     """Send a notification that a campaign was paused."""
@@ -184,7 +184,7 @@ async def send_campaign_pause_log(owner_id: int, campaign_name: str) -> None:
     try:
         await _logs_bot.send_message(owner_id, text, parse_mode="html")
     except Exception as e:
-        log.error("logs_bot.send_error", owner_id=owner_id, error=str(e))
+        await log.aerror("logs_bot.send_error", owner_id=owner_id, error=str(e))
 
 async def send_ad_success_log(owner_id: int, campaign_name: str, account_phone: str, group_id: int, message_link: str) -> None:
     """Safely queue a success log instead of instant sending."""
@@ -211,4 +211,4 @@ async def send_batch_summary(owner_id: int, campaign_name: str, batch_id: str, c
     try:
         await _logs_bot.send_message(owner_id, text, buttons=buttons, parse_mode="html")
     except Exception as e:
-        log.error("logs_bot.send_batch_error", owner_id=owner_id, error=str(e))
+        await log.aerror("logs_bot.send_batch_error", owner_id=owner_id, error=str(e))

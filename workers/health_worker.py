@@ -16,6 +16,7 @@ from core.logging import get_logger
 from repositories import accounts_repo
 from services import health_service, notification_service
 from telegram.client_pool import client_pool
+from utils.helpers import now_utc_naive
 from utils.metrics import HEALTH_CHECKS, metrics
 
 log = get_logger("health_worker")
@@ -28,7 +29,7 @@ async def run_health_check_cycle() -> None:
     Picks accounts due for check, contacts SpamBot for each,
     evaluates health, and updates caches.
     """
-    accounts = await accounts_repo.get_due_for_check(limit=500)
+    accounts = await accounts_repo.get_due_for_check(limit=50)
 
     if not accounts:
         return
@@ -39,9 +40,9 @@ async def run_health_check_cycle() -> None:
     sem = asyncio.Semaphore(10)
 
     async def _safe_check(account, offset: float):
-        # Stagger startups slightly to avoid identical millisecond requests
+        # Stagger startups to avoid burst — clamp at 30s max offset
         if offset > 0:
-            await asyncio.sleep(offset)
+            await asyncio.sleep(min(offset, 30.0))
             
         async with sem:
             try:
@@ -57,7 +58,7 @@ async def run_health_check_cycle() -> None:
                 # ALWAYS schedule the next check, even if the check fails
                 from datetime import datetime, timedelta
                 settings = get_settings()
-                next_check = datetime.utcnow() + timedelta(seconds=settings.health_check_interval_seconds)
+                next_check = now_utc_naive() + timedelta(seconds=settings.health_check_interval_seconds)
                 await accounts_repo.set_next_check(account.id, next_check)
 
     tasks = []
