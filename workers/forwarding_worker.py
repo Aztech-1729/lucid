@@ -14,7 +14,7 @@ from utils.helpers import now_utc_naive
 
 from core.config import get_settings
 from core.logging import get_logger
-from repositories import campaigns_repo, account_groups_repo
+from repositories import accounts_repo, campaigns_repo, account_groups_repo
 from services import forwarding_service, rotation_service
 from telegram.client_pool import client_pool
 from utils.metrics import WORKER_RUNS, metrics
@@ -115,10 +115,37 @@ async def execute_single_round(campaign) -> None:
     if not campaign.account_ids or not campaign.group_ids:
         return
 
+    # 1. Verify all campaign accounts actually exist in local DB
+    #    (campaigns may reference accounts that were copied from another environment)
+    valid_account_ids = []
+    for aid in campaign.account_ids:
+        acc = await accounts_repo.get(aid)
+        if acc is not None:
+            valid_account_ids.append(aid)
+        else:
+            await log.awarning(
+                "forwarding_worker.account_not_found",
+                campaign_id=campaign.id,
+                account_id=aid,
+            )
+
+    if not valid_account_ids:
+        await log.awarning(
+            "forwarding_worker.no_valid_accounts",
+            campaign_id=campaign.id,
+        )
+        return
+
+    # 2. Clean up orphan references from campaign
+    if len(valid_account_ids) != len(campaign.account_ids):
+        from repositories import campaigns_repo as cmp_repo
+        await cmp_repo.update_fields(campaign.id, {"account_ids": valid_account_ids})
+        campaign.account_ids = valid_account_ids
+
     # Select accounts using rotation weights
     selected = await rotation_service.select_accounts(
-        campaign.account_ids,
-        count=len(campaign.account_ids),
+        valid_account_ids,
+        count=len(valid_account_ids),
     )
 
     if not selected:
@@ -218,15 +245,24 @@ async def forward_for_account(
         account = await acc_repo.get(account_id)
         health_score = account.health_score if account else 100
 
-        async with client_pool.acquire(account_id) as client:
-            return await forwarding_service.forward_to_groups(
-                client=client,
-                account_id=account_id,
-                campaign=campaign,
-                groups=groups,
-                delay=delay,
-                health_score=health_score,
-            )
+        # Timeout to prevent hanging on accounts with invalid sessions
+        async with asyncio.timeout(60):
+            async with client_pool.acquire(account_id) as client:
+                return await forwarding_service.forward_to_groups(
+                    client=client,
+                    account_id=account_id,
+                    campaign=campaign,
+                    groups=groups,
+                    delay=delay,
+                    health_score=health_score,
+                )
+    except asyncio.TimeoutError:
+        await log.awarning(
+            "forwarding_worker.account_timeout",
+            account_id=account_id,
+            groups=len(groups),
+        )
+        return {"success": 0, "failed": len(groups), "total": len(groups)}
     except Exception as exc:
         await log.awarning(
             "forwarding_worker.account_error",
