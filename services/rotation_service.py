@@ -10,7 +10,7 @@ from __future__ import annotations
 import random
 from datetime import datetime, timedelta
 
-from cache.redis_client import get_redis, make_key
+from cache.redis_client import get_redis, make_key as _make_key
 from utils.helpers import now_utc_naive
 from core.constants import AccountStatus, RedisKeys, ROTATION_WEIGHT_FLOOD, ROTATION_WEIGHT_HEALTH, ROTATION_WEIGHT_SUCCESS
 from core.logging import get_logger
@@ -92,7 +92,7 @@ async def update_all_weights(owner_id: int | None = None) -> int:
         accounts = await accounts_repo.get_all_active()
 
     r = get_redis()
-    key = make_key(RedisKeys.ACCOUNT_ROTATION_WEIGHTS)
+    key = _make_key(RedisKeys.ACCOUNT_ROTATION_WEIGHTS)
     updated = 0
 
     for account in accounts:
@@ -117,7 +117,7 @@ async def select_accounts(
         return []
 
     r = get_redis()
-    key = make_key(RedisKeys.ACCOUNT_ROTATION_WEIGHTS)
+    key = _make_key(RedisKeys.ACCOUNT_ROTATION_WEIGHTS)
 
     # Get weights from Redis
     weights: dict[str, float] = {}
@@ -126,11 +126,11 @@ async def select_accounts(
         weights[aid] = float(raw) if raw else 0.5
 
     # Filter out zero-weight accounts AND accounts on FloodWait cooldown
-    from cache.redis_client import cache_get, make_key
+    from cache.redis_client import cache_get
     eligible = {}
     for aid, w in weights.items():
         if w > 0:
-            flood_key = make_key(RedisKeys.FLOOD_LOCK, account_id=aid)
+            flood_key = _make_key(RedisKeys.FLOOD_LOCK, account_id=aid)
             if await cache_get(flood_key):
                 await log.ainfo("rotation.skipping_floodwait", account_id=aid)
                 continue
