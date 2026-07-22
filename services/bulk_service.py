@@ -5,15 +5,11 @@ Bulk Account Manager Service — Executes bulk actions across all loaded account
 from __future__ import annotations
 
 import asyncio
-from typing import Optional
 
-from telethon.tl.functions.account import UpdateProfileRequest, UpdateUsernameRequest, UpdatePasswordSettingsRequest
+from telethon.tl.functions.account import UpdateProfileRequest, UpdateUsernameRequest
 from telethon.tl.functions.photos import UploadProfilePhotoRequest, DeletePhotosRequest
-from telethon.tl.functions.messages import DeleteHistoryRequest, GetDialogsRequest
-from telethon.tl.functions.channels import LeaveChannelRequest
 from telethon.tl.functions.folders import EditPeerFoldersRequest
 from telethon.tl.types import InputFolderPeer
-from telethon.errors import FloodWaitError
 
 from core.logging import get_logger
 from repositories import accounts_repo

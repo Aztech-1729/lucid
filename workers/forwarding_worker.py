@@ -8,7 +8,6 @@ and executes their group forwarding round-by-round.
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime
 
 from utils.helpers import now_utc_naive
 

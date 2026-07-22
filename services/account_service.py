@@ -4,7 +4,6 @@ Account service — Account CRUD, validation, and lifecycle management.
 
 from __future__ import annotations
 
-from typing import Optional
 
 from cache import account_cache, dashboard_cache
 from core.constants import AccountStatus

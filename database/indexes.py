@@ -2,7 +2,6 @@
 MongoDB Index Setup
 """
 
-from typing import Any
 from pymongo.asynchronous.database import AsyncDatabase
 import pymongo
 from core.logging import get_logger
@@ -50,7 +49,7 @@ async def setup_indexes(db: AsyncDatabase) -> None:
         # Existing records may have owner_id as str or int. Run this migration once
         # to convert all to int, then remove the $or: [int, str] fallback from repos.
         try:
-            for coll_name in [collections.ACCOUNTS, collections.CAMPAIGNS, collections.HEALTH_RECORDS, collections.FORWARDING_LOGS, collections.WORKER_RECORDS]:
+            for coll_name in ["accounts", "campaigns", "health_records", "forwarding_logs", "worker_records"]:
                 coll = db[coll_name]
                 result = await coll.update_many(
                     {"owner_id": {"$type": "string"}},

@@ -4,13 +4,10 @@ Group Health repository — Tracks performance and safety of target groups.
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
-from typing import Optional
 
 from utils.helpers import now_utc_naive
 
 from database.mongo import get_db
-from pymongo import UpdateOne
 
 COLLECTION = "group_health"
 

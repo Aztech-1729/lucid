@@ -11,8 +11,10 @@ from core.config import get_settings
 from core.logging import get_logger, setup_logging
 from database.mongo import init_mongo
 from cache.redis_client import init_redis
+from core.logging import get_logger
 
 log = get_logger("startup")
+webhook_runner = None
 
 
 async def startup() -> None:
@@ -77,10 +79,15 @@ async def startup() -> None:
     from services.auth_service import cleanup_auth_sessions
     await cleanup_auth_sessions()
 
-    # 6. Launch workers
+    # 6. Launch workers & webhooks
     await log.ainfo("startup.workers_launching")
     from workers.scheduler_worker import worker_manager
     await worker_manager.start_all()
+    
+    from app.webhook_server import start_webhook_server
+    global webhook_runner
+    webhook_runner = await start_webhook_server()
+    
     await log.ainfo("startup.workers_running")
 
     # 7. Start bot

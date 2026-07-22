@@ -5,7 +5,7 @@ Authentication service for adding accounts via Phone Number & OTP.
 from __future__ import annotations
 
 import time
-from typing import Optional, Dict, Any
+from typing import Any
 
 from telethon import TelegramClient
 from telethon.sessions import StringSession

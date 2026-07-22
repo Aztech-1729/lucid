@@ -10,10 +10,7 @@ import os
 import tempfile
 import zipfile
 import sqlite3
-from typing import List, Dict, Any, Optional
 
-from telethon import TelegramClient
-from telethon.sessions import StringSession
 
 from core.config import get_settings
 from core.logging import get_logger

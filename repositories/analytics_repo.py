@@ -9,11 +9,9 @@ from typing import Optional
 
 from utils.helpers import now_utc_naive
 
-from bson import ObjectId
 
 from database import collections
 from database.mongo import get_db
-from models.analytics import AnalyticsDaily, AnalyticsWeekly, ForwardingLog
 
 
 def _logs():

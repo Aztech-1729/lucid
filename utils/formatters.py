@@ -4,7 +4,7 @@ Text, number, and date formatting helpers for Telegram message rendering.
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from utils.helpers import now_utc_naive
 

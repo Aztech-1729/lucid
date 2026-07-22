@@ -17,8 +17,7 @@ from cache import account_cache, analytics_cache, campaign_cache, dashboard_cach
 from core.constants import CB
 from core.logging import get_logger
 from telegram import keyboards, menus
-from telegram.states import get_context, pop_screen, push_screen, set_context
-from utils.validators import parse_callback_data
+from telegram.states import get_context, push_screen, set_context
 
 log = get_logger("callbacks")
 
@@ -312,7 +311,7 @@ async def on_campaign_set_rounds(event: events.CallbackQuery.Event, action: str,
 
 async def on_campaign_manage_accounts(event: events.CallbackQuery.Event, campaign_id: str, page: int = 1) -> None:
     """Display the accounts management screen for a campaign with pagination."""
-    from cache import account_cache, campaign_cache
+    from cache import account_cache
 
     data = await account_cache.get_page(event.sender_id, page)
     if not data:
@@ -1017,7 +1016,7 @@ async def on_confirm_yes(event: events.CallbackQuery.Event, action: str, target_
             text = "⏸️ Campaign paused."
         elif action == "resume_campaign":
             # (Lock removed)
-            from repositories import users_repo, campaigns_repo
+            from repositories import users_repo
             from core.config import get_settings
             
             user = await users_repo.get(event.sender_id)
@@ -1297,6 +1296,87 @@ async def on_bulk_action(event: events.CallbackQuery.Event, action: str) -> None
 
 # ── Callback Router ─────────────────────────────────────────
 
+async def on_buy_plan(event: events.CallbackQuery.Event, plan: str) -> None:
+    """Show payment methods for the selected plan."""
+    await event.answer()
+    price = "$25" if plan == "weekly" else "$55"
+    text = (
+        f"<b>🛒 Purchase Plan</b>\n\n"
+        f"<b>Selected:</b> {plan.capitalize()} Pass\n"
+        f"<b>Price:</b> {price}\n\n"
+        f"<i>Please select your preferred payment method below.</i>"
+    )
+    from telegram import keyboards
+    await event.edit(text, buttons=keyboards.payment_method_keyboard(plan), parse_mode="html")
+
+async def on_pay_method_select(event: events.CallbackQuery.Event, plan: str, method: str) -> None:
+    """Generate invoice based on payment method."""
+    await event.answer()
+    
+    amount_usd = 25 if plan == "weekly" else 55
+    
+    import uuid
+    order_id = str(uuid.uuid4().hex)
+    user_id = event.sender_id
+    
+    from services.payment_service import create_zapupi_invoice, create_oxapay_invoice
+    from models.invoice import Invoice
+    from repositories.invoice_repo import invoice_repo
+    
+    await event.edit("⏳ <b>Generating Invoice...</b>", parse_mode="html")
+    
+    if method == "upi":
+        pay_url = await create_zapupi_invoice(order_id, amount_usd, user_id)
+        gateway = "zapupi"
+    else:
+        pay_url = await create_oxapay_invoice(order_id, amount_usd, user_id)
+        gateway = "oxapay"
+        
+    if not pay_url:
+        from telethon.tl.custom import Button
+        await event.edit("❌ <b>Failed to generate payment link. Please try again later.</b>", parse_mode="html", buttons=[[Button.inline("← Back", b"pay:options")]])
+        return
+
+    # Save to database
+    inv = Invoice(order_id=order_id, user_id=user_id, plan=plan.upper(), amount=str(amount_usd), gateway=gateway)
+    await invoice_repo.create(inv)
+    
+    text = (
+        f"<b>🧾 Invoice Created</b>\n"
+        f"━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"<b>Order ID:</b> <code>{order_id}</code>\n"
+        f"<b>Plan:</b> {plan.capitalize()} Pass\n"
+        f"<b>Amount:</b> ${amount_usd}\n"
+        f"<b>Method:</b> {'UPI (INR)' if method == 'upi' else 'Crypto (OxaPay)'}\n\n"
+        f"<i>{'Scan the QR code below to pay.' if method == 'upi' else 'Click the button below to pay.'} Your plan will be automatically activated once payment is confirmed.</i>"
+    )
+    from telegram import keyboards
+    if method == "upi":
+        # Generate QR code for ZapUPI payment URL
+        import urllib.parse
+        encoded_url = urllib.parse.quote(pay_url)
+        qr_url = f"https://api.qrserver.com/v1/create-qr-code/?size=500x500&data={encoded_url}"
+        
+        await event.delete()
+        await event.respond(file=qr_url, message=text, buttons=keyboards.invoice_keyboard(pay_url, show_link=False), parse_mode="html")
+    else:
+        await event.edit(text, buttons=keyboards.invoice_keyboard(pay_url, show_link=True), parse_mode="html")
+
+async def on_invoice_cancel(event: events.CallbackQuery.Event) -> None:
+    """Cancel an invoice."""
+    await event.answer("Invoice Canceled")
+    # Delete the photo/text message
+    await event.delete()
+    
+    from telegram import keyboards
+    text = (
+        "<b>💎 Premium Plans</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━\n\n"
+        "Select your preferred billing cycle to continue:"
+    )
+    await event.respond(text, buttons=keyboards.paywall_keyboard(), parse_mode="html")
+
+
 async def route_callback(event: events.CallbackQuery.Event) -> None:
     """
     Route a callback query to the appropriate handler.
@@ -1463,6 +1543,14 @@ async def route_callback(event: events.CallbackQuery.Event) -> None:
         # e.g. bulk:name, bulk:2fa:set
         action = data[5:]
         await on_bulk_action(event, action)
+    elif data.startswith("buy:"):
+        plan = data.split(":")[1]
+        await on_buy_plan(event, plan)
+    elif data.startswith("pay:") and len(data.split(":")) == 3:
+        _, plan, method = data.split(":")
+        await on_pay_method_select(event, plan, method)
+    elif data == "invoice:cancel":
+        await on_invoice_cancel(event)
     elif data == "pay:profile":
         await on_pay_profile(event)
     elif data == "pay:options":

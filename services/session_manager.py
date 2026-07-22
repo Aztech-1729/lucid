@@ -7,7 +7,6 @@ Uses Fernet symmetric encryption (compatible with existing accounts).
 
 from __future__ import annotations
 
-from typing import Optional
 
 from cryptography.fernet import Fernet
 from telethon import TelegramClient

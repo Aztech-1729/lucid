@@ -7,8 +7,7 @@ automatic actions based on thresholds.
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
-from typing import Optional
+from datetime import timedelta
 
 from cache import health_cache
 from core.config import get_settings

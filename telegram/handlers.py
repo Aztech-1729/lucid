@@ -8,7 +8,6 @@ Handles: phone auth OTP, campaign creation, bulk actions, session uploads.
 from __future__ import annotations
 
 from telethon import events
-from telethon.events import NewMessage
 
 from core.constants import CB
 from core.logging import get_logger

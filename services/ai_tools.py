@@ -6,7 +6,6 @@ Crucially, the `user_id` is always injected by the wrapper, never by the AI, ens
 """
 
 from typing import Dict, Any, Callable, Coroutine
-from pydantic import BaseModel
 import json
 
 from repositories import accounts_repo
@@ -319,7 +318,6 @@ async def execute_get_campaign_detail(user_id: int, kwargs: dict) -> str:
 
 
 async def execute_get_system_health(user_id: int, kwargs: dict) -> str:
-    from datetime import datetime
     result = {
         "status": "OPERATIONAL",
         "redis_connected": True,

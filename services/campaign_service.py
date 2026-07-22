@@ -4,8 +4,6 @@ Campaign service — Campaign lifecycle management.
 
 from __future__ import annotations
 
-from datetime import datetime
-from typing import Optional
 
 from cache import campaign_cache, dashboard_cache
 from core.constants import CampaignStatus

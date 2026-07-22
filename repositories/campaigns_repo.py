@@ -4,7 +4,6 @@ Campaigns repository — CRUD operations for the campaigns collection.
 
 from __future__ import annotations
 
-from datetime import datetime
 from typing import Optional
 
 from utils.helpers import now_utc_naive

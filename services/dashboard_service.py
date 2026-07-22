@@ -7,7 +7,6 @@ analytics data. Writes to dashboard cache for instant callback reads.
 
 from __future__ import annotations
 
-from datetime import datetime
 
 from cache import dashboard_cache
 from core.logging import get_logger

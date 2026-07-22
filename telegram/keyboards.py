@@ -631,39 +631,49 @@ def profile_keyboard() -> list[list[Button]]:
     ]
 
 def paywall_keyboard(user=None) -> list[list[Button]]:
-    """Subscription options linking to the admin."""
-    from core.config import get_settings
-    settings = get_settings()
-    admin_url = f"https://t.me/{settings.admin_username.replace('@', '')}"
-    
-    # URL encode the base text and append user details
-    import urllib.parse
-    base_text = "I want to buy the {plan} Pass for ${price}.\n\nMy details:\nID: {uid}\nUsername: @{uname}"
-    uid = user.user_id if user else "Unknown"
-    uname = user.username if user and user.username else "NoUsername"
-    
-    w_text = urllib.parse.quote(base_text.format(plan="Weekly", price="10", uid=uid, uname=uname))
-    m_text = urllib.parse.quote(base_text.format(plan="Monthly", price="35", uid=uid, uname=uname))
-    y_text = urllib.parse.quote(base_text.format(plan="Yearly", price="250", uid=uid, uname=uname))
-    
+    """Subscription options."""
     from telethon.tl.types import KeyboardButtonStyle
     
-    btn_w = Button.url(_b("Buy Weekly - $10"), f"{admin_url}?text={w_text}")
+    btn_w = Button.inline(_b("Buy Weekly - $25"), b"buy:weekly")
     btn_w.style = KeyboardButtonStyle(bg_success=True, icon=5409048419211682843)
     
-    btn_m = Button.url(_b("Buy Monthly - $35"), f"{admin_url}?text={m_text}")
+    btn_m = Button.inline(_b("Buy Monthly - $55"), b"buy:monthly")
     btn_m.style = KeyboardButtonStyle(bg_primary=True, icon=5409048419211682843)
-    
-    btn_y = Button.url(_b("Buy Yearly - $250"), f"{admin_url}?text={y_text}")
-    btn_y.style = KeyboardButtonStyle(bg_danger=True, icon=5409048419211682843)
     
     return [
         [btn_w],
         [btn_m],
-        [btn_y],
-        [Button.inline(_b("← Back"), "pay:profile", style="danger")]
+        [Button.inline(_b("← Back"), b"pay:profile", style="danger")]
     ]
 
+def payment_method_keyboard(plan: str) -> list[list[Button]]:
+    """Choose payment method."""
+    from telethon.tl.types import KeyboardButtonStyle
+    
+    btn_upi = Button.inline(_b("Pay via UPI (INR)"), data=f"pay:{plan}:upi".encode("utf-8"))
+    btn_upi.style = KeyboardButtonStyle(bg_success=True)
+    
+    btn_crypto = Button.inline(_b("Pay via Crypto (OxaPay)"), data=f"pay:{plan}:crypto".encode("utf-8"))
+    btn_crypto.style = KeyboardButtonStyle(bg_primary=True)
+    
+    return [
+        [btn_upi],
+        [btn_crypto],
+        [Button.inline(_b("← Cancel"), b"pay:profile", style="danger")]
+    ]
+
+def invoice_keyboard(pay_url: str, show_link: bool = True) -> list[list[Button]]:
+    """Invoice with link and cancel."""
+    from telethon.tl.types import KeyboardButtonStyle
+    
+    buttons = []
+    if show_link:
+        btn_pay = Button.url(_b("💸 Pay Now"), pay_url)
+        btn_pay.style = KeyboardButtonStyle(bg_success=True)
+        buttons.append([btn_pay])
+        
+    buttons.append([Button.inline(_b("❌ Cancel Invoice"), b"invoice:cancel", style="danger")])
+    return buttons
 def admin_panel_keyboard() -> list[list[Button]]:
     """Admin panel actions."""
     return [

@@ -7,7 +7,6 @@ bans, campaign completions, and other events.
 
 from __future__ import annotations
 
-from typing import Optional
 
 from core.constants import HEALTH_EMOJI, HealthState
 from core.logging import get_logger

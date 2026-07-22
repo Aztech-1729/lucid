@@ -36,10 +36,15 @@ async def shutdown() -> None:
     except Exception as exc:
         await log.awarning("shutdown.bots_error", error=str(exc))
 
-    # 2. Stop workers
+    # 2. Stop workers & webhooks
     try:
         from workers.scheduler_worker import worker_manager
         await worker_manager.stop_all()
+        
+        import app.startup
+        if hasattr(app.startup, "webhook_runner"):
+            await app.startup.webhook_runner.cleanup()
+            
         await log.ainfo("shutdown.workers_stopped")
     except Exception as exc:
         await log.awarning("shutdown.workers_error", error=str(exc))

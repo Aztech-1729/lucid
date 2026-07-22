@@ -53,7 +53,7 @@ async def run_health_check_cycle() -> None:
                 )
             finally:
                 # ALWAYS schedule the next check, even if the check fails
-                from datetime import datetime, timedelta
+                from datetime import timedelta
                 settings = get_settings()
                 next_check = now_utc_naive() + timedelta(seconds=settings.health_check_interval_seconds)
                 await accounts_repo.set_next_check(account.id, next_check)

@@ -87,3 +87,10 @@ class Settings(BaseSettings):
     logs_bot_image_url: str = ""
     plan_image_url: str = ""
     bot_username: str = ""
+
+    # ── Payment Gateways ────────────────────────────────────
+    zap_upi_key: str = ""
+    oxapay_key: str = ""
+    webhook_base_url: str = ""
+    zapupi_webhook_url: str = ""
+    oxapay_webhook_url: str = ""

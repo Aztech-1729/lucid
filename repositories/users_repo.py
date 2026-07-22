@@ -4,12 +4,10 @@ Users repository — CRUD operations for the users collection.
 
 from __future__ import annotations
 
-from datetime import datetime
 from typing import Optional
 
 from utils.helpers import now_utc_naive
 
-from bson import ObjectId
 
 from database import collections
 from database.mongo import get_db

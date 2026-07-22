@@ -8,7 +8,6 @@ monitors heartbeats, and restarts crashed workers.
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime
 from typing import Optional
 
 from core.constants import CRASH_RECOVERY_DELAY, WorkerStatus
@@ -16,7 +15,7 @@ from core.logging import get_logger
 from database import collections
 from database.mongo import get_db
 from utils.helpers import generate_id, now_utc_naive
-from utils.metrics import WORKER_CRASHES, WORKER_RUNS, metrics
+from utils.metrics import WORKER_CRASHES, metrics
 from workers import (
     analytics_worker,
     cache_worker,

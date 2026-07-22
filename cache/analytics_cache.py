@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
-from cache.redis_client import cache_delete, cache_get, cache_set, get_redis, make_key
+from cache.redis_client import cache_delete, cache_get, cache_set, make_key
 from core.constants import RedisKeys, TTL_ANALYTICS
 
 

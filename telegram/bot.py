@@ -247,7 +247,7 @@ def _register_handlers(bot: TelegramClient) -> None:
                 await event.respond("Invalid plan. Use weekly, monthly, or yearly.")
                 return
                 
-            from datetime import datetime, timedelta
+            from datetime import timedelta
             ends_at = now_utc_naive() + timedelta(days=days)
             
             success = await users_repo.update(target_id, {"plan_type": plan, "subscription_ends_at": ends_at})

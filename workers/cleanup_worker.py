@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import asyncio
 
-from core.config import get_settings
 from core.logging import get_logger
 from repositories import analytics_repo, health_repo
 from utils.metrics import WORKER_RUNS, metrics

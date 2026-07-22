@@ -7,7 +7,6 @@ Writes results to analytics cache.
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
 
 from cache import analytics_cache
 from core.logging import get_logger

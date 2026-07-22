@@ -8,7 +8,7 @@ for each user interacting with the bot.
 from __future__ import annotations
 
 import json
-from typing import Any, Optional
+from typing import Any
 
 from cache.redis_client import get_redis, make_key
 from core.constants import RedisKeys, TTL_USER_STATE

@@ -1,4 +1,4 @@
-﻿*.session
+*.session
 __pycache__/
 dump.rdb
 *.session-journal

@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import asyncio
 import random
-from typing import Optional
 
 from telethon.errors import (
     ChatAdminRequiredError,
@@ -17,7 +16,6 @@ from telethon.errors import (
     ChannelPrivateError,
     FloodWaitError,
     UserBannedInChannelError,
-    SlowModeWaitError,
     UserDeactivatedError,
     AuthKeyUnregisteredError,
 )

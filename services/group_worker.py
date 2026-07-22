@@ -4,7 +4,6 @@ Group worker — handles folder actions and bulk joining logic.
 
 from __future__ import annotations
 
-import asyncio
 from typing import Callable, Coroutine, List
 
 from telethon import functions, types

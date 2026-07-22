@@ -8,7 +8,7 @@ distribute traffic across accounts proportionally.
 from __future__ import annotations
 
 import random
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from cache.redis_client import get_redis, make_key as _make_key
 from utils.helpers import now_utc_naive

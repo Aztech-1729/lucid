@@ -9,7 +9,7 @@ import random
 import re
 from typing import Dict, List, Optional
 
-from telethon import TelegramClient, functions, types
+from telethon import functions, types
 from telethon.errors import (
     FloodWaitError, 
     InviteRequestSentError, 
