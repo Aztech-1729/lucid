@@ -12,6 +12,7 @@ No expensive work. No health checks. No calculations. No Telegram API calls.
 from __future__ import annotations
 
 from telethon import events
+from telethon.tl import types
 
 from cache import account_cache, analytics_cache, campaign_cache, dashboard_cache, health_cache
 from core.constants import CB
@@ -1352,13 +1353,18 @@ async def on_pay_method_select(event: events.CallbackQuery.Event, plan: str, met
     )
     from telegram import keyboards
     if method == "upi":
-        # Generate QR code for ZapUPI payment URL
+        import io
+        import aiohttp
         import urllib.parse
         encoded_url = urllib.parse.quote(pay_url)
         qr_url = f"https://api.qrserver.com/v1/create-qr-code/?size=500x500&data={encoded_url}"
         
+        async with aiohttp.ClientSession() as session:
+            async with session.get(qr_url) as resp:
+                qr_bytes = await resp.read()
+        
         await event.delete()
-        await event.respond(file=qr_url, message=text, buttons=keyboards.invoice_keyboard(pay_url, show_link=False), parse_mode="html")
+        await event.client.send_file(event.chat_id, io.BytesIO(qr_bytes), caption=text, force_document=False, buttons=keyboards.invoice_keyboard(pay_url, show_link=False), parse_mode="html", attributes=[types.DocumentAttributeFilename("qr.png")])
     else:
         await event.edit(text, buttons=keyboards.invoice_keyboard(pay_url, show_link=True), parse_mode="html")
 
@@ -1394,8 +1400,8 @@ async def route_callback(event: events.CallbackQuery.Event) -> None:
         settings = get_settings()
         is_active = user.is_active(settings.admin_user_ids, settings.admin_username)
         if not is_active:
-            allowed_prefixes = ("pay:", "admin:")
-            allowed_exact = (CB.DASHBOARD, CB.NOOP, "force_join_check")
+            allowed_prefixes = ("pay:", "admin:", "buy:")
+            allowed_exact = (CB.DASHBOARD, CB.NOOP, "force_join_check", "invoice:cancel")
             if not any(data.startswith(p) for p in allowed_prefixes) and data not in allowed_exact:
                 await event.answer("❌ You don't have an active plan! Please purchase a plan from 'My Plan'.", alert=True)
                 return
