@@ -34,11 +34,12 @@ async def create_zapupi_invoice(order_id: str, amount_usd: int, user_id: int) ->
                 if data.get("status") == "success" or data.get("payment_url"):
                     return data.get("payment_url")
                 else:
+                    error_msg = data.get("message", "Unknown error")
                     await log.aerror("payment_service.zapupi_failed", resp=data)
-                    return ""
+                    return f"ERROR:{error_msg}"
     except Exception as e:
         await log.aerror("payment_service.zapupi_error", error=str(e))
-        return ""
+        return f"ERROR:{str(e)}"
 
 
 async def create_oxapay_invoice(order_id: str, amount_usd: int, user_id: int) -> str:

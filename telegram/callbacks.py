@@ -1333,9 +1333,10 @@ async def on_pay_method_select(event: events.CallbackQuery.Event, plan: str, met
         pay_url = await create_oxapay_invoice(order_id, amount_usd, user_id)
         gateway = "oxapay"
         
-    if not pay_url:
+    if not pay_url or pay_url.startswith("ERROR:"):
         from telethon.tl.custom import Button
-        await event.edit("❌ <b>Failed to generate payment link. Please try again later.</b>", parse_mode="html", buttons=[[Button.inline("← Back", b"pay:options")]])
+        error_msg = pay_url[6:] if pay_url and pay_url.startswith("ERROR:") else "Unknown error"
+        await event.edit(f"❌ <b>Failed to generate payment link.</b>\n<i>Reason: {error_msg}</i>\n\nPlease try again later or contact support.", parse_mode="html", buttons=[[Button.inline("← Back", b"pay:options")]])
         return
 
     # Save to database
@@ -1353,18 +1354,30 @@ async def on_pay_method_select(event: events.CallbackQuery.Event, plan: str, met
     )
     from telegram import keyboards
     if method == "upi":
+        import qrcode
         import io
-        import aiohttp
-        import urllib.parse
-        encoded_url = urllib.parse.quote(pay_url)
-        qr_url = f"https://api.qrserver.com/v1/create-qr-code/?size=500x500&data={encoded_url}"
+        from telethon import types
         
-        async with aiohttp.ClientSession() as session:
-            async with session.get(qr_url) as resp:
-                qr_bytes = await resp.read()
+        qr = qrcode.QRCode(version=1, box_size=10, border=4)
+        qr.add_data(pay_url)
+        qr.make(fit=True)
+        img = qr.make_image(fill_color="black", back_color="white")
+        
+        bio = io.BytesIO()
+        bio.name = 'qr.png'
+        img.save(bio, 'PNG')
+        bio.seek(0)
         
         await event.delete()
-        await event.client.send_file(event.chat_id, io.BytesIO(qr_bytes), caption=text, force_document=False, buttons=keyboards.invoice_keyboard(pay_url, show_link=False), parse_mode="html", attributes=[types.DocumentAttributeFilename("qr.png")])
+        await event.client.send_file(
+            event.chat_id, 
+            bio, 
+            caption=text, 
+            force_document=False, 
+            buttons=keyboards.invoice_keyboard(pay_url, show_link=False), 
+            parse_mode="html",
+            attributes=[types.DocumentAttributeFilename("qr.png")]
+        )
     else:
         await event.edit(text, buttons=keyboards.invoice_keyboard(pay_url, show_link=True), parse_mode="html")
 
