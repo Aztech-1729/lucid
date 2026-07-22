@@ -2,3 +2,5 @@
 __pycache__/
 dump.rdb
 *.session-journal
+venv/
+bot.log
