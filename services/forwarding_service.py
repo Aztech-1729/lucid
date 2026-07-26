@@ -295,6 +295,13 @@ async def safe_forward(
                     pass
                 return False
             
+            # Session invalidated from another IP — remove account
+            if "wrong session id" in err_str:
+                await log.aerror("forward.wrong_session_id", account_id=account_id, error=str(e))
+                from services import account_service
+                await account_service.handle_unauthorized_account(account_id)
+                return False
+            
             await log.awarning(
                 "forward.error",
                 account_id=account_id,
