@@ -123,45 +123,45 @@ class ClientPool:
                 slot.error_count = 0
                 await self._update_circuit(account_id, success=True)
 
-                except Exception as exc:
-                    slot.error_count += 1
-                    await self._update_circuit(account_id, success=False)
-                    
-                    # Force disconnect or auto-delete on fatal connection/session errors
-                    err_str = str(exc).lower()
-                    if any(x in err_str for x in ["authkey", "deactivated", "authorization key"]):
-                        # Only auto-delete after 3 consecutive auth failures to avoid
-                        # false positives from Telegram rate-limiting during bulk operations
-                        if slot.error_count >= 3:
-                            try:
-                                from services import account_service
-                                asyncio.create_task(account_service.handle_unauthorized_account(account_id))
-                                await log.aerror("pool.account_revoked", account_id=account_id, error=str(exc))
-                            except Exception:
-                                pass
-                        else:
-                            await log.awarning("pool.auth_error_transient", account_id=account_id, attempt=slot.error_count, error=str(exc))
-                            try:
-                                async with slot.lock:
-                                    await slot.client.disconnect()
-                            except Exception:
-                                pass
-                    elif "wrong session id" in err_str:
-                        # Session was invalidated (used from another IP) — remove from pool
+            except Exception as exc:
+                slot.error_count += 1
+                await self._update_circuit(account_id, success=False)
+                
+                # Force disconnect or auto-delete on fatal connection/session errors
+                err_str = str(exc).lower()
+                if any(x in err_str for x in ["authkey", "deactivated", "authorization key"]):
+                    # Only auto-delete after 3 consecutive auth failures to avoid
+                    # false positives from Telegram rate-limiting during bulk operations
+                    if slot.error_count >= 3:
                         try:
                             from services import account_service
                             asyncio.create_task(account_service.handle_unauthorized_account(account_id))
-                            await log.aerror("pool.wrong_session_id", account_id=account_id, error=str(exc))
+                            await log.aerror("pool.account_revoked", account_id=account_id, error=str(exc))
                         except Exception:
                             pass
-                    elif "connection" in err_str or "closed" in err_str or "unpacking" in err_str:
+                    else:
+                        await log.awarning("pool.auth_error_transient", account_id=account_id, attempt=slot.error_count, error=str(exc))
                         try:
                             async with slot.lock:
                                 await slot.client.disconnect()
                         except Exception:
                             pass
-                        
-                    raise
+                elif "wrong session id" in err_str:
+                    # Session was invalidated (used from another IP) — remove from pool
+                    try:
+                        from services import account_service
+                        asyncio.create_task(account_service.handle_unauthorized_account(account_id))
+                        await log.aerror("pool.wrong_session_id", account_id=account_id, error=str(exc))
+                    except Exception:
+                        pass
+                elif "connection" in err_str or "closed" in err_str or "unpacking" in err_str:
+                    try:
+                        async with slot.lock:
+                            await slot.client.disconnect()
+                    except Exception:
+                        pass
+                    
+                raise
 
             finally:
                 async with slot.lock:
