@@ -25,10 +25,23 @@ def _install_uvloop() -> None:
         print("[boot] uvloop not available, using default asyncio loop")
 
 
+def _suppress_telethon_crashes(loop, context):
+    """Catch Telethon internal task crashes (send loop, wrong session ID) to prevent process death."""
+    exc = context.get("exception")
+    if exc:
+        msg = str(exc).lower()
+        if any(x in msg for x in ["tcptransport closed", "wrong session", "security error", "send loop"]):
+            return
+    loop.default_exception_handler(context)
+
+
 async def main() -> None:
     """
     Main coroutine — runs startup, keeps bot alive, handles shutdown.
     """
+    loop = asyncio.get_running_loop()
+    loop.set_exception_handler(_suppress_telethon_crashes)
+
     from app.startup import startup
     from app.shutdown import shutdown
     from telegram.bot import get_bot
@@ -64,6 +77,16 @@ async def main() -> None:
     finally:
         # Always run shutdown
         await shutdown()
+
+
+def _suppress_telethon_crashes(loop, context):
+    """Catch Telethon internal task crashes (send loop, wrong session ID) to prevent process death."""
+    exc = context.get("exception")
+    if exc:
+        msg = str(exc).lower()
+        if any(x in msg for x in ["tcptransport closed", "wrong session", "security error"]):
+            return  # Suppress — these are handled by the pool's circuit breaker
+    loop.default_exception_handler(context)
 
 
 def run() -> None:
