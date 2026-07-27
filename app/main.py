@@ -90,17 +90,30 @@ def _suppress_telethon_crashes(loop, context):
 
 
 def run() -> None:
-    """Entry point — configures the event loop and runs main()."""
+    """Entry point — configures the event loop and runs main() with auto-restart."""
     _install_uvloop()
 
     if sys.platform == "win32":
-        # Windows requires ProactorEventLoop for subprocess support
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-    try:
-        asyncio.run(main())
-    except KeyboardInterrupt:
-        print("[boot] Shutdown complete")
+    while True:
+        try:
+            asyncio.run(main())
+            break  # Clean exit
+        except KeyboardInterrupt:
+            print("[boot] Shutdown complete")
+            break
+        except Exception as exc:
+            msg = str(exc).lower()
+            if any(x in msg for x in ["tcptransport closed", "wrong session", "security error", "send loop"]):
+                print(f"\n[boot] Telethon internal error, restarting in 5s...")
+                import time
+                time.sleep(5)
+                continue
+            print(f"\n[boot] Unexpected fatal error: {exc}")
+            print("[boot] Restarting in 10s...")
+            import time
+            time.sleep(10)
 
 
 if __name__ == "__main__":
