@@ -7,23 +7,6 @@ from datetime import timedelta
 
 log = get_logger("webhook_server")
 
-async def handle_zapupi_webhook(request: web.Request) -> web.Response:
-    """Handle ZapUPI payment callbacks."""
-    try:
-        data = await request.json()
-        order_id = data.get("order_id")
-        status = data.get("status")
-        
-        await log.ainfo("webhook.zapupi.received", order_id=order_id, status=status)
-        
-        if status == "Success":
-            await process_successful_payment(order_id)
-            
-        return web.json_response({"status": "ok"})
-    except Exception as e:
-        await log.aerror("webhook.zapupi.error", error=str(e))
-        return web.Response(status=500)
-
 async def handle_oxapay_webhook(request: web.Request) -> web.Response:
     """Handle OxaPay payment callbacks."""
     try:
@@ -79,7 +62,6 @@ async def process_successful_payment(order_id: str) -> None:
 
 def create_app() -> web.Application:
     app = web.Application()
-    app.router.add_post('/webhook/zapupi', handle_zapupi_webhook)
     app.router.add_post('/webhook/oxapay', handle_oxapay_webhook)
     return app
 

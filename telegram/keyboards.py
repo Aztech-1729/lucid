@@ -649,13 +649,10 @@ def payment_method_keyboard(plan: str) -> list[list[Button]]:
     """Choose payment method."""
     from telethon.tl.types import KeyboardButtonStyle
     
-    btn_upi = Button.url(_b("👤 Contact Admin for UPI"), "https://t.me/AzTechDeveloper")
-    
     btn_crypto = Button.inline(_b("🪙 Crypto (OxaPay)"), data=f"pay:{plan}:crypto".encode("utf-8"))
     btn_crypto.style = KeyboardButtonStyle(bg_primary=True)
     
     return [
-        [btn_upi],
         [btn_crypto],
         [Button.inline(_b("← Cancel"), b"pay:profile", style="danger")]
     ]

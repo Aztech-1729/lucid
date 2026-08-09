@@ -1319,23 +1319,18 @@ async def on_pay_method_select(event: events.CallbackQuery.Event, plan: str, met
     order_id = str(uuid.uuid4().hex)
     user_id = event.sender_id
     
-    from services.payment_service import create_zapupi_invoice, create_oxapay_invoice
+    from services.payment_service import create_oxapay_invoice
     from models.invoice import Invoice
     from repositories.invoice_repo import invoice_repo
     
     await event.edit("⏳ <b>Generating Invoice...</b>", parse_mode="html")
     
-    if method == "upi":
-        pay_url = await create_zapupi_invoice(order_id, amount_usd, user_id)
-        gateway = "zapupi"
-    else:
-        pay_url = await create_oxapay_invoice(order_id, amount_usd, user_id)
-        gateway = "oxapay"
+    pay_url = await create_oxapay_invoice(order_id, amount_usd, user_id)
+    gateway = "oxapay"
         
-    if not pay_url or pay_url.startswith("ERROR:"):
+    if not pay_url:
         from telethon.tl.custom import Button
-        error_msg = pay_url[6:] if pay_url and pay_url.startswith("ERROR:") else "Unknown error"
-        await event.edit(f"❌ <b>Failed to generate payment link.</b>\n<i>Reason: {error_msg}</i>\n\nPlease try again later or contact support.", parse_mode="html", buttons=[[Button.inline("← Back", b"pay:options")]])
+        await event.edit("❌ <b>Failed to generate payment link.</b>\n\nPlease try again later or contact support.", parse_mode="html", buttons=[[Button.inline("← Back", b"pay:options")]])
         return
 
     # Save to database
@@ -1348,37 +1343,11 @@ async def on_pay_method_select(event: events.CallbackQuery.Event, plan: str, met
         f"<b>Order ID:</b> <code>{order_id}</code>\n"
         f"<b>Plan:</b> {plan.capitalize()} Pass\n"
         f"<b>Amount:</b> ${amount_usd}\n"
-        f"<b>Method:</b> {'UPI (INR)' if method == 'upi' else 'Crypto (OxaPay)'}\n\n"
-        f"<i>{'Scan the QR code below to pay.' if method == 'upi' else 'Click the button below to pay.'} Your plan will be automatically activated once payment is confirmed.</i>"
+        f"<b>Method:</b> Crypto (OxaPay)\n\n"
+        f"<i>Click the button below to pay. Your plan will be automatically activated once payment is confirmed.</i>"
     )
     from telegram import keyboards
-    if method == "upi":
-        import qrcode
-        import io
-        from telethon import types
-        
-        qr = qrcode.QRCode(version=1, box_size=10, border=4)
-        qr.add_data(pay_url)
-        qr.make(fit=True)
-        img = qr.make_image(fill_color="black", back_color="white")
-        
-        bio = io.BytesIO()
-        bio.name = 'qr.png'
-        img.save(bio, 'PNG')
-        bio.seek(0)
-        
-        await event.delete()
-        await event.client.send_file(
-            event.chat_id, 
-            bio, 
-            caption=text, 
-            force_document=False, 
-            buttons=keyboards.invoice_keyboard(pay_url, show_link=False), 
-            parse_mode="html",
-            attributes=[types.DocumentAttributeFilename("qr.png")]
-        )
-    else:
-        await event.edit(text, buttons=keyboards.invoice_keyboard(pay_url, show_link=True), parse_mode="html")
+    await event.edit(text, buttons=keyboards.invoice_keyboard(pay_url, show_link=True), parse_mode="html")
 
 async def on_invoice_cancel(event: events.CallbackQuery.Event) -> None:
     """Cancel an invoice."""
