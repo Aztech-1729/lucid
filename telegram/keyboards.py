@@ -12,6 +12,7 @@ from __future__ import annotations
 from typing import Any
 
 from telethon import Button
+from telethon.tl.types import KeyboardButtonStyle
 
 from core.constants import CB
 
@@ -20,8 +21,6 @@ def _b(text: str) -> str:
     return text
 
 # ── 1. MAIN MENU (DASHBOARD) ───────────────────────────────
-
-from telethon.tl.types import KeyboardButtonStyle
 
 def main_menu_keyboard() -> list[list[Button]]:
     """Main menu buttons — 2-column grid + full-width My Plan."""

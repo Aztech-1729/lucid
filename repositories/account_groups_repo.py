@@ -123,7 +123,7 @@ async def list_by_ids(object_ids: list[str]) -> list[dict]:
     for oid in object_ids:
         try:
             oids.append(ObjectId(oid))
-        except:
+        except Exception:
             pass
             
     if not oids:

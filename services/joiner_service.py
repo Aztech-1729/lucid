@@ -144,7 +144,8 @@ async def _run_joiner_task(user_id: int, links: List[str], update_callback) -> N
 def _sanitize_link(link: str) -> Optional[str]:
     """Extract username or hash from various link formats."""
     link = link.strip()
-    if not link: return None
+    if not link:
+        return None
     
     # https://t.me/username
     # @username

@@ -4,7 +4,7 @@ Campaigns repository — CRUD operations for the campaigns collection.
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import AsyncGenerator, Optional
 
 from utils.helpers import now_utc_naive
 
@@ -67,8 +67,6 @@ async def count_by_owner(owner_id: int) -> int:
     """Count campaigns owned by a user."""
     return await _coll().count_documents({"owner_id": owner_id})
 
-
-from typing import AsyncGenerator
 
 async def get_active() -> AsyncGenerator[Campaign, None]:
     """Get all active campaigns (for forwarding worker).

@@ -1097,11 +1097,13 @@ async def on_confirm_yes(event: events.CallbackQuery.Event, action: str, target_
                 async def update_progress(success, failed, total):
                     try:
                         await event.edit(render_bulk_progress("Remove Usernames", success, failed, total), buttons=bulk_progress_keyboard(), parse_mode="html")
-                    except Exception: pass
+                    except Exception:
+                        pass
                 success, failed = await bulk_service.bulk_remove_usernames(event.sender_id, progress_callback=update_progress)
                 try:
                     await event.edit(render_bulk_progress("Remove Usernames", success, failed, success+failed, "<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Completed!"), buttons=bulk_manager_keyboard(), parse_mode="html")
-                except Exception: pass
+                except Exception:
+                        pass
             import asyncio
             asyncio.create_task(run_task())
             return
@@ -1115,11 +1117,13 @@ async def on_confirm_yes(event: events.CallbackQuery.Event, action: str, target_
                 async def update_progress(success, failed, total):
                     try:
                         await event.edit(render_bulk_progress("Remove Photo", success, failed, total), buttons=bulk_progress_keyboard(), parse_mode="html")
-                    except Exception: pass
+                    except Exception:
+                        pass
                 success, failed = await bulk_service.bulk_delete_profile_photos(event.sender_id, progress_callback=update_progress)
                 try:
                     await event.edit(render_bulk_progress("Remove Photo", success, failed, success+failed, "<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Completed!"), buttons=bulk_manager_keyboard(), parse_mode="html")
-                except Exception: pass
+                except Exception:
+                        pass
             import asyncio
             asyncio.create_task(run_task())
             return
@@ -1133,11 +1137,13 @@ async def on_confirm_yes(event: events.CallbackQuery.Event, action: str, target_
                 async def update_progress(success, failed, total):
                     try:
                         await event.edit(render_bulk_progress("Clean DMs", success, failed, total), buttons=bulk_progress_keyboard(), parse_mode="html")
-                    except Exception: pass
+                    except Exception:
+                        pass
                 success, failed = await bulk_service.bulk_clean_dms(event.sender_id, progress_callback=update_progress)
                 try:
                     await event.edit(render_bulk_progress("Clean DMs", success, failed, success+failed, "<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Completed!"), buttons=bulk_manager_keyboard(), parse_mode="html")
-                except Exception: pass
+                except Exception:
+                        pass
             import asyncio
             asyncio.create_task(run_task())
             return
@@ -1151,11 +1157,13 @@ async def on_confirm_yes(event: events.CallbackQuery.Event, action: str, target_
                 async def update_progress(success, failed, total):
                     try:
                         await event.edit(render_bulk_progress("Archive Chats", success, failed, total), buttons=bulk_progress_keyboard(), parse_mode="html")
-                    except Exception: pass
+                    except Exception:
+                        pass
                 success, failed = await bulk_service.bulk_archive_chats(event.sender_id, progress_callback=update_progress)
                 try:
                     await event.edit(render_bulk_progress("Archive Chats", success, failed, success+failed, "<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Completed!"), buttons=bulk_manager_keyboard(), parse_mode="html")
-                except Exception: pass
+                except Exception:
+                        pass
             import asyncio
             asyncio.create_task(run_task())
             return
@@ -1169,11 +1177,13 @@ async def on_confirm_yes(event: events.CallbackQuery.Event, action: str, target_
                 async def update_progress(success, failed, total):
                     try:
                         await event.edit(render_bulk_progress("Leave Groups/Channels", success, failed, total), buttons=bulk_progress_keyboard(), parse_mode="html")
-                    except Exception: pass
+                    except Exception:
+                        pass
                 success, failed = await bulk_service.bulk_leave_groups(event.sender_id, progress_callback=update_progress)
                 try:
                     await event.edit(render_bulk_progress("Leave Groups/Channels", success, failed, success+failed, "<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Completed!"), buttons=bulk_manager_keyboard(), parse_mode="html")
-                except Exception: pass
+                except Exception:
+                        pass
             import asyncio
             asyncio.create_task(run_task())
             return
@@ -1187,11 +1197,13 @@ async def on_confirm_yes(event: events.CallbackQuery.Event, action: str, target_
                 async def update_progress(success, failed, total):
                     try:
                         await event.edit(render_bulk_progress("Remove Folders", success, failed, total), buttons=bulk_progress_keyboard(), parse_mode="html")
-                    except Exception: pass
+                    except Exception:
+                        pass
                 success, failed = await group_worker.bulk_remove_folders(event.sender_id, progress_callback=update_progress)
                 try:
                     await event.edit(render_bulk_progress("Remove Folders", success, failed, success+failed, "<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Completed!"), buttons=bulk_manager_keyboard(), parse_mode="html")
-                except Exception: pass
+                except Exception:
+                        pass
             import asyncio
             asyncio.create_task(run_task())
             return
@@ -1205,11 +1217,13 @@ async def on_confirm_yes(event: events.CallbackQuery.Event, action: str, target_
                 async def update_progress(success, failed, total):
                     try:
                         await event.edit(render_bulk_progress("Remove 2FA", success, failed, total), buttons=bulk_progress_keyboard(), parse_mode="html")
-                    except Exception: pass
+                    except Exception:
+                        pass
                 success, failed = await bulk_service.bulk_remove_2fa(event.sender_id, progress_callback=update_progress)
                 try:
                     await event.edit(render_bulk_progress("Remove 2FA", success, failed, success+failed, "<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Completed!"), buttons=bulk_manager_keyboard(), parse_mode="html")
-                except Exception: pass
+                except Exception:
+                        pass
             import asyncio
             asyncio.create_task(run_task())
             return

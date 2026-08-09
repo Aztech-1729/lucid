@@ -533,7 +533,8 @@ def _register_handlers(bot: TelegramClient) -> None:
                 async def update_progress_folder(text: str):
                     try:
                         await msg.edit(text, parse_mode="html")
-                    except: pass
+                    except Exception:
+                        pass
                 
                 import asyncio
                 asyncio.create_task(group_worker.bulk_join_folder(user_id, slug, update_progress_folder))
@@ -550,7 +551,7 @@ def _register_handlers(bot: TelegramClient) -> None:
                 try:
                     content = file_bytes.decode("utf-8")
                     links = [line.strip() for line in content.split("\n") if line.strip()]
-                except:
+                except Exception:
                     await event.respond("<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> Invalid file encoding. Must be UTF-8 txt.")
                     return
                 
@@ -564,7 +565,8 @@ def _register_handlers(bot: TelegramClient) -> None:
                 async def update_progress_links(text: str):
                     try:
                         await msg.edit(text, parse_mode="html")
-                    except: pass
+                    except Exception:
+                        pass
                 
                 import asyncio
                 asyncio.create_task(group_worker.bulk_join_links(user_id, links, update_progress_links))
