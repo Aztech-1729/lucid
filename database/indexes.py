@@ -45,6 +45,11 @@ async def setup_indexes(db: AsyncDatabase) -> None:
         await db.analytics_daily.create_index([("owner_id", pymongo.ASCENDING)])
         await db.analytics_daily.create_index([("date", pymongo.DESCENDING)])
 
+        # 7b. checker_accounts
+        await db.checker_accounts.create_index([("session", pymongo.ASCENDING)], unique=True)
+        await db.checker_accounts.create_index([("status", pymongo.ASCENDING)])
+        await db.checker_accounts.create_index([("flood_until", pymongo.ASCENDING)])
+
         # ── owner_id type migration (run once to normalize all collections) ──
         # Existing records may have owner_id as str or int. Run this migration once
         # to convert all to int, then remove the $or: [int, str] fallback from repos.

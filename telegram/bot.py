@@ -625,14 +625,22 @@ def _register_handlers(bot: TelegramClient) -> None:
             except Exception:
                 pass
 
+            import time as _time
+            _last_progress_edit = [0.0]
+            _terminal_statuses = ("✅", "🛑", "❌", "⚠️")
+
             async def update_progress_checker(checked, valid, invalid, total, status="Processing", flood=0, skipped=0, accounts_count=0):
-                try:
-                    await msg.edit(
-                        menus.render_checker_progress(checked, valid, invalid, total, status=status, flood=flood, skipped=skipped, accounts_count=accounts_count),
-                        parse_mode="html",
-                    )
-                except Exception:
-                    pass
+                # Throttle edits: Telegram rate-limits message edits (~1/s per message)
+                now = _time.monotonic()
+                if status.startswith(_terminal_statuses) or now - _last_progress_edit[0] >= 0.6:
+                    try:
+                        await msg.edit(
+                            menus.render_checker_progress(checked, valid, invalid, total, status=status, flood=flood, skipped=skipped, accounts_count=accounts_count),
+                            parse_mode="html",
+                        )
+                        _last_progress_edit[0] = now
+                    except Exception:
+                        pass
 
             async def on_checker_result(valid_links, stats):
                 try:

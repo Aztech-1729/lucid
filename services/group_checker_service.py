@@ -130,6 +130,8 @@ async def _check_link(client: TelegramClient, link: str) -> dict:
             return {"status": "valid_group"}
         except UserAlreadyParticipantError:
             return {"status": "valid_group"}
+        except InviteHashExpiredError:
+            return {"status": "invalid"}
         except FloodWaitError:
             raise
         except Exception as e:
