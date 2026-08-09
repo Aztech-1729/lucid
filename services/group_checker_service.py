@@ -44,9 +44,11 @@ FOLDER_RE = re.compile(r"t\.me/addlist/([A-Za-z0-9_\-]+)", re.I)
 HASH_RE = re.compile(r"t\.me/(?:\+([A-Za-z0-9_\-]+)|joinchat/([A-Za-z0-9_\-]+))", re.I)
 USERNAME_RE = re.compile(r"t\.me/([A-Za-z0-9_]{5,32})$", re.I)
 
-# Pace between checks to stay under Telegram rate limits
-CHECK_DELAY = (1.0, 1.8)
-FLOOD_SLEEP_CAP = 30  # seconds — above this, the account bows out of the run
+# Adaptive pacing: start fast, back off on floods, recover gradually
+CHECK_DELAY = (0.4, 0.6)  # base seconds between checks (per account, parallel)
+DELAY_MULT_MAX = 8.0      # max slowdown multiplier after repeated floods
+DELAY_RECOVER = 0.8       # fraction of multiplier kept per successful check
+FLOOD_SLEEP_CAP = 30      # seconds — above this, the account bows out of the run
 
 
 def is_checker_running(user_id: int) -> bool:
@@ -251,8 +253,9 @@ async def _run_checker_task(
                 return
 
             try:
+                delay_mult = 1.0
                 for link in links[idx::len(accounts)]:
-                    await asyncio.sleep(random.uniform(*CHECK_DELAY))
+                    await asyncio.sleep(random.uniform(*CHECK_DELAY) * delay_mult)
                     try:
                         result = await _check_link(client, link)
                     except FloodWaitError as fl:
@@ -261,6 +264,7 @@ async def _run_checker_task(
                             state["flood"] += 1
                             state["checked"] += 1
                         if fl.seconds <= FLOOD_SLEEP_CAP:
+                            delay_mult = min(delay_mult * 2.0, DELAY_MULT_MAX)
                             await asyncio.sleep(fl.seconds)
                             continue
                         await checker_repo.record_use(checker_id, flood_until=now_utc_naive() + timedelta(seconds=fl.seconds))
@@ -286,6 +290,7 @@ async def _run_checker_task(
                         else:
                             state["invalid"] += 1
 
+                    delay_mult = max(1.0, delay_mult * DELAY_RECOVER)
                     await _safe_update()
                 await checker_repo.record_use(checker_id)
             except asyncio.CancelledError:
