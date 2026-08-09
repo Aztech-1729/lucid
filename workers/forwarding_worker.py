@@ -190,7 +190,7 @@ async def execute_single_round(campaign) -> None:
                 acc_id=account_id,
                 camp=campaign,
                 grps=acc_groups,
-                d=campaign.group_delay_seconds,
+                d=campaign.group_delay_seconds or get_settings().default_forward_delay_seconds,
                 offset=i * 0.2
             )
         )
@@ -244,8 +244,8 @@ async def forward_for_account(
         account = await acc_repo.get(account_id)
         health_score = account.health_score if account else 100
 
-        # Timeout to prevent hanging on accounts with invalid sessions
-        async with asyncio.timeout(60):
+        # Timeout: 5 minutes to handle accounts with many groups
+        async with asyncio.timeout(300):
             async with client_pool.acquire(account_id) as client:
                 return await forwarding_service.forward_to_groups(
                     client=client,
@@ -276,7 +276,6 @@ async def run(stop_event: asyncio.Event | None = None) -> None:
     Main worker loop.
     Periodically checks for newly activated campaigns or pauses.
     """
-    settings = get_settings()
     interval = 10  # Fast check interval to spawn tasks immediately!
 
     await log.ainfo("forwarding_worker.started")

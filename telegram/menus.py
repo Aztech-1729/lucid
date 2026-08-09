@@ -341,7 +341,6 @@ def render_analytics(data: dict | None) -> str:
     successful = data.get("total_success", 0)
     failed = data.get("total_failed", 0)
     rate = (successful / total_sent * 100) if total_sent > 0 else 0
-    uptime = 99.9
 
     return (
         f"<tg-emoji emoji-id='5231200819986047254'>📊</tg-emoji> <b>ANALYTICS OVERVIEW</b>\n"
@@ -369,9 +368,9 @@ def render_analytics_detailed(data: dict | None) -> str:
 
     return (
         "<tg-emoji emoji-id='5244837092042750681'>📈</tg-emoji> <b>DETAILED ANALYTICS</b>\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        f"Detailed metrics and graphs will be displayed here.\n\n"
-        f"<i>Coming soon in the next update!</i>"
+        "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        "Detailed metrics and graphs will be displayed here.\n\n"
+        "<i>Coming soon in the next update!</i>"
     )
 
 
@@ -389,19 +388,17 @@ def render_health_overview(data: dict | None) -> str:
 
     counts = data.get("counts", {})
     healthy = counts.get("HEALTHY", 0)
-    warning = counts.get("WARNING", 0)
     limited = counts.get("LIMITED", 0)
-    banned = counts.get("BANNED", 0)
     total = data.get("total_accounts", 0) or 1
     overall = data.get("overall_health_pct", 0)
 
     return (
         "<b><tg-emoji emoji-id=\"5289562446216835198\">🛡️</tg-emoji> ACCOUNTS HEALTH</b>\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         "<b><tg-emoji emoji-id='5231200819986047254'>📊</tg-emoji> STATUS:</b>\n"
         f"├ <b><tg-emoji emoji-id=\"5416081784641168838\">🟢</tg-emoji> Healthy: {healthy} ({healthy/total*100:.1f}%)</b>\n"
         f"└ <b><tg-emoji emoji-id=\"5411225014148014586\">🟠</tg-emoji> Limited: {limited} ({limited/total*100:.1f}%)</b>\n\n"
-        "<b><tg-emoji emoji-id=\"5438496463044752972\">⭐</tg-emoji> Overall Health Score: {overall}%</b>"
+        f"<b><tg-emoji emoji-id=\"5438496463044752972\">⭐</tg-emoji> Overall Health Score: {overall}%</b>"
     )
 
 
@@ -562,31 +559,31 @@ def render_profile(user_data: dict, is_active: bool) -> str:
 def render_paywall() -> str:
     """Render the paywall message."""
     return (
-        f"<tg-emoji emoji-id=\"5427168083074628963\">💎</tg-emoji> <b>LUCID ADS PREMIUM</b>\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        f"Unlock the full power of Lucid Ads Bot to automate your campaigns.\n\n"
-        f"<tg-emoji emoji-id=\"5461151367559141950\">✨</tg-emoji> <b>Features Included:</b>\n"
-        f"• Unlimited Accounts\n"
-        f"• Unlimited Campaigns\n"
-        f"• Health Monitoring & Auto Pause\n"
-        f"• Advanced Anti-Ban Delays\n"
-        f"• Auto-Join & Auto-Reply\n"
-        f"• Personal AI Assistant\n\n"
-        f"<i>Select a plan below to contact the admin for instant activation.</i>"
+        "<tg-emoji emoji-id=\"5427168083074628963\">💎</tg-emoji> <b>LUCID ADS PREMIUM</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        "Unlock the full power of Lucid Ads Bot to automate your campaigns.\n\n"
+        "<tg-emoji emoji-id=\"5461151367559141950\">✨</tg-emoji> <b>Features Included:</b>\n"
+        "• Unlimited Accounts\n"
+        "• Unlimited Campaigns\n"
+        "• Health Monitoring & Auto Pause\n"
+        "• Advanced Anti-Ban Delays\n"
+        "• Auto-Join & Auto-Reply\n"
+        "• Personal AI Assistant\n\n"
+        "<i>Select a plan below to contact the admin for instant activation.</i>"
     )
 
 def render_admin_panel(stats: dict = None) -> str:
     """Render the main admin dashboard."""
     return (
-        f"👑 <b>ADMIN PANEL</b>\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        f"Manage users and subscriptions directly from Telegram.\n\n"
-        f"🛠 <b>COMMANDS:</b>\n"
-        f"<code>/grant [user_id] [weekly|monthly|yearly]</code>\n"
-        f"<i>Instantly activates a plan for a user.</i>\n\n"
-        f"<code>/revoke [user_id]</code>\n"
-        f"<i>Instantly cancels a user's subscription.</i>\n\n"
-        f"Select an option below to view statistics or active users."
+        "👑 <b>ADMIN PANEL</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        "Manage users and subscriptions directly from Telegram.\n\n"
+        "🛠 <b>COMMANDS:</b>\n"
+        "<code>/grant [user_id] [weekly|monthly|yearly]</code>\n"
+        "<i>Instantly activates a plan for a user.</i>\n\n"
+        "<code>/revoke [user_id]</code>\n"
+        "<i>Instantly cancels a user's subscription.</i>\n\n"
+        "Select an option below to view statistics or active users."
     )
 
 def render_admin_stats(stats: dict) -> str:

@@ -12,7 +12,6 @@ No expensive work. No health checks. No calculations. No Telegram API calls.
 from __future__ import annotations
 
 from telethon import events
-from telethon.tl import types
 
 from cache import account_cache, analytics_cache, campaign_cache, dashboard_cache, health_cache
 from core.constants import CB
@@ -462,7 +461,7 @@ async def on_campaign_acc_detail(event: events.CallbackQuery.Event, account_id: 
                 ]
                 await account_groups_repo.save_groups(account_id, groups)
                 total_groups = len(groups)
-        except Exception as exc:
+        except Exception:
             pass # Ignore and continue with 0 groups
     
     phone = account.phone or "Unknown"

@@ -74,7 +74,8 @@ def compute_health_score(
     # FloodWait frequency factor — more floods = lower score
     recent_floods = sum(
         1 for f in account.flood_wait_history
-        if f.occurred_at > now_utc_naive() - timedelta(days=7)
+        if hasattr(f, 'occurred_at') and f.occurred_at is not None
+        and f.occurred_at > now_utc_naive() - timedelta(days=7)
     )
     flood_factor = max(0.0, 1.0 - (recent_floods * 0.15))
 

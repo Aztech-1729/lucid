@@ -80,7 +80,6 @@ async def chat_with_ai(user_id: int, user_message: str) -> str:
     
     # System prompt - always ensure the latest agent.md is used
     system_content = "You are the Lucid Ads Personal AI Assistant."
-    agent_path = os.path.join(os.path.dirname(__file__), "..", "agent.md") if "services" in __file__ else "agent.md"
     try:
         with open("agent.md", "r", encoding="utf-8") as f:
             system_content = f.read()

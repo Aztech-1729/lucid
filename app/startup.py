@@ -11,7 +11,6 @@ from core.config import get_settings
 from core.logging import get_logger, setup_logging
 from database.mongo import init_mongo
 from cache.redis_client import init_redis
-from core.logging import get_logger
 
 log = get_logger("startup")
 webhook_runner = None

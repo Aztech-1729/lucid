@@ -32,6 +32,8 @@ async def log_forward(
     success: bool,
     error_message: Optional[str] = None,
     flood_wait_seconds: Optional[int] = None,
+    campaign_name: Optional[str] = None,
+    account_phone: Optional[str] = None,
 ) -> None:
     """Insert a forwarding attempt log."""
     doc = {
@@ -42,6 +44,8 @@ async def log_forward(
         "success": success,
         "error_message": error_message,
         "flood_wait_seconds": flood_wait_seconds,
+        "campaign_name": campaign_name,
+        "account_phone": account_phone,
         "sent_at": now_utc_naive(),
     }
     await _logs().insert_one(doc)

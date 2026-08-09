@@ -448,7 +448,6 @@ def campaign_account_groups_keyboard(
     current_row = []
     for g in groups:
         group_id_str = str(g.get("_id") or g.get("id", ""))
-        icon_val = 5206607081334906820 if group_id_str in assigned_group_ids else 5260293700088511294
         is_assigned = group_id_str in assigned_group_ids
         title = g.get("title", "Unknown")
         # Truncate title

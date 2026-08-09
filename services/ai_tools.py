@@ -399,7 +399,7 @@ async def propose_create_campaign(user_id: int, kwargs: dict) -> str:
     }
     
     try:
-        campaign = await campaigns_repo.create(payload)
+        await campaigns_repo.create(payload)
     except ValueError as e:
         return json.dumps({"error": str(e)})
     

@@ -12,7 +12,6 @@ import zipfile
 import sqlite3
 
 
-from core.config import get_settings
 from core.logging import get_logger
 from services import session_manager
 
@@ -154,8 +153,6 @@ async def _import_single_session_file(owner_id: int, file_path: str) -> bool:
         finally:
             conn.close()
 
-        settings = get_settings()
-        
         # 2. Handle Conversion
         if is_pyrogram and dc_id and auth_key:
             # Convert Pyrogram auth_key to Telethon StringSession

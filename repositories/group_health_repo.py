@@ -75,7 +75,7 @@ async def get_health_score(group_id: str) -> int:
     final_score = max(0, min(100, round(base_score - flood_penalty)))
     return final_score
 
-async def is_toxic(group_id: str, threshold: int = 15) -> bool:
+async def is_toxic(group_id: str, threshold: int = 50) -> bool:
     """Check if a group is restricted or has a critically low health score."""
     # Fast path: check if group is permanently restricted
     doc = await _coll().find_one({"group_id": group_id})
@@ -91,7 +91,7 @@ async def get_toxic_groups() -> list[str]:
     toxic = []
     async for doc in cursor:
         score = await get_health_score(doc["group_id"])
-        if score < 15:
+        if score < 50:
             toxic.append(doc["group_id"])
     return toxic
 

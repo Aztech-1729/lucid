@@ -4,3 +4,4 @@ dump.rdb
 *.session-journal
 venv/
 bot.log
+.env

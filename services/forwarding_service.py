@@ -45,6 +45,8 @@ async def safe_forward(
     topic_id: int | None = None,
     access_hash: int = 0,
     retries: int = 3,
+    campaign_name: str = "",
+    account_phone: str = "",
 ) -> bool:
     """
     Forward a message with FloodWait handling and retry logic.
@@ -107,8 +109,14 @@ async def safe_forward(
                         await asyncio.sleep(random.uniform(0.5, 2.0))
                         await client.get_dialogs()
                         target = await client.get_input_entity(target)
+                        resolved = True
                     except Exception:
                         pass  # Fallback to using the raw ID if all resolution fails
+
+                # If still not resolved after all steps, skip this group
+                if not resolved:
+                    await log.awarning("forward.target_resolution_failed", target=str(target), account_id=account_id)
+                    return False
 
             # Logic: If it's a string, we MUST use send_message.
             # If it's a message object AND there's a topic, we use send_message (resends the object).
@@ -151,20 +159,22 @@ async def safe_forward(
                 group_id=group_id,
                 owner_id=owner_id,
                 success=True,
+                campaign_name=campaign_name,
+                account_phone=account_phone,
             )
             await metrics.increment(MESSAGES_SENT)
             
             try:
                 from telegram.logs_bot import send_ad_success_log
-                from repositories import campaigns_repo, accounts_repo as acc_repo
-                camp = await campaigns_repo.get(campaign_id)
-                acc = await acc_repo.get(account_id)
-                if camp and acc:
-                    await send_ad_success_log(owner_id, camp.name, acc.phone, group_id, msg_link)
-                else:
-                    await log.awarning("forward.log_failed", reason="Campaign or Account not found", campaign_id=campaign_id, account_id=account_id)
-            except Exception as e:
-                await log.aerror("forward.log_error", error=str(e), account_id=account_id)
+                await send_ad_success_log(
+                    owner_id,
+                    campaign_name or "Unknown",
+                    account_phone or "Unknown",
+                    group_id,
+                    msg_link,
+                )
+            except Exception as log_err:
+                await log.awarning("forward.log_bot_error", error=str(log_err), account_id=account_id)
                 
             return True
 
@@ -176,7 +186,7 @@ async def safe_forward(
             try:
                 from repositories import group_health_repo
                 await group_health_repo.log_interaction(str(target), success=False, is_flood=True)
-            except:
+            except Exception:
                 pass
 
             await analytics_repo.log_forward(
@@ -187,6 +197,8 @@ async def safe_forward(
                 success=False,
                 error_message=f"FloodWait: {e.seconds}s",
                 flood_wait_seconds=e.seconds,
+                campaign_name=campaign_name,
+                account_phone=account_phone,
             )
 
             wait_time = e.seconds + random.uniform(1, 5)
@@ -226,7 +238,7 @@ async def safe_forward(
             )
             await asyncio.sleep(wait_time)
 
-        except (ChatWriteForbiddenError, UserBannedInChannelError, ChatAdminRequiredError, ChannelPrivateError) as e:
+        except (ChatWriteForbiddenError, UserBannedInChannelError, ChannelPrivateError) as e:
             # Permanent failures — don't retry, mark group as restricted
             await accounts_repo.increment_counters(account_id, failure=1)
             await analytics_repo.log_forward(
@@ -236,6 +248,8 @@ async def safe_forward(
                 owner_id=owner_id,
                 success=False,
                 error_message=str(e),
+                campaign_name=campaign_name,
+                account_phone=account_phone,
             )
             await metrics.increment(MESSAGES_FAILED)
             
@@ -245,6 +259,40 @@ async def safe_forward(
                 await group_health_repo.mark_restricted(str(target), reason=type(e).__name__)
             except Exception:
                 pass
+            return False
+
+        except ChatAdminRequiredError as e:
+            # ChatAdminRequiredError is common for topic groups — log and skip, don't permanently restrict
+            await accounts_repo.increment_counters(account_id, failure=1)
+            await analytics_repo.log_forward(
+                campaign_id=campaign_id,
+                account_id=account_id,
+                group_id=group_id,
+                owner_id=owner_id,
+                success=False,
+                error_message=str(e),
+                campaign_name=campaign_name,
+                account_phone=account_phone,
+            )
+            await metrics.increment(MESSAGES_FAILED)
+            # Don't mark_restricted — this is often a topic/permission issue, not permanent
+            return False
+
+        except ChatWriteForbiddenError as e:
+            # ChatWriteForbiddenError often means banned in this group — skip immediately, don't retry
+            await accounts_repo.increment_counters(account_id, failure=1)
+            await analytics_repo.log_forward(
+                campaign_id=campaign_id,
+                account_id=account_id,
+                group_id=group_id,
+                owner_id=owner_id,
+                success=False,
+                error_message=str(e),
+                campaign_name=campaign_name,
+                account_phone=account_phone,
+            )
+            await metrics.increment(MESSAGES_FAILED)
+            # Don't mark permanently restricted — might work from another account
             return False
 
         except (UserDeactivatedError, AuthKeyUnregisteredError) as e:
@@ -278,14 +326,18 @@ async def safe_forward(
                 owner_id=owner_id,
                 success=False,
                 error_message=str(e),
+                campaign_name=campaign_name,
+                account_phone=account_phone,
             )
             await metrics.increment(MESSAGES_FAILED)
             
             # Detect permanent peer/entity errors and mark as restricted
             err_str = str(e).lower()
             is_permanent = any(keyword in err_str for keyword in [
-                "peer", "entity", "invalid peer", "not found", 
-                "channel private", "chat restricted", "payment required",
+                "invalid peer", "not found",
+                "channel private", "payment required",
+                "banned from sending messages",
+                "you can't write in this chat",
             ])
             if is_permanent:
                 try:
@@ -332,6 +384,10 @@ async def forward_to_groups(
     success = 0
     failed = 0
 
+    # Safety: default delay if campaign has None/null
+    if delay is None:
+        delay = get_settings().default_forward_delay_seconds
+
     message_obj = campaign.message
     # If ad_type is forward, resolve the link to get the message to forward
     if getattr(campaign, "ad_type", "custom") == "forward" and getattr(campaign, "forward_link", None):
@@ -356,6 +412,16 @@ async def forward_to_groups(
             await log.aerror("forward.link_resolution_failed", link=getattr(campaign, "forward_link", ""), error=str(e))
             return {"success": 0, "failed": len(groups), "total": len(groups)}
 
+    # Cache campaign name and account phone once (avoid DB lookups per message)
+    campaign_name = getattr(campaign, 'name', '') or ''
+    account_phone = ''
+    try:
+        from repositories import accounts_repo as _acc_repo
+        _acc = await _acc_repo.get(account_id)
+        account_phone = getattr(_acc, 'phone', None) or getattr(_acc, 'phone_number', None) or ''
+    except Exception:
+        pass
+
     for group in groups:
         # Check if task was cancelled (campaign paused)
         try:
@@ -365,6 +431,9 @@ async def forward_to_groups(
             raise
 
         target = group.get("group_id")
+        if target is None:
+            failed += 1
+            continue
         group_id = group.get("_id", str(target))
         topic_id = group.get("topic_id")
 
@@ -385,6 +454,8 @@ async def forward_to_groups(
             target=target,
             topic_id=topic_id,
             access_hash=group.get("access_hash", 0),
+            campaign_name=campaign_name,
+            account_phone=account_phone,
         )
 
         if result:

@@ -183,7 +183,7 @@ def _register_handlers(bot: TelegramClient) -> None:
 
         user_id = event.sender_id
 
-        user = await users_repo.get_or_create(
+        await users_repo.get_or_create(
             user_id=user_id,
             username=username,
             first_name=getattr(sender, "first_name", None),

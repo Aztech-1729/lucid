@@ -79,16 +79,6 @@ async def main() -> None:
         await shutdown()
 
 
-def _suppress_telethon_crashes(loop, context):
-    """Catch Telethon internal task crashes (send loop, wrong session ID) to prevent process death."""
-    exc = context.get("exception")
-    if exc:
-        msg = str(exc).lower()
-        if any(x in msg for x in ["tcptransport closed", "wrong session", "security error"]):
-            return  # Suppress — these are handled by the pool's circuit breaker
-    loop.default_exception_handler(context)
-
-
 def run() -> None:
     """Entry point — configures the event loop and runs main() with auto-restart."""
     _install_uvloop()
@@ -106,7 +96,7 @@ def run() -> None:
         except Exception as exc:
             msg = str(exc).lower()
             if any(x in msg for x in ["tcptransport closed", "wrong session", "security error", "send loop"]):
-                print(f"\n[boot] Telethon internal error, restarting in 5s...")
+                print("\n[boot] Telethon internal error, restarting in 5s...")
                 import time
                 time.sleep(5)
                 continue
