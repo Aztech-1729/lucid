@@ -857,8 +857,6 @@ async def on_groups_checker_cancel(event: events.CallbackQuery.Event) -> None:
         await event.answer("🛑 Checking process cancelled!", alert=True)
     else:
         await event.answer("Nothing to cancel.")
-    from telegram.callbacks import on_dashboard
-    await on_dashboard(event)
 
 
 # ── Analytics ───────────────────────────────────────────────

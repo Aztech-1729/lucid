@@ -13,7 +13,7 @@ import asyncio
 import random
 import re
 from datetime import timedelta
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, List
 
 from telethon import TelegramClient
 from telethon.errors import (
@@ -244,8 +244,12 @@ async def _run_checker_task(
                 await client.disconnect()
                 raise
             except Exception as e:
-                await log.awarning("checker.account_unusable", id=checker_id, error=str(e)[:120])
-                await checker_repo.mark_broken(checker_id)
+                err_str = str(e).lower()
+                if any(x in err_str for x in ("authkey", "auth key", "deactivated", "revoked", "not registered")):
+                    await checker_repo.mark_broken(checker_id)
+                    await log.awarning("checker.account_revoked", id=checker_id, error=str(e)[:120])
+                else:
+                    await log.awarning("checker.account_unusable", id=checker_id, error=str(e)[:120])
                 async with state["lock"]:
                     state["skipped"] += len(links[idx::len(accounts)])
                 try:
@@ -256,7 +260,8 @@ async def _run_checker_task(
 
             try:
                 delay_mult = 1.0
-                for link in links[idx::len(accounts)]:
+                my_links = links[idx::len(accounts)]
+                for i, link in enumerate(my_links):
                     await asyncio.sleep(random.uniform(*CHECK_DELAY) * delay_mult)
                     try:
                         result = await _check_link(client, link)
@@ -271,7 +276,7 @@ async def _run_checker_task(
                             continue
                         await checker_repo.record_use(checker_id, flood_until=now_utc_naive() + timedelta(seconds=fl.seconds))
                         async with state["lock"]:
-                            state["skipped"] += 1
+                            state["skipped"] += len(my_links) - i
                         break
                     except Exception as e:
                         await log.awarning("checker.link_error", link=link, error=str(e)[:120])
