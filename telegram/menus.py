@@ -484,6 +484,39 @@ def render_autojoin_progress(joined: int, failed: int, total: int, status: str =
     )
 
 
+def render_checker_prompt() -> str:
+    """Render the group checker instructions."""
+    return (
+        "<tg-emoji emoji-id='5289562446216835198'>🔍</tg-emoji> <b>GROUPS CHECKER</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        "<b>👇 Do ONE of the following right here in the chat:</b>\n\n"
+        "<b>📄 Option 1: Upload a <code>.txt</code> file containing group links</b>\n\n"
+        "<b>📁 Option 2: Paste a <code>t.me/addlist/...</code> folder link (checks every group inside)</b>\n\n"
+        "<b>✍️ Option 3: Paste a list of links directly</b>\n\n"
+        "I will check every group and reply with a filtered <code>.txt</code> of <b>valid</b> links only."
+    )
+
+
+def render_checker_progress(checked: int, valid: int, invalid: int, total: int, status: str = "Processing", flood: int = 0, skipped: int = 0, accounts_count: int = 0) -> str:
+    """Render the real-time group checking progress."""
+    pct = (checked / total * 100) if total > 0 else 0
+    
+    return (
+        f"<tg-emoji emoji-id='5289562446216835198'>🔍</tg-emoji> <b>GROUPS CHECKER PROGRESS</b>\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"⏳ <b>Status: {status}</b>\n\n"
+        f"<tg-emoji emoji-id='5231200819986047254'>📊</tg-emoji> <b>STATS:</b>\n"
+        f"├ <b>Checker Accounts: {accounts_count}</b>\n"
+        f"├ <b>Checked: {checked}/{total}</b>\n"
+        f"├ <b>✅ Valid: {valid}</b>\n"
+        f"├ <b>❌ Invalid: {invalid}</b>\n"
+        f"├ <b>🌊 Flood waits: {flood}</b>\n"
+        f"└ <b>⏭ Skipped: {skipped}</b>\n\n"
+        f"<tg-emoji emoji-id='5244837092042750681'>📈</tg-emoji> <b>Progress: {checked}/{total} ({pct:.1f}%)</b>\n"
+        f"{_bar(checked, total, 16)}"
+    )
+
+
 # ── SETTINGS ────────────────────────────────────────────────
 
 def render_autoreply_menu(enabled: bool, has_custom: bool) -> str:

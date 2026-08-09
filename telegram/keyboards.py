@@ -43,7 +43,10 @@ def main_menu_keyboard() -> list[list[Button]]:
     
     btn_autojoin = Button.inline(_b("Auto Join"), CB.AUTO_JOIN)
     btn_autojoin.style = KeyboardButtonStyle(bg_primary=True, icon=5224607267797606837)
-    
+
+    btn_checker = Button.inline(_b("🔍 Groups Checker"), CB.GROUPS_CHECKER)
+    btn_checker.style = KeyboardButtonStyle(bg_primary=True, icon=5289562446216835198)
+
     btn_ai = Button.inline(_b("Personal AI"), CB.AI_CHAT)
     btn_ai.style = KeyboardButtonStyle(bg_success=True, icon=5877651964208091297)
 
@@ -54,7 +57,8 @@ def main_menu_keyboard() -> list[list[Button]]:
         [btn_accounts, btn_campaigns],
         [btn_analytics, btn_health],
         [btn_autoreply, btn_autojoin],
-        [btn_ai, btn_profile],
+        [btn_checker, btn_ai],
+        [btn_profile],
     ]
     
     return grid
@@ -564,6 +568,13 @@ def autojoin_progress_keyboard() -> list[list[Button]]:
     """Keyboard for joiner progress with cancel button."""
     return [
         [Button.inline(_b("Cancel Joining"), "groups:autojoin:cancel", style="danger", icon=5260293700088511294)],
+    ]
+
+
+def checker_progress_keyboard() -> list[list[Button]]:
+    """Keyboard for checker progress with cancel button."""
+    return [
+        [Button.inline(_b("Cancel Checking"), CB.GROUPS_CHECKER_CANCEL, style="danger", icon=5260293700088511294)],
     ]
 
 

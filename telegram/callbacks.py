@@ -823,6 +823,44 @@ async def on_groups_autojoin_cancel(event: events.CallbackQuery.Event) -> None:
     await on_dashboard(event)
 
 
+# ── Groups Checker ───────────────────────────────────────────
+
+
+async def on_groups_checker(event: events.CallbackQuery.Event) -> None:
+    """Prompt for .txt file / folder link to start group checking."""
+    await event.answer()
+    from services.group_checker_service import is_checker_running
+    if is_checker_running(event.sender_id):
+        await event.answer("⚠️ Checker already in progress!", alert=True)
+        return
+
+    from repositories import checker_repo
+    if await checker_repo.count() == 0:
+        await event.respond(
+            "<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> <b>No checker accounts added.</b>\n"
+            "Add checker sessions first, then try again.",
+            buttons=keyboards.back_keyboard(CB.DASHBOARD),
+            parse_mode="html",
+        )
+        return
+
+    text = menus.render_checker_prompt()
+    buttons = keyboards.back_keyboard(CB.DASHBOARD)
+    await event.edit(text, buttons=buttons, parse_mode="html")
+    await set_context(event.sender_id, "awaiting_input", "bulk_checker")
+
+
+async def on_groups_checker_cancel(event: events.CallbackQuery.Event) -> None:
+    """Cancel the running checker."""
+    from services.group_checker_service import cancel_checker
+    if await cancel_checker(event.sender_id):
+        await event.answer("🛑 Checking process cancelled!", alert=True)
+    else:
+        await event.answer("Nothing to cancel.")
+    from telegram.callbacks import on_dashboard
+    await on_dashboard(event)
+
+
 # ── Analytics ───────────────────────────────────────────────
 
 async def on_analytics(event: events.CallbackQuery.Event) -> None:
@@ -1411,6 +1449,8 @@ async def route_callback(event: events.CallbackQuery.Event) -> None:
         CB.SETTINGS_AUTOREPLY_CUSTOM: on_autoreply_custom,
         CB.AUTO_JOIN: on_groups_autojoin,
         "groups:autojoin:cancel": on_groups_autojoin_cancel,
+        CB.GROUPS_CHECKER: on_groups_checker,
+        CB.GROUPS_CHECKER_CANCEL: on_groups_checker_cancel,
         CB.AI_CHAT: on_ai_chat,
     }
 

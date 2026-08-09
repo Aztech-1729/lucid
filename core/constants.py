@@ -169,6 +169,8 @@ class CB:
     GROUPS_TOGGLE = "groups:toggle:{account_id}:{group_id}:{page}"
     GROUPS_SELECT_ALL = "groups:all:{account_id}:{page}"
     AUTO_JOIN = "groups:autojoin"
+    GROUPS_CHECKER = "groups:checker"
+    GROUPS_CHECKER_CANCEL = "groups:checker:cancel"
 
     # AI
     AI_CHAT = "ai:chat"

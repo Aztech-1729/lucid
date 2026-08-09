@@ -573,6 +573,98 @@ def _register_handlers(bot: TelegramClient) -> None:
                 await event.respond("<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> Please send a <b>.txt file</b> or a <b>t.me/addlist/</b> link.", parse_mode="html")
                 return
 
+        if awaiting == "bulk_checker":
+            from services import group_checker_service
+            import io
+            from datetime import datetime
+
+            # Handle Folder Link
+            if event.text and "t.me/addlist/" in event.text:
+                await set_context(user_id, "awaiting_input", None)
+                links = group_checker_service.parse_check_links(event.text)
+                msg = await event.respond("⏳ <b>Processing folder link...</b>", parse_mode="html")
+
+            # Handle TXT File
+            elif event.document:
+                filename = event.document.attributes[0].file_name if event.document.attributes else ""
+                if not filename.lower().endswith(".txt"):
+                    await event.respond("<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> Please send a <b>.txt</b> file.", parse_mode="html")
+                    return
+
+                file_bytes = await event.download_media(bytes)
+                try:
+                    content = file_bytes.decode("utf-8")
+                except Exception:
+                    await event.respond("<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> Invalid file encoding. Must be UTF-8 txt.")
+                    return
+
+                links = group_checker_service.parse_check_links(content)
+                await set_context(user_id, "awaiting_input", None)
+                msg = await event.respond(f"⏳ <b>Processing {len(links)} links...</b>", parse_mode="html")
+
+            # Handle Pasted Links
+            elif event.text and event.text.strip():
+                links = group_checker_service.parse_check_links(event.text)
+                await set_context(user_id, "awaiting_input", None)
+                msg = await event.respond(f"⏳ <b>Processing {len(links)} links...</b>", parse_mode="html")
+            else:
+                await event.respond("<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> Please send a <b>.txt file</b>, a <b>folder link</b>, or paste links.", parse_mode="html")
+                return
+
+            if not links:
+                await event.respond("<tg-emoji emoji-id='5420323339723881652'>⚠️</tg-emoji> No valid t.me links found.", parse_mode="html")
+                return
+
+            total_links = len(links)
+            try:
+                await msg.edit(
+                    menus.render_checker_progress(0, 0, 0, total_links, status="Starting...", accounts_count=0),
+                    buttons=keyboards.checker_progress_keyboard(),
+                    parse_mode="html",
+                )
+            except Exception:
+                pass
+
+            async def update_progress_checker(checked, valid, invalid, total, status="Processing", flood=0, skipped=0, accounts_count=0):
+                try:
+                    await msg.edit(
+                        menus.render_checker_progress(checked, valid, invalid, total, status=status, flood=flood, skipped=skipped, accounts_count=accounts_count),
+                        parse_mode="html",
+                    )
+                except Exception:
+                    pass
+
+            async def on_checker_result(valid_links, stats):
+                try:
+                    caption = (
+                        f"<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> <b>CHECK COMPLETE</b>\n"
+                        f"━━━━━━━━━━━━━━━━━━━━\n\n"
+                        f"<tg-emoji emoji-id='5231200819986047254'>📊</tg-emoji> <b>RESULT:</b>\n"
+                        f"├ <b>Checked: {stats['checked']}/{stats['total']}</b>\n"
+                        f"├ <b>✅ Valid: {len(valid_links)}</b>\n"
+                        f"├ <b>❌ Invalid: {stats['invalid']}</b>\n"
+                        f"├ <b>🌊 Flood waits: {stats['flood']}</b>\n"
+                        f"└ <b>⏭ Skipped: {stats['skipped']}</b>"
+                    )
+                    if valid_links:
+                        content = "\n".join(valid_links)
+                        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+                        await event.client.send_file(
+                            event.chat_id,
+                            io.BytesIO(content.encode("utf-8")),
+                            file_name=f"checked_groups_{ts}.txt",
+                            caption=caption,
+                            parse_mode="html",
+                        )
+                    else:
+                        await event.respond(caption, parse_mode="html")
+                except Exception as e:
+                    await event.respond(f"<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> Failed to send result: {str(e)[:80]}", parse_mode="html")
+
+            import asyncio
+            asyncio.create_task(group_checker_service.start_check(user_id, links, update_progress_checker, on_checker_result))
+            return
+
         # Interactive Handlers (Phone, OTP, etc.)
         try:
             if awaiting == "auth_phone":
