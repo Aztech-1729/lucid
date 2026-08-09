@@ -633,10 +633,10 @@ def paywall_keyboard(user=None) -> list[list[Button]]:
     """Subscription options."""
     from telethon.tl.types import KeyboardButtonStyle
     
-    btn_w = Button.inline(_b("Buy Weekly - $25"), b"buy:weekly")
+    btn_w = Button.inline(_b("Buy Weekly - $35"), b"buy:weekly")
     btn_w.style = KeyboardButtonStyle(bg_success=True, icon=5409048419211682843)
     
-    btn_m = Button.inline(_b("Buy Monthly - $55"), b"buy:monthly")
+    btn_m = Button.inline(_b("Buy Monthly - $75"), b"buy:monthly")
     btn_m.style = KeyboardButtonStyle(bg_primary=True, icon=5409048419211682843)
     
     return [

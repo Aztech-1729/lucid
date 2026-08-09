@@ -1299,7 +1299,7 @@ async def on_bulk_action(event: events.CallbackQuery.Event, action: str) -> None
 async def on_buy_plan(event: events.CallbackQuery.Event, plan: str) -> None:
     """Show payment methods for the selected plan."""
     await event.answer()
-    price = "$25" if plan == "weekly" else "$55"
+    price = "$35" if plan == "weekly" else "$75"
     text = (
         f"<b>🛒 Purchase Plan</b>\n\n"
         f"<b>Selected:</b> {plan.capitalize()} Pass\n"
@@ -1313,7 +1313,7 @@ async def on_pay_method_select(event: events.CallbackQuery.Event, plan: str, met
     """Generate invoice based on payment method."""
     await event.answer()
     
-    amount_usd = 25 if plan == "weekly" else 55
+    amount_usd = 35 if plan == "weekly" else 75
     
     import uuid
     order_id = str(uuid.uuid4().hex)
