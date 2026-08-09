@@ -9,7 +9,7 @@ class Invoice(BaseModel):
     user_id: int = Field(..., description="Telegram User ID")
     plan: str = Field(..., description="Plan type (WEEKLY, MONTHLY)")
     amount: str = Field(..., description="Amount charged (e.g., '25')")
-    gateway: str = Field(..., description="Payment gateway (ZAPUPI or OXAPAY)")
+    gateway: str = Field(..., description="Payment gateway (OXAPAY)")
     status: str = Field(default="pending", description="Status (pending, paid, cancelled)")
     created_at: datetime = Field(default_factory=datetime.utcnow)
     paid_at: Optional[datetime] = None
