@@ -357,7 +357,8 @@ def _register_handlers(bot: TelegramClient) -> None:
         """Handle all inline button presses."""
         
         sender_id = event.sender_id
-        if not sender_id: return
+        if not sender_id:
+            return
         
         # ── Anti-spam throttle ──────────────────────────────────
         now = _time.monotonic()
@@ -673,10 +674,11 @@ def _register_handlers(bot: TelegramClient) -> None:
                         )
                     if valid_links:
                         content = "\n".join(valid_links)
+                        buf = io.BytesIO(content.encode("utf-8"))
+                        buf.name = f"{len(valid_links)}_valid_groups.txt"
                         await event.client.send_file(  # type: ignore[union-attr]
                             event.chat_id,
-                            io.BytesIO(content.encode("utf-8")),
-                            file_name=f"{len(valid_links)}_valid_groups.txt",
+                            buf,
                             caption=caption,
                             parse_mode="html",
                         )
