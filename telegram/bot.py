@@ -580,7 +580,6 @@ def _register_handlers(bot: TelegramClient) -> None:
         if awaiting == "bulk_checker":
             from services import group_checker_service
             import io
-            from datetime import datetime
 
             # Handle Folder Link
             if event.text and "t.me/addlist/" in event.text:
@@ -660,11 +659,10 @@ def _register_handlers(bot: TelegramClient) -> None:
                     )
                     if valid_links:
                         content = "\n".join(valid_links)
-                        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
                         await event.client.send_file(  # type: ignore[union-attr]
                             event.chat_id,
                             io.BytesIO(content.encode("utf-8")),
-                            file_name=f"checked_groups_{ts}.txt",
+                            file_name=f"{len(valid_links)}_valid_groups.txt",
                             caption=caption,
                             parse_mode="html",
                         )

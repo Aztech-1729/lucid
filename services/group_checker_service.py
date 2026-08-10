@@ -67,18 +67,19 @@ async def cancel_checker(user_id: int) -> bool:
 
 
 def parse_check_links(text: str) -> List[str]:
-    """Extract clean, deduped t.me links from raw text/txt content."""
+    """Extract clean, deduped t.me links from raw text/txt content.
+
+    Parses the WHOLE text with one regex pass, so empty lines, BOMs, and
+    arbitrary line structure can never cut off detection mid-file.
+    """
+    text = text.lstrip("\ufeff")
     links: List[str] = []
     seen = set()
-    for line in text.splitlines():
-        line = line.strip()
-        if not line or line.startswith("#"):
-            continue
-        for m in LINK_RE.finditer(line):
-            link = m.group(1).rstrip(".,;")
-            if link not in seen:
-                seen.add(link)
-                links.append(link)
+    for m in LINK_RE.finditer(text):
+        link = m.group(1).rstrip(".,;:!?")
+        if link not in seen:
+            seen.add(link)
+            links.append(link)
     return links
 
 
