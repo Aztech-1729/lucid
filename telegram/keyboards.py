@@ -143,6 +143,9 @@ def account_list_keyboard(
             Button.inline(_b("Upload Sessions"), CB.ACCOUNT_UPLOAD_SESSIONS, style="success", icon=5282843764451195532),
         ])
         rows.append([
+            Button.inline(_b("Export Sessions (ZIP)"), CB.ACCOUNT_EXPORT_SESSIONS, style="primary", icon=5415754593856396827),
+        ])
+        rows.append([
             Button.inline(_b("Remove Limited"), CB.ACCOUNT_DELETE_LIMITED, style="danger", icon=5445267414562389170),
             Button.inline(_b("Remove All"), CB.ACCOUNT_DELETE_ALL, style="danger", icon=5445267414562389170),
         ])

@@ -97,6 +97,33 @@ async def on_account_view(event: events.CallbackQuery.Event, account_id: str) ->
     buttons = keyboards.account_detail_keyboard(account_id, status, back_cb=back_target)
     await event.edit(text, buttons=buttons, parse_mode="html")
 
+async def on_account_export_sessions(event: events.CallbackQuery.Event) -> None:
+    """Export all accounts as a ZIP of .session files."""
+    await event.answer()  # LINE 1. Non-negotiable.
+    
+    # 1. Update UI to show processing
+    await event.edit("⏳ <b>Generating ZIP...</b>\n\nPlease wait while your sessions are securely decrypted and packaged.", buttons=[], parse_mode="html")
+    
+    # 2. Call exporter service
+    from services.session_exporter import export_sessions_zip
+    from telethon.tl.types import DocumentAttributeFilename
+    zip_bytes = await export_sessions_zip(_uid(event))
+    
+    if not zip_bytes:
+        await event.edit("❌ <b>Export Failed</b>\n\nYou do not have any active accounts to export.", buttons=keyboards.back_keyboard(CB.ACCOUNTS), parse_mode="html")
+        return
+        
+    # 3. Send file to user
+    await event.respond(
+        file=zip_bytes,
+        attributes=[DocumentAttributeFilename("Exported_Sessions.zip")],
+        message="✅ <b>Export Complete!</b>\n\nHere are your exported Telethon `.session` files.",
+        parse_mode="html"
+    )
+    
+    # 4. Restore menu
+    await on_accounts(event)
+
 async def on_account_add(event: events.CallbackQuery.Event) -> None:
     """Prompt user to send a session string."""
     await event.answer()  # LINE 1. Non-negotiable.
@@ -1463,6 +1490,7 @@ async def route_callback(event: events.CallbackQuery.Event) -> None:
         CB.ACCOUNT_DELETE_ALL: on_accounts_delete_all,
         CB.ACCOUNT_DELETE_LIMITED: on_accounts_delete_limited,
         CB.ACCOUNT_UPLOAD_SESSIONS: on_account_upload_sessions,
+        CB.ACCOUNT_EXPORT_SESSIONS: on_account_export_sessions,
         CB.CAMPAIGN_CREATE: on_campaign_create,
         CB.CONFIRM_NO: on_confirm_no,
         CB.SETTINGS_AUTOREPLY: on_autoreply_menu,

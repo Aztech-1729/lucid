@@ -1,0 +1,49 @@
+import io
+import os
+import zipfile
+import tempfile
+
+from telethon.sessions import StringSession, SQLiteSession
+
+from core.logging import get_logger
+from repositories import accounts_repo
+from services import session_manager
+
+log = get_logger("session_exporter")
+
+async def export_sessions_zip(owner_id: int) -> bytes:
+    """
+    Exports all active accounts for a user into a ZIP file containing
+    standard Telethon .session (SQLite) files.
+    """
+    accounts = await accounts_repo.list_by_owner(owner_id)
+    if not accounts:
+        return b""
+        
+    mem_zip = io.BytesIO()
+    
+    with tempfile.TemporaryDirectory() as tmpdir:
+        with zipfile.ZipFile(mem_zip, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
+            for acc in accounts:
+                try:
+                    # 1. Decrypt raw string
+                    raw_str = session_manager.decrypt_session(acc.session)
+                    string_sess = StringSession(raw_str)
+                    
+                    # 2. Re-create SQLite .session file
+                    session_path = os.path.join(tmpdir, f"{acc.phone}.session")
+                    sql_sess = SQLiteSession(session_path)
+                    
+                    # Populate the core details
+                    sql_sess.set_dc(string_sess.dc_id, string_sess.server_address, string_sess.port)
+                    sql_sess.auth_key = string_sess.auth_key
+                    sql_sess.save()
+                    sql_sess.close()
+                    
+                    # 3. Add to ZIP archive
+                    zf.write(session_path, arcname=f"{acc.phone}.session")
+                    
+                except Exception as e:
+                    await log.aerror("export.failed", phone=acc.phone, error=str(e))
+                    
+    return mem_zip.getvalue()

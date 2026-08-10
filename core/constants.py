@@ -191,6 +191,7 @@ class CB:
     ACCOUNT_DELETE_ALL = "acc:delall"
     ACCOUNT_DELETE_LIMITED = "acc:dellimited"
     ACCOUNT_UPLOAD_SESSIONS = "acc:upload"
+    ACCOUNT_EXPORT_SESSIONS = "acc:export"
     ACCOUNT_PAUSE = "acc:pause:{account_id}"
     ACCOUNT_RESUME = "acc:resume:{account_id}"
     ACCOUNT_HEALTH = "acc:health:{account_id}"
