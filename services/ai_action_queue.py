@@ -4,6 +4,8 @@ AI Action Queue.
 Holds pending DANGEROUS or WRITE actions proposed by the AI in Redis.
 These actions require explicit user confirmation via inline buttons before execution.
 """
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 
 import json
 import uuid

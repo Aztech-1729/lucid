@@ -7,6 +7,8 @@ Handles FloodWait, retries, topic support, and result logging.
 
 from __future__ import annotations
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 import asyncio
 import random
 
@@ -35,13 +37,13 @@ log = get_logger("forwarding_service")
 
 
 async def safe_forward(
-    client,
+    client: Any,
     account_id: str,
     campaign_id: str,
     group_id: str,
     owner_id: int,
-    message,
-    target,
+    message: Any,
+    target: Any,
     topic_id: int | None = None,
     access_hash: int = 0,
     retries: int = 3,
@@ -369,13 +371,13 @@ async def safe_forward(
 
 
 async def forward_to_groups(
-    client,
+    client: Any,
     account_id: str,
-    campaign,
-    groups: list[dict],
+    campaign: Any,
+    groups: list[dict[str, Any]],
     delay: float = 2.0,
     health_score: int = 100,
-) -> dict:
+) -> dict[str, Any]:
     """
     Forward a message to multiple groups with delay between sends.
 

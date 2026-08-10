@@ -8,6 +8,8 @@ analytics data. Writes to dashboard cache for instant callback reads.
 from __future__ import annotations
 
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 from cache import dashboard_cache
 from core.logging import get_logger
 from repositories import accounts_repo, campaigns_repo, health_repo, users_repo
@@ -15,7 +17,7 @@ from repositories import accounts_repo, campaigns_repo, health_repo, users_repo
 log = get_logger("dashboard_service")
 
 
-async def build_dashboard(user_id: int) -> dict:
+async def build_dashboard(user_id: int) -> dict[str, Any]:
     """
     Assemble and cache the dashboard payload for a user.
 

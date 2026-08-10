@@ -6,6 +6,8 @@ Field names match existing DB schema: name, session, added_at, etc.
 
 from __future__ import annotations
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 from datetime import datetime
 from typing import Optional
 
@@ -46,13 +48,13 @@ async def create(
         "status": AccountStatus.ACTIVE,
         "health_score": 100,
         "rotation_score": 1.0,
-        "flood_wait_history": [],
+        "flood_wait_history": cast(list[Any], []),
         "success_count": 0,
         "failure_count": 0,
         "last_used_at": None,
         "next_check_at": now,
         "notes": None,
-        "tags": [],
+        "tags": cast(list[Any], []),
     }
     result = await _coll().insert_one(doc)
     doc["_id"] = str(result.inserted_id)
@@ -71,7 +73,7 @@ async def get(account_id: str) -> Optional[Account]:
 async def list_by_owner(owner_id: int) -> list[Account]:
     """Get all accounts for a user."""
     cursor = _coll().find({"owner_id": owner_id}).sort("added_at", -1)
-    accounts = []
+    accounts: list[Any] = []
     async for doc in cursor:
         doc["_id"] = str(doc["_id"])
         accounts.append(Account.model_validate(doc))
@@ -98,7 +100,7 @@ async def update_health(
     status: Optional[str] = None,
 ) -> bool:
     """Update health score and optionally status."""
-    update_doc: dict = {
+    update_doc: dict[str, Any] = {
         "health_score": health_score,
         "last_checked_at": now_utc_naive(),
         "updated_at": now_utc_naive(),
@@ -136,8 +138,8 @@ async def increment_counters(
     failure: int = 0,
 ) -> None:
     """Atomically increment success/failure counters."""
-    update_doc: dict = {"$set": {"last_used_at": now_utc_naive()}}
-    inc_doc: dict = {}
+    update_doc: dict[str, Any] = {"$set": {"last_used_at": now_utc_naive()}}
+    inc_doc: dict[str, Any] = {}
     if success:
         inc_doc["success_count"] = success
     if failure:
@@ -188,7 +190,7 @@ async def get_all_active() -> list[Account]:
             {"status": {"$exists": False}},  # Old accounts without status field
         ]
     })
-    accounts = []
+    accounts: list[Any] = []
     async for doc in cursor:
         doc["_id"] = str(doc["_id"])
         accounts.append(Account.model_validate(doc))
@@ -210,7 +212,7 @@ async def get_due_for_check(limit: int = 50) -> list[Account]:
         .sort("next_check_at", 1)
         .limit(limit)
     )
-    accounts = []
+    accounts: list[Any] = []
     async for doc in cursor:
         doc["_id"] = str(doc["_id"])
         accounts.append(Account.model_validate(doc))

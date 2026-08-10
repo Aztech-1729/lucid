@@ -7,8 +7,9 @@ for each user interacting with the bot.
 
 from __future__ import annotations
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 import json
-from typing import Any
 
 from cache.redis_client import get_redis, make_key
 from core.constants import RedisKeys, TTL_USER_STATE
@@ -27,9 +28,9 @@ class UserState:
         self.user_id = user_id
         self.screen = screen
         self.nav_stack = nav_stack or []
-        self.context = context or {}
+        self.context: dict[str, Any] = context or {}
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "user_id": self.user_id,
             "screen": self.screen,
@@ -38,7 +39,7 @@ class UserState:
         }
 
     @classmethod
-    def from_dict(cls, data: dict) -> "UserState":
+    def from_dict(cls, data: dict[str, Any]) -> "UserState":
         return cls(
             user_id=data["user_id"],
             screen=data.get("screen", "main_menu"),
@@ -70,7 +71,7 @@ async def set_state(state: UserState) -> None:
     await r.setex(key, TTL_USER_STATE, json.dumps(state.to_dict()))
 
 
-async def push_screen(user_id: int, screen: str, context: dict | None = None) -> None:
+async def push_screen(user_id: int, screen: str, context: dict[str, Any] | None = None) -> None:
     """Navigate to a new screen, pushing current to back stack."""
     state = await get_state(user_id)
     state.nav_stack.append(state.screen)

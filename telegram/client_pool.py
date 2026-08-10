@@ -12,11 +12,13 @@ Features:
 
 from __future__ import annotations
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 import asyncio
 import time
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
-from typing import AsyncIterator, Optional
+from typing import AsyncIterator, Optional, AsyncGenerator
 
 from telethon import TelegramClient
 from telethon.sessions import StringSession
@@ -53,7 +55,7 @@ class ClientPool:
     def __init__(self) -> None:
         self._slots: dict[str, PoolSlot] = {}
         self._global_lock = asyncio.Lock()
-        self._eviction_task: Optional[asyncio.Task] = None
+        self._eviction_task: Optional[asyncio.Task[Any]] = None
         self._running = False
         self.keep_alive_accounts: set[str] = set()
 
@@ -74,7 +76,7 @@ class ClientPool:
                 pass
 
         # Disconnect all clients concurrently
-        disconnect_tasks = []
+        disconnect_tasks: list[Any] = []
         for slot in list(self._slots.values()):
             disconnect_tasks.append(slot.client.disconnect())
             
@@ -87,7 +89,7 @@ class ClientPool:
         await log.ainfo("pool.stopped")
 
     @asynccontextmanager
-    async def acquire(self, account_id: str) -> AsyncIterator[TelegramClient]:
+    async def acquire(self, account_id: str) -> AsyncGenerator[TelegramClient]:
         """
         Borrow a connected client for an account.
 
@@ -95,7 +97,7 @@ class ClientPool:
             async with client_pool.acquire(account_id) as client:
                 await client.send_message(target, message)
         """
-        account_id = str(account_id)
+        account_id = account_id
         
         while True:
             # Check circuit breaker
@@ -178,7 +180,7 @@ class ClientPool:
 
     async def evict(self, account_id: str) -> None:
         """Force-disconnect and remove a client (on ban/quarantine)."""
-        account_id = str(account_id)
+        account_id = account_id
         async with self._global_lock:
             slot = self._slots.pop(account_id, None)
             if slot:
@@ -192,7 +194,7 @@ class ClientPool:
 
     async def register(self, account_id: str, session: StringSession) -> None:
         """Register a new session in the pool without connecting."""
-        account_id = str(account_id)
+        account_id = account_id
         settings = get_settings()
         client = TelegramClient(session, settings.api_id, settings.api_hash, connection_retries=3, request_retries=3, retry_delay=2)
         async with self._global_lock:
@@ -231,14 +233,14 @@ class ClientPool:
                 except Exception as exc:
                     await log.awarning("pool.pre_warm_failed", account_id=aid, error=str(exc))
                     
-        tasks = []
+        tasks: list[Any] = []
         for i, aid in enumerate(account_ids):
-            tasks.append(_warm(str(aid), i * 0.1))
+            tasks.append(_warm(aid, i * 0.1))
             
         await asyncio.gather(*tasks, return_exceptions=True)
         await log.ainfo("pool.pre_warming_completed")
 
-    async def stats(self) -> dict:
+    async def stats(self) -> dict[str, Any]:
         """Return pool statistics."""
         # ASYNC FIX: Use a list snapshot to prevent dictionary size mutation errors
         slots_snapshot = list(self._slots.values())
@@ -305,7 +307,7 @@ class ClientPool:
 
     async def _evict_lru(self) -> None:
         """Evict the least-recently-used idle client."""
-        idle_slots = [
+        idle_slots: list[tuple[str, Any]] = [
             (aid, s) for aid, s in self._slots.items()
             if s.borrow_count == 0
         ]
@@ -313,8 +315,10 @@ class ClientPool:
             await log.awarning("pool.no_idle_to_evict")
             return
 
-        # Sort by last_used ascending
-        idle_slots.sort(key=lambda x: x[1].last_used)
+        def _sort_key(item: tuple[str, Any]) -> float:
+            return item[1].last_used
+            
+        idle_slots.sort(key=_sort_key)
         lru_id, lru_slot = idle_slots[0]
 
         try:
@@ -336,8 +340,7 @@ class ClientPool:
                 await asyncio.sleep(60)  # Check every minute
 
                 now = time.monotonic()
-                to_evict = []
-
+                to_evict: list[Any] = []
                 # ASYNC FIX: Use a list snapshot to prevent dictionary size mutation errors
                 for account_id, slot in list(self._slots.items()):
                     if account_id in self.keep_alive_accounts:

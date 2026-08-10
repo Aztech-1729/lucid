@@ -6,6 +6,8 @@ Uses pydantic-settings v2 with SettingsConfigDict.
 
 from __future__ import annotations
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 from typing import Optional
 from pydantic import Field
 

@@ -6,6 +6,8 @@ Thread-safe in-memory counters for monitoring system health.
 
 from __future__ import annotations
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 import asyncio
 from collections import defaultdict
 

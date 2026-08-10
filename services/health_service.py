@@ -7,6 +7,8 @@ automatic actions based on thresholds.
 
 from __future__ import annotations
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 from datetime import timedelta
 
 from cache import health_cache
@@ -190,7 +192,7 @@ async def evaluate_account(
     return record
 
 
-async def get_health_summary(owner_id: int) -> dict:
+async def get_health_summary(owner_id: int) -> dict[str, Any]:
     """
     Build a health summary for a user's accounts.
 

@@ -4,6 +4,8 @@ Campaign data model and related sub-models.
 
 from __future__ import annotations
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 from datetime import datetime
 from typing import Optional
 

@@ -5,6 +5,8 @@ Auto-pauses active campaigns if their trial or plan has expired.
 
 from __future__ import annotations
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 import asyncio
 from core.constants import CampaignStatus
 from core.logging import get_logger
@@ -16,7 +18,7 @@ async def run_subscription_cycle() -> None:
     """Check all active campaigns, and pause them if the owner's subscription has expired."""
     await log.ainfo("subscription_worker.cycle_start")
     
-    users_cache = {}
+    users_cache: dict[Any, Any] = {}
     paused_count = 0
     
     async for camp in campaigns_repo.get_active():

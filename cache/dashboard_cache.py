@@ -7,13 +7,15 @@ Workers write this cache; callbacks read it.
 
 from __future__ import annotations
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 from typing import Any, Optional
 
 from cache.redis_client import cache_delete, cache_get, cache_set, make_key
 from core.constants import RedisKeys, TTL_DASHBOARD
 
 
-async def get(user_id: int) -> Optional[dict]:
+async def get(user_id: int) -> Optional[dict[str, Any]]:
     """Read the dashboard payload from cache."""
     key = make_key(RedisKeys.DASHBOARD, user_id=user_id)
     return await cache_get(key)

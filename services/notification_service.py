@@ -8,6 +8,8 @@ bans, campaign completions, and other events.
 from __future__ import annotations
 
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 from core.constants import HEALTH_EMOJI, HealthState
 from core.logging import get_logger
 
@@ -17,7 +19,7 @@ log = get_logger("notification_service")
 _bot = None
 
 
-def set_bot(bot) -> None:
+def set_bot(bot: Any) -> None:
     """Set the bot client for sending notifications."""
     global _bot
     _bot = bot
@@ -101,7 +103,7 @@ async def notify_account_removed(
 async def notify_campaign_completed(
     user_id: int,
     campaign_name: str,
-    stats: dict,
+    stats: dict[str, Any],
 ) -> None:
     """Notify user of campaign completion."""
     success = stats.get("total_success", 0)

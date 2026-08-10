@@ -1,6 +1,8 @@
 """
 MongoDB Index Setup
 """
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 
 from pymongo.asynchronous.database import AsyncDatabase
 import pymongo
@@ -9,7 +11,7 @@ from core.logging import get_logger
 log = get_logger("mongo.indexes")
 
 
-async def setup_indexes(db: AsyncDatabase) -> None:
+async def setup_indexes(db: AsyncDatabase[Any]) -> None:
     """
     Create necessary indexes for performance.
     """

@@ -6,13 +6,15 @@ go_back pops the navigation stack and routes to the correct screen.
 
 from __future__ import annotations
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 from core.logging import get_logger
 from telegram.states import pop_screen
 
 log = get_logger("navigation")
 
 
-async def go_back(event) -> None:
+async def go_back(event: Any) -> None:
     """
     Go back to the previous screen in the navigation stack.
 

@@ -7,6 +7,8 @@ ISO timestamps, and JSON or console rendering based on settings.
 
 from __future__ import annotations
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 import logging
 import sys
 

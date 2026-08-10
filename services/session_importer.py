@@ -4,6 +4,8 @@ Session Importer service — Handles bulk import of .session and .zip files.
 
 from __future__ import annotations
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 import asyncio
 import io
 import os
@@ -17,7 +19,7 @@ from services import session_manager
 
 log = get_logger("session_importer")
 
-async def import_from_file(owner_id: int, file_bytes: bytes, filename: str, update_callback) -> None:
+async def import_from_file(owner_id: int, file_bytes: bytes, filename: str, update_callback: Callable[..., Any]) -> None:
     """Import sessions from a .session file or a .zip archive."""
     if filename.lower().endswith(".session"):
         await _process_session_file(owner_id, file_bytes, filename, update_callback)
@@ -32,7 +34,7 @@ async def import_from_file(owner_id: int, file_bytes: bytes, filename: str, upda
     await account_cache.invalidate_list(owner_id)
     await dashboard_cache.invalidate(owner_id)
 
-async def _process_session_file(owner_id: int, file_bytes: bytes, filename: str, update_callback) -> None:
+async def _process_session_file(owner_id: int, file_bytes: bytes, filename: str, update_callback: Callable[..., Any]) -> None:
     """Process a single Telethon/Pyrogram .session file."""
     await update_callback(0, 0, 1, "Processing session file...")
     
@@ -56,7 +58,7 @@ async def _process_session_file(owner_id: int, file_bytes: bytes, filename: str,
     except Exception as e:
         await update_callback(0, 1, 1, f"❌ Error: {str(e)[:20]}")
 
-async def _process_zip_file(owner_id: int, file_bytes: bytes, update_callback) -> None:
+async def _process_zip_file(owner_id: int, file_bytes: bytes, update_callback: Callable[..., Any]) -> None:
     """Extract and process all .session files from a ZIP archive."""
     try:
         with zipfile.ZipFile(io.BytesIO(file_bytes)) as z:

@@ -7,6 +7,8 @@ Handles: phone auth OTP, campaign creation, bulk actions, session uploads.
 
 from __future__ import annotations
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 from telethon import events
 
 from core.constants import CB
@@ -149,7 +151,7 @@ async def handle_campaign_name_input(event: events.NewMessage.Event) -> None:
 
         await campaign_cache.set_summary(str(campaign.id), data)
 
-        text = render_campaign_detail(data)
+        text: str = render_campaign_detail(data)
         buttons = campaign_detail_keyboard(str(campaign.id), campaign.status)
 
         settings = get_settings()
@@ -218,7 +220,7 @@ async def handle_account_notes_input(event: events.NewMessage.Event) -> None:
 
 async def handle_autoreply_text_input(event: events.NewMessage.Event) -> None:
     """Handle custom auto-reply message input."""
-    text = event.text.strip()
+    text: str = event.text.strip()
 
     try:
         from repositories import users_repo
@@ -237,7 +239,7 @@ async def handle_autoreply_text_input(event: events.NewMessage.Event) -> None:
             parse_mode="html")
 
 
-async def handle_cmp_ad_custom(event, campaign_id: str):
+async def handle_cmp_ad_custom(event: Any, campaign_id: str) -> None:
     from services import campaign_service
     from telegram.menus import render_campaign_detail
     from telegram.keyboards import campaign_detail_keyboard
@@ -251,12 +253,12 @@ async def handle_cmp_ad_custom(event, campaign_id: str):
     from workers.cache_worker import warm_user_cache
     await warm_user_cache(event.sender_id)
     data = await campaign_cache.get_summary(campaign_id)
-    text = render_campaign_detail(data)
+    text: str = render_campaign_detail(data)
     buttons = campaign_detail_keyboard(campaign_id, data.get("status", "UNKNOWN") if data else "UNKNOWN")
     await event.respond(text, buttons=buttons, parse_mode="html")
 
 
-async def handle_cmp_ad_forward(event, campaign_id: str):
+async def handle_cmp_ad_forward(event: Any, campaign_id: str) -> None:
     from services import campaign_service
     from telegram.menus import render_campaign_detail
     from telegram.keyboards import campaign_detail_keyboard
@@ -270,12 +272,12 @@ async def handle_cmp_ad_forward(event, campaign_id: str):
     from workers.cache_worker import warm_user_cache
     await warm_user_cache(event.sender_id)
     data = await campaign_cache.get_summary(campaign_id)
-    text = render_campaign_detail(data)
+    text: str = render_campaign_detail(data)
     buttons = campaign_detail_keyboard(campaign_id, data.get("status", "UNKNOWN") if data else "UNKNOWN")
     await event.respond(text, buttons=buttons, parse_mode="html")
 
 
-async def handle_cmp_int_group(event, campaign_id: str):
+async def handle_cmp_int_group(event: Any, campaign_id: str) -> None:
     from services import campaign_service
     from telegram.menus import render_campaign_detail
     from telegram.keyboards import campaign_detail_keyboard
@@ -289,14 +291,14 @@ async def handle_cmp_int_group(event, campaign_id: str):
         from workers.cache_worker import warm_user_cache
         await warm_user_cache(event.sender_id)
         data = await campaign_cache.get_summary(campaign_id)
-        text = render_campaign_detail(data)
+        text: str = render_campaign_detail(data)
         buttons = campaign_detail_keyboard(campaign_id, data.get("status", "UNKNOWN") if data else "UNKNOWN")
         await event.respond(text, buttons=buttons, parse_mode="html")
     except ValueError:
         await event.respond("<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> Invalid number. Try again.")
 
 
-async def handle_cmp_int_round(event, campaign_id: str):
+async def handle_cmp_int_round(event: Any, campaign_id: str) -> None:
     from services import campaign_service
     from telegram.menus import render_campaign_detail
     from telegram.keyboards import campaign_detail_keyboard
@@ -310,14 +312,14 @@ async def handle_cmp_int_round(event, campaign_id: str):
         from workers.cache_worker import warm_user_cache
         await warm_user_cache(event.sender_id)
         data = await campaign_cache.get_summary(campaign_id)
-        text = render_campaign_detail(data)
+        text: str = render_campaign_detail(data)
         buttons = campaign_detail_keyboard(campaign_id, data.get("status", "UNKNOWN") if data else "UNKNOWN")
         await event.respond(text, buttons=buttons, parse_mode="html")
     except ValueError:
         await event.respond("<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> Invalid number. Try again.")
 
 
-async def handle_cmp_rounds_max(event, campaign_id: str):
+async def handle_cmp_rounds_max(event: Any, campaign_id: str) -> None:
     from services import campaign_service
     from telegram.menus import render_campaign_detail
     from telegram.keyboards import campaign_detail_keyboard
@@ -331,7 +333,7 @@ async def handle_cmp_rounds_max(event, campaign_id: str):
         from workers.cache_worker import warm_user_cache
         await warm_user_cache(event.sender_id)
         data = await campaign_cache.get_summary(campaign_id)
-        text = render_campaign_detail(data)
+        text: str = render_campaign_detail(data)
         buttons = campaign_detail_keyboard(campaign_id, data.get("status", "UNKNOWN") if data else "UNKNOWN")
         await event.respond(text, buttons=buttons, parse_mode="html")
     except ValueError:
@@ -339,7 +341,7 @@ async def handle_cmp_rounds_max(event, campaign_id: str):
 
 
 async def handle_bulk_name_first(event: events.NewMessage.Event) -> None:
-    text = event.text.strip()
+    text: str = event.text.strip()
     await set_context(event.sender_id, "bulk_first_name", text)
     await set_context(event.sender_id, "awaiting_input", "bulk_name_last")
     from telegram.keyboards import back_keyboard
@@ -363,7 +365,7 @@ async def handle_bulk_name_last(event: events.NewMessage.Event) -> None:
     from services import bulk_service
 
     async def run_task():
-        async def update_progress(success, failed, total):
+        async def update_progress(success: int, failed: int, total: int):
             try:
                 await msg.edit(render_bulk_progress("Change Name", success, failed, total), buttons=bulk_progress_keyboard(), parse_mode="html")
             except Exception:
@@ -380,7 +382,7 @@ async def handle_bulk_name_last(event: events.NewMessage.Event) -> None:
 
 
 async def handle_bulk_bio(event: events.NewMessage.Event) -> None:
-    text = event.text.strip()
+    text: str = event.text.strip()
     if len(text) > 70:
         await event.respond(
             "<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> <b>Bio too long!</b>\n"
@@ -394,7 +396,7 @@ async def handle_bulk_bio(event: events.NewMessage.Event) -> None:
     from services import bulk_service
 
     async def run_task():
-        async def update_progress(success, failed, total):
+        async def update_progress(success: int, failed: int, total: int):
             try:
                 await msg.edit(render_bulk_progress("Change Bio", success, failed, total), buttons=bulk_progress_keyboard(), parse_mode="html")
             except Exception:
@@ -427,7 +429,7 @@ async def handle_bulk_photo(event: events.NewMessage.Event) -> None:
     from services import bulk_service
 
     async def run_task():
-        async def update_progress(success, failed, total):
+        async def update_progress(success: int, failed: int, total: int):
             try:
                 await msg.edit(render_bulk_progress("Change Photo", success, failed, total), buttons=bulk_progress_keyboard(), parse_mode="html")
             except Exception:
@@ -446,14 +448,14 @@ async def handle_bulk_photo(event: events.NewMessage.Event) -> None:
 
 
 async def handle_bulk_2fa_set(event: events.NewMessage.Event) -> None:
-    text = event.text.strip()
+    text: str = event.text.strip()
     from telegram.menus import render_bulk_progress
     from telegram.keyboards import bulk_progress_keyboard, bulk_manager_keyboard
     msg = await event.respond(render_bulk_progress("Set 2FA", 0, 0, 0), buttons=bulk_progress_keyboard(), parse_mode="html")
     from services import bulk_service
 
     async def run_task():
-        async def update_progress(success, failed, total):
+        async def update_progress(success: int, failed: int, total: int):
             try:
                 await msg.edit(render_bulk_progress("Set 2FA", success, failed, total), buttons=bulk_progress_keyboard(), parse_mode="html")
             except Exception:

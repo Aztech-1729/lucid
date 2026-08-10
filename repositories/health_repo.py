@@ -4,6 +4,8 @@ Health repository — CRUD operations for the health_records collection.
 
 from __future__ import annotations
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 from typing import Optional
 
 from utils.helpers import now_utc_naive
@@ -18,7 +20,7 @@ def _coll():
     return get_db()[collections.HEALTH_RECORDS]
 
 
-async def insert_record(record: dict) -> HealthRecord:
+async def insert_record(record: dict[str, Any]) -> HealthRecord:
     """Insert a new health check record."""
     record.setdefault("checked_at", now_utc_naive())
     result = await _coll().insert_one(record)
@@ -46,7 +48,7 @@ async def get_history(account_id: str, limit: int = 20) -> list[HealthRecord]:
         .sort("checked_at", -1)
         .limit(limit)
     )
-    records = []
+    records: list[Any] = []
     async for doc in cursor:
         doc["_id"] = str(doc["_id"])
         records.append(HealthRecord.model_validate(doc))
@@ -64,7 +66,7 @@ async def get_alerts(owner_id: int, limit: int = 10) -> list[HealthRecord]:
         .sort("checked_at", -1)
         .limit(limit)
     )
-    records = []
+    records: list[Any] = []
     async for doc in cursor:
         doc["_id"] = str(doc["_id"])
         records.append(HealthRecord.model_validate(doc))

@@ -6,7 +6,10 @@ Uses redis.asyncio (the successor to aioredis).
 
 from __future__ import annotations
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 import orjson  # type: ignore
+import json
 from typing import Any, Optional
 
 import redis.asyncio as redis
@@ -82,7 +85,6 @@ async def cache_get(key: str) -> Any:
     except orjson.JSONDecodeError:
         # Fallback to stdlib json for values stored by non-orjson clients
         try:
-            import json
             return json.loads(raw)
         except (json.JSONDecodeError, TypeError):
             return None
@@ -105,7 +107,7 @@ async def cache_delete(key: str) -> None:
 async def cache_delete_pattern(pattern: str) -> int:
     """Delete all keys matching a pattern. Returns count deleted."""
     r = get_redis()
-    keys = []
+    keys: list[str] = []
     async for key in r.scan_iter(match=pattern, count=100):
         keys.append(key)
     

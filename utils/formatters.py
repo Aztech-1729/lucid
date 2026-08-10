@@ -4,6 +4,8 @@ Text, number, and date formatting helpers for Telegram message rendering.
 
 from __future__ import annotations
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 from datetime import datetime
 
 from utils.helpers import now_utc_naive
@@ -52,7 +54,7 @@ def format_duration(seconds: int) -> str:
     if seconds < 60:
         return f"{seconds}s"
 
-    parts = []
+    parts: list[Any] = []
     hours = seconds // 3600
     minutes = (seconds % 3600) // 60
     secs = seconds % 60

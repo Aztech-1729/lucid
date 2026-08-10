@@ -3,6 +3,8 @@ Core AI Service.
 
 Handles chat history (Redis) and OpenAI API interaction with strict user isolation.
 """
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 
 import json
 import os
@@ -37,7 +39,7 @@ async def _get_chat_history(user_id: int) -> List[Dict[str, Any]]:
     if not history:
         return []
     
-    cleaned_history = []
+    cleaned_history: list[Any] = []
     for msg in history:
         if msg.get("role") == "tool":
             continue
@@ -49,7 +51,7 @@ async def _get_chat_history(user_id: int) -> List[Dict[str, Any]]:
 
 async def _save_chat_history(user_id: int, history: List[Dict[str, Any]]) -> None:
     # Filter out intermediate tool calls to save tokens and prevent API errors
-    cleaned_history = []
+    cleaned_history: list[Any] = []
     for msg in history:
         if msg.get("role") == "tool":
             continue
@@ -129,18 +131,18 @@ async def chat_with_ai(user_id: int, user_message: str) -> str:
                     parts = message.content.split('<| |DSML| |invoke name="')
                     if len(parts) > 1:
                         func_name = parts[1].split('">')[0].strip()
-                        args = {}
+                        args: dict[str, Any] = {}
                         for param_part in parts[2:]:
                             param_name = param_part.split('">')[0].strip()
                             param_value = param_part.split('">')[1].split('<')[0].strip()
                             args[param_name] = param_value
                         
                         class MockFunction:
-                            def __init__(self, name, arguments):
+                            def __init__(self, name: str, arguments: str):
                                 self.name = name
                                 self.arguments = arguments
                         class MockToolCall:
-                            def __init__(self, id, function):
+                            def __init__(self, id: str, function: MockFunction):
                                 self.id = id
                                 self.type = "function"
                                 self.function = function
@@ -180,8 +182,7 @@ async def chat_with_ai(user_id: int, user_message: str) -> str:
                 try:
                     func_args = json.loads(getattr(tool_call, "function").arguments)  # type: ignore[attr-defined]
                 except Exception:
-                    func_args = {}
-                
+                    func_args: dict[str, Any] = {}
                 if func_name in TOOL_REGISTRY:
                     # Execute tool securely
                     tool_result = await TOOL_REGISTRY[func_name](user_id, func_args)
@@ -190,7 +191,7 @@ async def chat_with_ai(user_id: int, user_message: str) -> str:
                         "role": "tool",
                         "tool_call_id": tool_call.id,
                         "name": func_name,
-                        "content": str(tool_result)
+                        "content": tool_result
                     })
                 else:
                     history.append({

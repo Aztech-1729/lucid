@@ -9,8 +9,9 @@ UI layout matches the Lucid Ads Bot premium interface mockup.
 
 from __future__ import annotations
 
-from typing import Any
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 from telethon import Button
 from telethon.tl.types import KeyboardButtonStyle
 
@@ -83,8 +84,8 @@ def build_dashboard_keyboard(is_admin: bool = False) -> list[list[Any]]:
 # ── 2. ACCOUNTS LIST ──────────────────────────────────────
 
 def account_list_keyboard(
-    accounts: list[dict],
-    pagination: dict,
+    accounts: list[dict[str, Any]],
+    pagination: dict[str, Any],
     action_prefix: str = "acc:view",
     show_actions: bool = True,
     screen: str = "accounts"
@@ -99,13 +100,13 @@ def account_list_keyboard(
         health = acc.get("health_score", 0)
         if health >= 80:
             dot_icon = 5416081784641168838
-            btn_text = f"{phone}  •  Health: {health}"
+            btn_text: str = f"{phone}  •  Health: {health}"
         elif health >= 50:
             dot_icon = None
-            btn_text = f"🟡 {phone}  •  Health: {health}"
+            btn_text: str = f"🟡 {phone}  •  Health: {health}"
         else:
             dot_icon = None
-            btn_text = f"🔴 {phone}  •  Health: {health}"
+            btn_text: str = f"🔴 {phone}  •  Health: {health}"
             
         btn_style = "success" if health >= 80 else "primary" if health >= 50 else "danger"
         rows.append([
@@ -122,7 +123,7 @@ def account_list_keyboard(
     total = pagination.get("total_pages", 1)
 
     if total > 1:
-        nav_row = []
+        nav_row: list[Any] = []
         if current > 1:
             nav_row.append(Button.inline(_b("⏪ First"), f"page:next:{screen}:1", style="primary"))
             nav_row.append(Button.inline(_b("◀ Prev"), f"page:prev:{screen}:{current - 1}", style="primary"))
@@ -159,8 +160,7 @@ def account_list_keyboard(
 
 def account_detail_keyboard(account_id: str, status: str, back_cb: str = CB.ACCOUNTS) -> list[list[Any]]:
     """Account detail action buttons."""
-    rows = []
-
+    rows: list[Any] = []
     # Pause/Resume based on status
     if status in ("ACTIVE", "WARNING", "HEALTHY"):
         rows.append([
@@ -235,8 +235,8 @@ def bulk_progress_keyboard() -> list[list[Any]]:
 # ── 4. CAMPAIGNS LIST ─────────────────────────────────────
 
 def campaign_list_keyboard(
-    campaigns: list[dict],
-    pagination: dict,
+    campaigns: list[dict[str, Any]],
+    pagination: dict[str, Any],
 ) -> list[list[Any]]:
     """Campaign list with campaign buttons, pagination, and actions."""
     rows: list[list[Any]] = []
@@ -246,14 +246,14 @@ def campaign_list_keyboard(
         name = c.get("name", "Untitled")
         status = c.get("status", "DRAFT")
         if status == "DRAFT":
-            btn_text = f"{name} • {status}"
+            btn_text: str = f"{name} • {status}"
             btn_icon = 5395444784611480792
         elif status == "ACTIVE":
-            btn_text = f"{name} • {status}"
+            btn_text: str = f"{name} • {status}"
             btn_icon = 5416081784641168838
         else:
             emoji = {"PAUSED": "🟡", "COMPLETED": "✅"}.get(status, "⚫")
-            btn_text = f"{emoji} {name} • {status}"
+            btn_text: str = f"{emoji} {name} • {status}"
             btn_icon = None
             
         btn_style = "success" if status in ("ACTIVE", "COMPLETED") else "primary" if status == "DRAFT" else "danger"
@@ -272,7 +272,7 @@ def campaign_list_keyboard(
     total = pagination.get("total_pages", 1)
 
     if total > 1:
-        nav_row = []
+        nav_row: list[Any] = []
         if current > 1:
             nav_row.append(Button.inline("⏪ First", "page:next:campaigns:1", style="primary"))
             nav_row.append(Button.inline("◀ Prev", f"page:prev:campaigns:{current - 1}", style="primary"))
@@ -297,8 +297,7 @@ def campaign_list_keyboard(
 
 def campaign_detail_keyboard(campaign_id: str, status: str) -> list[list[Any]]:
     """Campaign detail action buttons."""
-    rows = []
-
+    rows: list[Any] = []
     # Start/Pause
     if status in ("DRAFT", "PAUSED"):
         rows.append([
@@ -372,11 +371,10 @@ def campaign_manage_accounts_keyboard(
     campaign_id: str, 
     accounts: list[Any], 
     assigned_ids: list[str],
-    pagination: dict
+    pagination: dict[str, Any]
 ) -> list[list[Any]]:
     """Menu to select accounts for a campaign with pagination."""
-    rows = []
-    
+    rows: list[Any] = []
     # 1. Accounts List
     for acc in accounts:
         acc_id = str(acc.get("id", ""))
@@ -406,7 +404,7 @@ def campaign_manage_accounts_keyboard(
     total = pagination.get("total_pages", 1)
     
     if total > 1:
-        nav_row = []
+        nav_row: list[Any] = []
         if current > 1:
             nav_row.append(Button.inline(_b("⬅️ Prev"), f"page:prev:cmp_acc:{current-1}", style="primary"))
         
@@ -423,7 +421,7 @@ def campaign_manage_accounts_keyboard(
 
 def campaign_account_detail_keyboard(campaign_id: str, account_id: str, is_assigned: bool) -> list[list[Any]]:
     """Account details within a campaign."""
-    toggle_text = _b("Remove from Campaign") if is_assigned else _b("Add to Campaign")
+    toggle_text: str = _b("Remove from Campaign") if is_assigned else _b("Add to Campaign")
     icon_val = 5260293700088511294 if is_assigned else 5206607081334906820
     rows = [
         [
@@ -440,15 +438,14 @@ def campaign_account_detail_keyboard(campaign_id: str, account_id: str, is_assig
 def campaign_account_groups_keyboard(
     campaign_id: str, 
     account_id: str, 
-    groups: list[dict], 
+    groups: list[dict[str, Any]], 
     assigned_group_ids: list[str],
-    pagination: dict
+    pagination: dict[str, Any]
 ) -> list[list[Any]]:
     """Paginated list of groups for an account."""
-    rows = []
-    
+    rows: list[Any] = []
     # Add groups (2 per row for compactness)
-    current_row = []
+    current_row: list[Any] = []
     for g in groups:
         group_id_str = str(g.get("_id") or g.get("id", ""))
         is_assigned = group_id_str in assigned_group_ids
@@ -458,10 +455,10 @@ def campaign_account_groups_keyboard(
             title = title[:13] + ".."
             
         if is_assigned:
-            btn_text = title
+            btn_text: str = title
             btn_icon = 5416081784641168838
         else:
-            btn_text = f"🔴 {title}"
+            btn_text: str = f"🔴 {title}"
             btn_icon = None
             
         page = pagination.get("page", 1)
@@ -471,8 +468,7 @@ def campaign_account_groups_keyboard(
         
         if len(current_row) == 2:
             rows.append(current_row)
-            current_row = []
-            
+            current_row: list[Any] = []
     if current_row:
         rows.append(current_row)
         
@@ -480,7 +476,7 @@ def campaign_account_groups_keyboard(
     page = pagination.get("page", 1)
     total_pages = pagination.get("total_pages", 1)
     
-    nav_row = []
+    nav_row: list[Any] = []
     if page > 1:
         nav_row.append(Button.inline("⬅️ Prev", f"cmp:acc_groups:{page-1}", style="primary"))
     if page < total_pages:
@@ -550,7 +546,7 @@ def health_overview_keyboard() -> list[list[Any]]:
 
 def health_settings_keyboard(auto_pause: bool) -> list[list[Any]]:
     """Health settings menu buttons."""
-    toggle_text = _b("Auto-Pause Unhealthy: ON") if auto_pause else _b("Auto-Pause Unhealthy: OFF")
+    toggle_text: str = _b("Auto-Pause Unhealthy: ON") if auto_pause else _b("Auto-Pause Unhealthy: OFF")
     icon_val = 5206607081334906820 if auto_pause else 5260293700088511294
     toggle_btn = Button.inline(
         toggle_text,
@@ -591,7 +587,7 @@ def settings_keyboard() -> list[list[Any]]:
 
 def autoreply_keyboard(enabled: bool, has_custom: bool) -> list[list[Any]]:
     """Auto Reply settings menu."""
-    toggle_text = _b("Turn OFF") if enabled else _b("Turn ON")
+    toggle_text: str = _b("Turn OFF") if enabled else _b("Turn ON")
     toggle_style = "danger" if enabled else "success"
     toggle_btn = Button.inline(
         toggle_text, 
@@ -639,7 +635,7 @@ def profile_keyboard() -> list[list[Any]]:
         [Button.inline(_b("← Back"), CB.DASHBOARD, style="danger")]
     ]
 
-def paywall_keyboard(user=None) -> list[list[Any]]:
+def paywall_keyboard(user: Any = None) -> list[list[Any]]:
     """Subscription options."""
     from telethon.tl.types import KeyboardButtonStyle
     
@@ -671,7 +667,7 @@ def invoice_keyboard(pay_url: str, show_link: bool = True) -> list[list[Any]]:
     """Invoice with link and cancel."""
     from telethon.tl.types import KeyboardButtonStyle
     
-    buttons = []
+    buttons: list[Any] = []
     if show_link:
         btn_pay = Button.url(_b("💸 Pay Now"), pay_url)
         btn_pay.style = KeyboardButtonStyle(bg_success=True)
@@ -689,9 +685,9 @@ def admin_panel_keyboard() -> list[list[Any]]:
 
 def admin_users_keyboard(page: int, total_pages: int) -> list[list[Any]]:
     """Pagination for admin active users."""
-    rows = []
+    rows: list[Any] = []
     if total_pages > 1:
-        nav = []
+        nav: list[Any] = []
         if page > 1:
             nav.append(Button.inline(_b("◀ Prev"), f"admin:users:{page-1}", style="primary"))
         nav.append(Button.inline(f"📄 {page}/{total_pages}", CB.NOOP, style="primary"))

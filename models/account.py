@@ -9,6 +9,8 @@ New fields (status, health_score, etc.) have defaults so old docs load cleanly.
 
 from __future__ import annotations
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 from datetime import datetime
 from typing import Optional
 

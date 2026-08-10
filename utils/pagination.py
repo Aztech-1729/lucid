@@ -6,6 +6,8 @@ All list screens use this — no list screen implements its own slicing logic.
 
 from __future__ import annotations
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 import math
 from typing import Generic, TypeVar
 
@@ -71,7 +73,7 @@ class Paginator(Generic[T]):
         """Human-readable page info string."""
         return f"Page {self._page} of {self._total_pages}"
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize pagination metadata (for cache storage)."""
         return {
             "page": self._page,

@@ -4,6 +4,8 @@ Input validation and sanitization utilities.
 
 from __future__ import annotations
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 import re
 from typing import Optional
 

@@ -4,6 +4,8 @@ Forwarding Trigger — Signal the worker to run immediately.
 
 from __future__ import annotations
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 import asyncio
 
 # Global event to wake up the forwarding worker

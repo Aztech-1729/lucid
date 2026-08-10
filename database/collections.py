@@ -6,6 +6,8 @@ Single source of truth for all collection names used in the application.
 
 from __future__ import annotations
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 USERS = "users"
 ACCOUNTS = "accounts"
 CAMPAIGNS = "campaigns"

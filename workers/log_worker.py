@@ -1,6 +1,8 @@
 """
 Log Worker — Background task to process buffered logs, batch them, and send to the user safely.
 """
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 
 import asyncio
 import json

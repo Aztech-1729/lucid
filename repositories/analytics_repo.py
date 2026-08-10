@@ -4,6 +4,8 @@ Analytics repository — Forwarding log insertion and aggregation queries.
 
 from __future__ import annotations
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -51,7 +53,7 @@ async def log_forward(
     await _logs().insert_one(doc)
 
 
-async def get_all_time_stats(owner_id: int) -> dict:
+async def get_all_time_stats(owner_id: int) -> dict[str, Any]:
     """Get aggregated stats for all time."""
     pipeline = [
         {"$match": {"owner_id": int(owner_id)}},
@@ -83,7 +85,7 @@ async def get_all_time_stats(owner_id: int) -> dict:
     }
 
 
-async def get_daily_stats(owner_id: int, date_str: str) -> dict:
+async def get_daily_stats(owner_id: int, date_str: str) -> dict[str, Any]:
     """Get aggregated stats for a specific day."""
     pipeline = [
         {"$match": {
@@ -121,7 +123,7 @@ async def get_daily_stats(owner_id: int, date_str: str) -> dict:
     }
 
 
-async def get_account_stats(account_id: str, days: int = 30) -> dict:
+async def get_account_stats(account_id: str, days: int = 30) -> dict[str, Any]:
     """Get aggregated stats for an account over N days."""
     since = now_utc_naive() - timedelta(days=days)
     pipeline = [
@@ -147,7 +149,7 @@ async def get_account_stats(account_id: str, days: int = 30) -> dict:
     return {"total_sent": 0, "total_success": 0, "total_failed": 0, "flood_events": 0}
 
 
-async def get_campaign_stats(campaign_id: str) -> dict:
+async def get_campaign_stats(campaign_id: str) -> dict[str, Any]:
     """Get aggregated stats for a campaign."""
     pipeline = [
         {"$match": {"campaign_id": campaign_id}},
@@ -170,7 +172,7 @@ async def get_campaign_stats(campaign_id: str) -> dict:
     return {"total_sent": 0, "total_success": 0, "total_failed": 0, "unique_groups_reached": 0}
 
 
-async def get_top_accounts(owner_id: int, limit: int = 10) -> list[dict]:
+async def get_top_accounts(owner_id: int, limit: int = 10) -> list[dict[str, Any]]:
     """Get top performing accounts by success rate."""
     since = now_utc_naive() - timedelta(days=30)
     pipeline = [
@@ -188,7 +190,7 @@ async def get_top_accounts(owner_id: int, limit: int = 10) -> list[dict]:
     return [doc async for doc in cursor]
 
 
-async def get_top_campaigns(owner_id: int, limit: int = 10) -> list[dict]:
+async def get_top_campaigns(owner_id: int, limit: int = 10) -> list[dict[str, Any]]:
     """Get top campaigns by message count."""
     pipeline = [
         {"$match": {"owner_id": owner_id}},
@@ -206,7 +208,7 @@ async def get_top_campaigns(owner_id: int, limit: int = 10) -> list[dict]:
 
 # ── Daily / Weekly Rollups ──────────────────────────────────
 
-async def upsert_daily(owner_id: int, date_str: str, data: dict) -> None:
+async def upsert_daily(owner_id: int, date_str: str, data: dict[str, Any]) -> None:
     """Upsert a daily analytics rollup."""
     await _daily().update_one(
         {"owner_id": owner_id, "date": date_str},

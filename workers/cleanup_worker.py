@@ -6,6 +6,8 @@ Runs every 1 hour.
 
 from __future__ import annotations
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 import asyncio
 
 from core.logging import get_logger

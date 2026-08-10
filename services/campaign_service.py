@@ -5,6 +5,8 @@ Campaign service — Campaign lifecycle management.
 from __future__ import annotations
 
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 from cache import campaign_cache, dashboard_cache
 from core.constants import CampaignStatus
 from core.exceptions import CampaignInactiveError, CampaignNotFoundError
@@ -61,14 +63,14 @@ async def get_campaign(campaign_id: str) -> Campaign:
     return campaign
 
 
-async def list_campaigns(owner_id: int, page: int = 1) -> tuple[list[Campaign], Paginator]:
+async def list_campaigns(owner_id: int, page: int = 1) -> tuple[list[Campaign], Paginator[Any]]:
     """List campaigns for a user with pagination."""
     campaigns = await campaigns_repo.list_by_owner(owner_id)
     paginator = Paginator(campaigns, page=page)
     return paginator.current_page, paginator
 
 
-async def update_campaign(campaign_id: str, **kwargs) -> None:
+async def update_campaign(campaign_id: str, **kwargs: Any) -> None:
     """Update arbitrary fields of a campaign."""
     campaign = await get_campaign(campaign_id)
     await campaigns_repo.update_fields(campaign_id, kwargs)
@@ -146,9 +148,8 @@ async def select_all_accounts(campaign_id: str, owner_id: int) -> None:
             await asyncio.sleep(random.uniform(1, 3))
     
     # 3. Build account_ids list and flat group_ids list
-    acc_ids = []
-    all_group_ids = []
-    
+    acc_ids: list[Any] = []
+    all_group_ids: list[Any] = []
     for acc in accounts:
         acc_id_str = str(acc.id)
         acc_ids.append(acc_id_str)

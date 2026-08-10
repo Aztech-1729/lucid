@@ -4,6 +4,8 @@ Retry utilities with exponential backoff and FloodWait awareness.
 
 from __future__ import annotations
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 import asyncio
 import functools
 import random
@@ -22,7 +24,7 @@ def with_retry(
     max_attempts: int = 3,
     base_delay: float = 1.0,
     max_delay: float = 60.0,
-    flood_wait_handler: Callable | None = None,
+    flood_wait_handler: Callable[..., Any] | None = None,
 ):
     """
     Decorator for exponential backoff with FloodWait support.

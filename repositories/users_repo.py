@@ -4,6 +4,8 @@ Users repository — CRUD operations for the users collection.
 
 from __future__ import annotations
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 from typing import Optional
 
 from utils.helpers import now_utc_naive
@@ -62,7 +64,7 @@ async def get(user_id: int) -> Optional[User]:
     return User.model_validate(doc)
 
 
-async def update(user_id: int, data: dict) -> bool:
+async def update(user_id: int, data: dict[str, Any]) -> bool:
     """Update user fields. Returns True if a document was modified."""
     data["updated_at"] = now_utc_naive()
     result = await _coll().update_one(
@@ -86,7 +88,7 @@ async def get_all_active_user_ids() -> list[int]:
     return [doc["user_id"] async for doc in cursor]
 
 
-async def get_stats() -> dict:
+async def get_stats() -> dict[str, Any]:
     """Return stats for the Admin panel."""
     total_users = await _coll().count_documents({})
     now = now_utc_naive()
@@ -100,7 +102,7 @@ async def get_active_subscribers() -> list[User]:
     """Return a list of all users with active subscriptions."""
     now = now_utc_naive()
     cursor = _coll().find({"subscription_ends_at": {"$gt": now}})
-    users = []
+    users: list[Any] = []
     async for doc in cursor:
         doc["_id"] = str(doc["_id"])
         users.append(User.model_validate(doc))

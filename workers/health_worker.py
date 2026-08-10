@@ -7,6 +7,8 @@ and writes to health cache.
 
 from __future__ import annotations
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 import asyncio
 
 from cache import health_cache
@@ -40,7 +42,7 @@ async def run_health_check_cycle() -> None:
     # No stagger needed — semaphore naturally throttles startup burst
     sem = asyncio.Semaphore(10)
 
-    async def _safe_check(account):
+    async def _safe_check(account: Any):
         async with sem:
             try:
                 await check_single_account(account)
@@ -58,7 +60,7 @@ async def run_health_check_cycle() -> None:
                 next_check = now_utc_naive() + timedelta(seconds=settings.health_check_interval_seconds)
                 await accounts_repo.set_next_check(account.id, next_check)
 
-    tasks = []
+    tasks: list[Any] = []
     for i, account in enumerate(accounts):
         tasks.append(_safe_check(account))
 
@@ -67,7 +69,7 @@ async def run_health_check_cycle() -> None:
     await log.ainfo("health_worker.cycle_complete", checked=len(accounts))
 
 
-async def check_single_account(account) -> None:
+async def check_single_account(account: Any) -> None:
     """
     Check a single account against SpamBot.
     """

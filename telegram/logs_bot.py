@@ -4,6 +4,8 @@ Logs Bot — Secondary bot client for campaign logs.
 
 from __future__ import annotations
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 from typing import Optional, Any
 
 from telethon import TelegramClient, events, Button
@@ -43,8 +45,7 @@ async def init_logs_bot() -> None:
         
         from telethon.tl.types import KeyboardButtonStyle
         
-        buttons = []
-        
+        buttons: list[Any] = []
         if settings.force_join_channel:
             btn_channel = Button.url("Channel", settings.force_join_channel)
             btn_channel.style = KeyboardButtonStyle(bg_primary=True, icon=5447410659077661506)
@@ -64,7 +65,7 @@ async def init_logs_bot() -> None:
             btn_bot.style = KeyboardButtonStyle(bg_success=True, icon=6147460667281511517)
             keyboard.append([btn_bot])
             
-        text = (
+        text: str = (
             "<b><tg-emoji emoji-id=\"5443038326535759644\">🔒</tg-emoji> LUCID LOGS SYSTEM</b>\n"
             "━━━━━━━━━━━━━━━━━━━━\n\n"
             "<b>Welcome to the official Lucid Ads logging network!</b>\n\n"
@@ -102,11 +103,10 @@ async def init_logs_bot() -> None:
             end_idx = start_idx + per_page
             page_logs = logs[start_idx:end_idx]
             
-            text = f"📄 <b>Logs Batch</b> (Page {page + 1}/{total_pages})\n━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            text: str = f"📄 <b>Logs Batch</b> (Page {page + 1}/{total_pages})\n━━━━━━━━━━━━━━━━━━━━━━━━\n"
             
-            buttons = []
-            row = []
-            
+            buttons: list[Any] = []
+            row: list[Any] = []
             for i, log_entry in enumerate(page_logs):
                 idx = start_idx + i + 1
                 phone = log_entry.get("account_phone", "").lstrip("+")
@@ -119,12 +119,11 @@ async def init_logs_bot() -> None:
                     row.append(Button.url(f"Msg {idx}", link))
                     if len(row) >= 2:
                         buttons.append(row)
-                        row = []
-                        
+                        row: list[Any] = []
             if row:
                 buttons.append(row)
                 
-            nav_row = []
+            nav_row: list[Any] = []
             if page > 0:
                 nav_row.append(Button.inline("⬅️ Prev", f"view_batch:{batch_id}:{page - 1}"))
             if page < total_pages - 1:
@@ -155,7 +154,7 @@ async def send_campaign_start_log(owner_id: int, campaign: Any) -> None:
     else:
         ad_disp = f"🔗 Forward ({campaign.forward_link})"
 
-    text = (
+    text: str = (
         f"🚀 <b>Campaign Started</b>\n"
         f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         f"<b>Campaign:</b> {campaign.name}\n"
@@ -175,7 +174,7 @@ async def send_campaign_pause_log(owner_id: int, campaign_name: str) -> None:
     if not _logs_bot:
         return
         
-    text = (
+    text: str = (
         f"⏸ <b>Campaign Paused</b>\n"
         f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         f"<b>Campaign:</b> {campaign_name}\n\n"
@@ -199,7 +198,7 @@ async def send_batch_summary(owner_id: int, campaign_name: str, batch_id: str, c
     if not _logs_bot:
         return
         
-    text = (
+    text: str = (
         f"<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> <b>Batch Success Report</b>\n"
         f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
         f"<b>Campaign:</b> {campaign_name}\n"

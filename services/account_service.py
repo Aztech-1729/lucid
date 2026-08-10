@@ -5,6 +5,8 @@ Account service — Account CRUD, validation, and lifecycle management.
 from __future__ import annotations
 
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 from cache import account_cache, dashboard_cache
 from core.constants import AccountStatus
 from core.exceptions import AccountBannedError, AccountNotFoundError
@@ -47,7 +49,7 @@ async def get_account(account_id: str) -> Account:
     return account
 
 
-async def list_accounts(owner_id: int, page: int = 1) -> tuple[list[Account], Paginator]:
+async def list_accounts(owner_id: int, page: int = 1) -> tuple[list[Account], Paginator[Account]]:
     """List accounts for a user with pagination."""
     accounts = await accounts_repo.list_by_owner(owner_id)
     paginator = Paginator(accounts, page=page)

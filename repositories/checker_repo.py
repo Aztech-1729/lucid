@@ -7,6 +7,8 @@ user's account list, campaigns, or forwarding workers.
 
 from __future__ import annotations
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 from typing import Optional
 
 from bson import ObjectId
@@ -46,9 +48,9 @@ async def add(
     return True
 
 
-async def list_all() -> list[dict]:
+async def list_all() -> list[dict[str, Any]]:
     """All checker accounts, oldest first."""
-    docs = []
+    docs: list[Any] = []
     async for doc in _coll().find().sort("added_at", 1):
         doc["_id"] = str(doc["_id"])
         docs.append(doc)
@@ -60,10 +62,10 @@ async def count() -> int:
     return await _coll().count_documents({})
 
 
-async def get_available() -> list[dict]:
+async def get_available() -> list[dict[str, Any]]:
     """Checker accounts usable right now (active, not flood-blocked)."""
     now = now_utc_naive()
-    docs = []
+    docs: list[Any] = []
     cursor = _coll().find(
         {
             "status": "active",
@@ -80,9 +82,9 @@ async def get_available() -> list[dict]:
     return docs
 
 
-async def record_use(checker_id: str, checks: int = 1, flood_until=None) -> None:
+async def record_use(checker_id: str, checks: int = 1, flood_until: Any = None) -> None:
     """Update usage stats after using a checker account."""
-    doc: dict = {
+    doc: dict[str, Any] = {
         "$set": {"last_used_at": now_utc_naive()},
         "$inc": {"total_checks": checks},
     }

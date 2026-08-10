@@ -6,6 +6,8 @@ Provides a cached singleton accessor for the Settings instance.
 
 from __future__ import annotations
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 import functools
 
 from core.settings import Settings

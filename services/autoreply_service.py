@@ -4,6 +4,8 @@ Auto-reply service to handle incoming private messages.
 
 from __future__ import annotations
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 import asyncio
 from telethon import events
 from core.logging import get_logger

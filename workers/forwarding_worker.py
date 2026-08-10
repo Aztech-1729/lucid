@@ -7,6 +7,8 @@ and executes their group forwarding round-by-round.
 
 from __future__ import annotations
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 import asyncio
 
 from utils.helpers import now_utc_naive
@@ -22,7 +24,7 @@ from core.constants import CampaignStatus
 log = get_logger("forwarding_worker")
 
 # Global dict to track currently running campaigns
-_active_campaign_tasks: dict[str, asyncio.Task] = {}
+_active_campaign_tasks: dict[str, asyncio.Task[Any]] = {}
 
 
 async def run_forwarding_cycle() -> None:
@@ -55,7 +57,7 @@ async def run_forwarding_cycle() -> None:
         await metrics.increment(WORKER_RUNS)
 
 
-async def process_campaign_safe(campaign) -> None:
+async def process_campaign_safe(campaign: Any) -> None:
     """Wrapper to catch exceptions so a campaign crash doesn't kill the worker."""
     try:
         await log.ainfo("forwarding_worker.campaign_task_started", campaign_id=campaign.id)
@@ -68,7 +70,7 @@ async def process_campaign_safe(campaign) -> None:
         _active_campaign_tasks.pop(campaign.id, None)
 
 
-async def process_campaign_loop(campaign) -> None:
+async def process_campaign_loop(campaign: Any) -> None:
     """
     Main loop for a single campaign.
     Executes rounds endlessly or up to max_rounds, pausing for round_delay_seconds.
@@ -108,7 +110,7 @@ async def process_campaign_loop(campaign) -> None:
         await asyncio.sleep(delay)
 
 
-async def execute_single_round(campaign) -> None:
+async def execute_single_round(campaign: Any) -> None:
     """
     Selects accounts, distributes groups, and runs forwards concurrently for all accounts.
     """
@@ -117,7 +119,7 @@ async def execute_single_round(campaign) -> None:
 
     # 1. Verify all campaign accounts actually exist in local DB
     #    (campaigns may reference accounts that were copied from another environment)
-    valid_account_ids = []
+    valid_account_ids: list[Any] = []
     for aid in campaign.account_ids:
         acc = await accounts_repo.get(aid)
         if acc is not None:
@@ -161,7 +163,7 @@ async def execute_single_round(campaign) -> None:
         return
 
     # Distribute groups by account_id
-    account_groups_map = {}
+    account_groups_map: dict[str, Any] = {}
     for g in groups:
         acc_id = g.get("account_id")
         if not acc_id:
@@ -174,14 +176,14 @@ async def execute_single_round(campaign) -> None:
             "topic_id": g.get("topic_id"),
         })
 
-    tasks = []
+    tasks: list[Any] = []
     for i, account_id in enumerate(selected):
         acc_groups = account_groups_map.get(account_id, [])
         if not acc_groups:
             continue
             
         # Stagger task creation/start for safety (0.2s per account)
-        async def staggered_forward(acc_id, camp, grps, d, offset):
+        async def staggered_forward(acc_id: Any, camp: Any, grps: Any, d: Any, offset: Any):
             if offset > 0:
                 await asyncio.sleep(offset)
             return await forward_for_account(acc_id, camp, grps, d)
@@ -235,10 +237,10 @@ async def execute_single_round(campaign) -> None:
 
 async def forward_for_account(
     account_id: str,
-    campaign,
-    groups: list[dict],
+    campaign: Any,
+    groups: list[dict[str, Any]],
     delay: float,
-) -> dict:
+) -> dict[str, Any]:
     """Forward message from a specific account to a set of groups."""
     try:
         from repositories import accounts_repo as acc_repo

@@ -7,6 +7,8 @@ top performer lists for all active users.
 
 from __future__ import annotations
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 import asyncio
 
 from core.config import get_settings

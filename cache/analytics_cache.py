@@ -6,13 +6,15 @@ Manages analytics dashboard, daily/weekly rollups, and top performers.
 
 from __future__ import annotations
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 from typing import Any, Optional
 
 from cache.redis_client import cache_delete, cache_get, cache_set, make_key
 from core.constants import RedisKeys, TTL_ANALYTICS
 
 
-async def get_dashboard(user_id: int) -> Optional[dict]:
+async def get_dashboard(user_id: int) -> Optional[dict[str, Any]]:
     """Read analytics overview from cache."""
     key = make_key(RedisKeys.ANALYTICS_DASHBOARD, user_id=user_id)
     return await cache_get(key)
@@ -24,7 +26,7 @@ async def set_dashboard(user_id: int, payload: dict[str, Any]) -> None:
     await cache_set(key, payload, ttl=TTL_ANALYTICS)
 
 
-async def get_daily(date_str: str) -> Optional[dict]:
+async def get_daily(date_str: str) -> Optional[dict[str, Any]]:
     """Read daily rollup from cache."""
     key = make_key(RedisKeys.ANALYTICS_DAILY, date=date_str)
     return await cache_get(key)
@@ -36,25 +38,25 @@ async def set_daily(date_str: str, payload: dict[str, Any]) -> None:
     await cache_set(key, payload, ttl=TTL_ANALYTICS)
 
 
-async def get_top_accounts() -> Optional[list]:
+async def get_top_accounts() -> Optional[list[Any]]:
     """Read top accounts from cache."""
     key = make_key(RedisKeys.ANALYTICS_TOP_ACCOUNTS)
     return await cache_get(key)
 
 
-async def set_top_accounts(accounts: list[dict]) -> None:
+async def set_top_accounts(accounts: list[dict[str, Any]]) -> None:
     """Write top accounts to cache."""
     key = make_key(RedisKeys.ANALYTICS_TOP_ACCOUNTS)
     await cache_set(key, accounts, ttl=TTL_ANALYTICS)
 
 
-async def get_top_campaigns() -> Optional[list]:
+async def get_top_campaigns() -> Optional[list[Any]]:
     """Read top campaigns from cache."""
     key = make_key(RedisKeys.ANALYTICS_TOP_CAMPAIGNS)
     return await cache_get(key)
 
 
-async def set_top_campaigns(campaigns: list[dict]) -> None:
+async def set_top_campaigns(campaigns: list[dict[str, Any]]) -> None:
     """Write top campaigns to cache."""
     key = make_key(RedisKeys.ANALYTICS_TOP_CAMPAIGNS)
     await cache_set(key, campaigns, ttl=TTL_ANALYTICS)

@@ -7,6 +7,8 @@ distribute traffic across accounts proportionally.
 
 from __future__ import annotations
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 import random
 from datetime import timedelta
 
@@ -20,7 +22,7 @@ from repositories import accounts_repo
 log = get_logger("rotation_service")
 
 
-def compute_flood_penalty(flood_history: list) -> float:
+def compute_flood_penalty(flood_history: list[Any]) -> float:
     """
     Compute a penalty factor based on recent FloodWait events.
 
@@ -127,7 +129,7 @@ async def select_accounts(
 
     # Filter out zero-weight accounts AND accounts on FloodWait cooldown
     from cache.redis_client import cache_get
-    eligible = {}
+    eligible: dict[str, Any] = {}
     for aid, w in weights.items():
         if w > 0:
             flood_key = _make_key(RedisKeys.FLOOD_LOCK, account_id=aid)
@@ -148,7 +150,7 @@ async def select_accounts(
         return ids
 
     # Weighted random selection WITHOUT replacement
-    selected = []
+    selected: list[Any] = []
     current_eligible = eligible.copy()
     for _ in range(count):
         curr_ids = list(current_eligible.keys())

@@ -4,6 +4,8 @@ Task Manager — Tracks and cancels active campaign tasks.
 
 from __future__ import annotations
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 import asyncio
 from typing import Dict, Set
 
@@ -12,9 +14,9 @@ from core.logging import get_logger
 log = get_logger("task_manager")
 
 # Dictionary mapping campaign_id -> set of asyncio.Task
-_active_tasks: Dict[str, Set[asyncio.Task]] = {}
+_active_tasks: Dict[str, Set[asyncio.Task[Any]]] = {}
 
-def register_task(campaign_id: str, task: asyncio.Task) -> None:
+def register_task(campaign_id: str, task: asyncio.Task[Any]) -> None:
     """Register a task to a campaign."""
     if campaign_id not in _active_tasks:
         _active_tasks[campaign_id] = set()

@@ -7,6 +7,8 @@ and keeps the bot running until interrupted.
 
 from __future__ import annotations
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 import asyncio
 import sys
 
@@ -18,14 +20,14 @@ def _install_uvloop() -> None:
         return
 
     try:
-        import uvloop
+        import uvloop  # type: ignore[import-not-found,import-untyped]
         uvloop.install()
         print("[boot] uvloop installed ✓")
     except ImportError:
         print("[boot] uvloop not available, using default asyncio loop")
 
 
-def _suppress_telethon_crashes(loop, context):
+def _suppress_telethon_crashes(loop: asyncio.AbstractEventLoop, context: dict[str, Any]) -> None:
     """Catch Telethon internal task crashes (send loop, wrong session ID) to prevent process death."""
     exc = context.get("exception")
     if exc:
@@ -84,7 +86,7 @@ def run() -> None:
     _install_uvloop()
 
     if sys.platform == "win32":
-        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy()) # type: ignore
 
     while True:
         try:

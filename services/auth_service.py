@@ -4,8 +4,9 @@ Authentication service for adding accounts via Phone Number & OTP.
 
 from __future__ import annotations
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 import time
-from typing import Any
 
 from telethon import TelegramClient
 from telethon.sessions import StringSession
@@ -102,7 +103,7 @@ async def submit_password(user_id: int, password: str) -> str:
         raise ValueError("Invalid password or error signing in.")
 
 
-async def finalize_auth(user_id: int) -> dict:
+async def finalize_auth(user_id: int) -> dict[str, Any]:
     """
     Finalize the authentication, fetch user profile and stats, export session string.
     Returns a dictionary with the summary and the raw session string.
@@ -118,7 +119,7 @@ async def finalize_auth(user_id: int) -> dict:
         dialogs = await client.get_dialogs()
         
         # Count groups/channels and parse them
-        groups = []
+        groups: list[Any] = []
         for d in dialogs:
             if d.is_group or d.is_channel:
                 groups.append({

@@ -9,6 +9,8 @@ UI design matches the Lucid Ads Bot premium dark-mode interface.
 
 from __future__ import annotations
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
@@ -52,7 +54,7 @@ def _format_iso_date(iso_str: str | None) -> str:
         dt = dt.astimezone(ZoneInfo("UTC"))
         return dt.strftime("%d %b %Y, %I:%M %p UTC")
     except (ValueError, TypeError):
-        return str(iso_str)
+        return iso_str
 
 
 def _time_ago(iso_str: str | None) -> str:
@@ -87,7 +89,7 @@ def _status_dot(status: str) -> str:
         "DISABLED": "⚫",
         "UNKNOWN": "⚫",
     }
-    return dots.get(str(status).upper(), "⚫")
+    return dots.get(status.upper(), "⚫")
 
 
 def _health_label(score: int) -> str:
@@ -128,7 +130,7 @@ def render_main_menu(user_name: str | None = None) -> str:
     )
 
 
-def render_dashboard(data: dict | None) -> str:
+def render_dashboard(data: dict[str, Any] | None) -> str:
     """Render the full dashboard with stats in tree style."""
     if not data:
         return (
@@ -173,7 +175,7 @@ def render_dashboard(data: dict | None) -> str:
 
 # ── 2. ACCOUNTS LIST ───────────────────────────────────────
 
-def render_account_list(data: dict | None) -> str:
+def render_account_list(data: dict[str, Any] | None) -> str:
     """Render the accounts list total count only."""
     if not data:
         return (
@@ -189,7 +191,7 @@ def render_account_list(data: dict | None) -> str:
 
 # ── 3. ACCOUNT DETAILS ─────────────────────────────────────
 
-def render_account_detail(data: dict | None) -> str:
+def render_account_detail(data: dict[str, Any] | None) -> str:
     """Render account detail view in tree style."""
     if not data:
         return (
@@ -233,7 +235,7 @@ def render_account_detail(data: dict | None) -> str:
 
 # ── 4. CAMPAIGNS LIST ──────────────────────────────────────
 
-def render_campaign_list(data: dict | None) -> str:
+def render_campaign_list(data: dict[str, Any] | None) -> str:
     """Render the campaign list page."""
     if not data:
         return (
@@ -271,7 +273,7 @@ def render_campaign_list(data: dict | None) -> str:
 
 # ── 5. CAMPAIGN DETAILS ────────────────────────────────────
 
-def render_campaign_detail(data: dict | None) -> str:
+def render_campaign_detail(data: dict[str, Any] | None) -> str:
     """Render campaign detail view in tree style."""
     if not data:
         return (
@@ -327,7 +329,7 @@ def render_campaign_detail(data: dict | None) -> str:
 
 # ── 6. ANALYTICS OVERVIEW ──────────────────────────────────
 
-def render_analytics(data: dict | None) -> str:
+def render_analytics(data: dict[str, Any] | None) -> str:
     """Render analytics overview with all-time stats in tree style."""
     if not data:
         return (
@@ -358,7 +360,7 @@ def render_analytics(data: dict | None) -> str:
 # ── 7. HEALTH OVERVIEW ─────────────────────────────────────
 
 
-def render_analytics_detailed(data: dict | None) -> str:
+def render_analytics_detailed(data: dict[str, Any] | None) -> str:
     """Render detailed analytics view."""
     if not data:
         return (
@@ -377,7 +379,7 @@ def render_analytics_detailed(data: dict | None) -> str:
 
 # ── 7. HEALTH OVERVIEW ─────────────────────────────────────
 
-def render_health_overview(data: dict | None) -> str:
+def render_health_overview(data: dict[str, Any] | None) -> str:
     """Render health overview in tree style."""
     if not data:
         return (
@@ -417,7 +419,7 @@ def render_session_import_progress(
     filename: str, total_count: int, success: int, failed: int
 ) -> str:
     """Renders live progress of a session import."""
-    text = (
+    text: str = (
         f"📦 <b>Session Import:</b> <code>{filename}</code>\n"
         f"├ <b>Total Detected:</b> {total_count}\n"
         f"├ <b>Success:</b> {success} <tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji>\n"
@@ -432,7 +434,7 @@ def render_bulk_progress(
 ) -> str:
     """Renders live progress of a bulk account action."""
     processed = success + failed
-    text = (
+    text: str = (
         f"👥 <b>Bulk Action:</b> <i>{action_name}</i>\n"
         f"├ <b>Total Accounts:</b> {total}\n"
         f"├ <b>Processed:</b> {processed} / {total}\n"
@@ -568,7 +570,7 @@ def render_ai_action(description: str) -> str:
     )
 
 
-def render_profile(user_data: dict, is_active: bool) -> str:
+def render_profile(user_data: dict[str, Any], is_active: bool) -> str:
     """Render the user profile and subscription status."""
     plan = user_data.get("plan_type", "NONE")
     ends_at = user_data.get("subscription_ends_at")
@@ -606,7 +608,7 @@ def render_paywall() -> str:
         "<i>Select a plan below to contact the admin for instant activation.</i>"
     )
 
-def render_admin_panel(stats: dict | None = None) -> str:
+def render_admin_panel(stats: dict[str, Any] | None = None) -> str:
     """Render the main admin dashboard."""
     return (
         "👑 <b>ADMIN PANEL</b>\n"
@@ -620,7 +622,7 @@ def render_admin_panel(stats: dict | None = None) -> str:
         "Select an option below to view statistics or active users."
     )
 
-def render_admin_stats(stats: dict) -> str:
+def render_admin_stats(stats: dict[str, Any]) -> str:
     """Render admin stats."""
     return (
         f"<tg-emoji emoji-id='5231200819986047254'>📊</tg-emoji> <b>SYSTEM STATISTICS</b>\n"

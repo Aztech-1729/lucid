@@ -5,6 +5,8 @@ Group Health repository — Tracks performance and safety of target groups.
 from __future__ import annotations
 
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 from utils.helpers import now_utc_naive
 
 from database.mongo import get_db
@@ -88,7 +90,7 @@ async def is_toxic(group_id: str, threshold: int = 50) -> bool:
 async def get_toxic_groups() -> list[str]:
     """Get list of group_ids that are considered toxic."""
     cursor = _coll().find({"total_attempts": {"$gte": 30}})
-    toxic = []
+    toxic: list[Any] = []
     async for doc in cursor:
         score = await get_health_score(doc["group_id"])
         if score < 50:

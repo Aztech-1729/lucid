@@ -11,6 +11,8 @@ No expensive work. No health checks. No calculations. No Telegram API calls.
 
 from __future__ import annotations
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 from telethon import events
 
 from cache import account_cache, analytics_cache, campaign_cache, dashboard_cache, health_cache
@@ -40,7 +42,7 @@ async def on_dashboard(event: events.CallbackQuery.Event) -> None:
         await warm_user_cache(_uid(event))
         data = await dashboard_cache.get(_uid(event))
         
-    text = menus.render_dashboard(data)
+    text: str = menus.render_dashboard(data)
     from core.config import get_settings
     from repositories import users_repo
     settings = get_settings()
@@ -69,7 +71,7 @@ async def on_accounts(event: events.CallbackQuery.Event) -> None:
         await warm_user_cache(_uid(event))
         data = await account_cache.get_page(_uid(event), page)
 
-    text = menus.render_account_list(data)
+    text: str = menus.render_account_list(data)
     accounts = data.get("accounts", []) if data else []
     pagination = data.get("pagination", {}) if data else {}
     buttons = keyboards.account_list_keyboard(accounts, pagination)
@@ -82,14 +84,14 @@ async def on_account_view(event: events.CallbackQuery.Event, account_id: str) ->
     
     # Read context BEFORE pushing new screen
     from telegram.states import get_context
-    context = await get_context(_uid(event), "view_source")
+    context: str = await get_context(_uid(event), "view_source")
     back_target = CB.ACCOUNTS
     if context == "health_all":
         back_target = CB.HEALTH_VIEW_ALL
 
     await push_screen(_uid(event), "account_detail", {"account_id": account_id})
     data = await account_cache.get_summary(account_id)
-    text = menus.render_account_detail(data)
+    text: str = menus.render_account_detail(data)
     status = data.get("status", "UNKNOWN") if data else "UNKNOWN"
 
     buttons = keyboards.account_detail_keyboard(account_id, status, back_cb=back_target)
@@ -99,7 +101,7 @@ async def on_account_add(event: events.CallbackQuery.Event) -> None:
     """Prompt user to send a session string."""
     await event.answer()  # LINE 1. Non-negotiable.
     await set_context(_uid(event), "awaiting_input", "auth_phone")
-    text = (
+    text: str = (
         "📲 <b>Add Account</b>\n"
         "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         "Please send the <b>Phone Number</b> of the account you want to add.\n\n"
@@ -111,7 +113,7 @@ async def on_account_add(event: events.CallbackQuery.Event) -> None:
 async def on_account_pause(event: events.CallbackQuery.Event, account_id: str) -> None:
     """Confirm account pause."""
     await event.answer()  # LINE 1. Non-negotiable.
-    text = "⏸️ Are you sure you want to <b>pause</b> this account?"
+    text: str = "⏸️ Are you sure you want to <b>pause</b> this account?"
     buttons = keyboards.confirm_keyboard("pause_account", account_id)
     await event.edit(text, buttons=buttons, parse_mode="html")
 
@@ -119,7 +121,7 @@ async def on_account_pause(event: events.CallbackQuery.Event, account_id: str) -
 async def on_account_resume(event: events.CallbackQuery.Event, account_id: str) -> None:
     """Confirm account resume."""
     await event.answer()  # LINE 1. Non-negotiable.
-    text = "▶️ Are you sure you want to <b>resume</b> this account?"
+    text: str = "▶️ Are you sure you want to <b>resume</b> this account?"
     buttons = keyboards.confirm_keyboard("resume_account", account_id)
     await event.edit(text, buttons=buttons, parse_mode="html")
 
@@ -127,7 +129,7 @@ async def on_account_resume(event: events.CallbackQuery.Event, account_id: str) 
 async def on_account_delete(event: events.CallbackQuery.Event, account_id: str) -> None:
     """Confirm account deletion."""
     await event.answer()  # LINE 1. Non-negotiable.
-    text = "<tg-emoji emoji-id='5445267414562389170'>🗑️</tg-emoji> Are you sure you want to <b>delete</b> this account?\n\n<tg-emoji emoji-id='5420323339723881652'>⚠️</tg-emoji> This action cannot be undone."
+    text: str = "<tg-emoji emoji-id='5445267414562389170'>🗑️</tg-emoji> Are you sure you want to <b>delete</b> this account?\n\n<tg-emoji emoji-id='5420323339723881652'>⚠️</tg-emoji> This action cannot be undone."
     buttons = keyboards.confirm_keyboard("delete_account", account_id)
     await event.edit(text, buttons=buttons, parse_mode="html")
 
@@ -136,7 +138,7 @@ async def on_accounts_delete_all(event: events.CallbackQuery.Event) -> None:
     """Confirm deletion of all accounts."""
     await event.answer()  # LINE 1. Non-negotiable.
     await push_screen(_uid(event), "accounts")
-    text = (
+    text: str = (
         "<tg-emoji emoji-id='5445267414562389170'>🗑️</tg-emoji> <b>REMOVE ALL ACCOUNTS</b>\n"
         "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         "Are you sure you want to remove <b>ALL</b> accounts from the bot?\n\n"
@@ -149,7 +151,7 @@ async def on_accounts_delete_all(event: events.CallbackQuery.Event) -> None:
 async def on_accounts_delete_limited(event: events.CallbackQuery.Event) -> None:
     """Prompt for confirmation before deleting limited accounts."""
     await event.answer()
-    text = (
+    text: str = (
         "<tg-emoji emoji-id='5420323339723881652'>⚠️</tg-emoji> <b>REMOVE LIMITED ACCOUNTS</b>\n"
         "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         "Are you sure you want to remove <b>ALL</b> accounts with a health score below 50?\n"
@@ -162,7 +164,7 @@ async def on_accounts_delete_limited(event: events.CallbackQuery.Event) -> None:
 async def on_account_upload_sessions(event: events.CallbackQuery.Event) -> None:
     """Prompt user to upload a .session or .zip file."""
     await event.answer()
-    text = (
+    text: str = (
         "📂 <b>UPLOAD SESSIONS</b>\n"
         "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         "Please send a <b>.session</b> file or a <b>.zip</b> archive containing sessions.\n\n"
@@ -184,7 +186,7 @@ async def on_account_health(event: events.CallbackQuery.Event, account_id: str) 
         from core.constants import HEALTH_EMOJI, HealthState
         state = data.get("state", "UNKNOWN")
         emoji = HEALTH_EMOJI.get(HealthState(state), "❓")
-        text = (
+        text: str = (
             f"🩺 <b>Account Health</b>\n"
             f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
             f"Status: {emoji} <b>{state}</b>\n"
@@ -192,7 +194,7 @@ async def on_account_health(event: events.CallbackQuery.Event, account_id: str) 
             f"Checked: <b>{menus._format_iso_date(data.get('checked_at'))}</b>"
         )
     else:
-        text = "🩺 No health data available for this account yet."
+        text: str = "🩺 No health data available for this account yet."
     await event.edit(text, buttons=keyboards.back_keyboard(), parse_mode="html")
 
 
@@ -202,7 +204,7 @@ async def on_account_stats(event: events.CallbackQuery.Event, account_id: str) -
     data = await account_cache.get_summary(account_id)
     if data:
         from utils.formatters import format_number, format_percentage
-        text = (
+        text: str = (
             f"<tg-emoji emoji-id='5231200819986047254'>📊</tg-emoji> <b>Account Statistics</b>\n"
             f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
             f"<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Success: <b>{format_number(data.get('success_count', 0))}</b>\n"
@@ -212,7 +214,7 @@ async def on_account_stats(event: events.CallbackQuery.Event, account_id: str) -
             f"🕐 Last Used: <b>{menus._format_iso_date(data.get('last_used_at'))}</b>"
         )
     else:
-        text = "<tg-emoji emoji-id='5231200819986047254'>📊</tg-emoji> No statistics available for this account."
+        text: str = "<tg-emoji emoji-id='5231200819986047254'>📊</tg-emoji> No statistics available for this account."
     await event.edit(text, buttons=keyboards.back_keyboard(), parse_mode="html")
 
 
@@ -230,11 +232,11 @@ async def on_campaigns(event: events.CallbackQuery.Event) -> None:
         
     campaigns_list = data.get("campaigns", []) if data else []
     pagination = data.get("pagination", {}) if data else {}
-    text = menus.render_campaign_list(data)
+    text: str = menus.render_campaign_list(data)
     buttons = keyboards.campaign_list_keyboard(campaigns_list, pagination)
     await event.edit(text, buttons=buttons, parse_mode="html")
 
-async def _get_campaign_summary(campaign_id: str) -> dict:
+async def _get_campaign_summary(campaign_id: str) -> dict[str, Any]:
     from cache import campaign_cache
     data = await campaign_cache.get_summary(campaign_id)
     if not data:
@@ -256,7 +258,7 @@ async def on_campaign_view(event: events.CallbackQuery.Event, campaign_id: str) 
     await push_screen(_uid(event), "campaign_detail", {"campaign_id": campaign_id})
     data = await _get_campaign_summary(campaign_id)
     from telegram import menus, keyboards
-    text = menus.render_campaign_detail(data)
+    text: str = menus.render_campaign_detail(data)
     status = data.get("status", "UNKNOWN") if data else "UNKNOWN"
     buttons = keyboards.campaign_detail_keyboard(campaign_id, status)
     await event.edit(text, buttons=buttons, parse_mode="html")
@@ -273,7 +275,7 @@ async def on_campaign_set_ad(event: events.CallbackQuery.Event, action: str, cam
         msg_disp = f"{msg[:40]}..." if len(msg) > 40 else msg
         link = getattr(camp, "forward_link", "") or "None"
         
-        text = (
+        text: str = (
             "<tg-emoji emoji-id='5395444784611480792'>📝</tg-emoji> <b>Set Ad Type</b>\n\n"
             "Choose the type of advertisement for this campaign:\n\n"
             "<b>Current Settings:</b>\n"
@@ -291,7 +293,7 @@ async def on_campaign_set_ad(event: events.CallbackQuery.Event, action: str, cam
 async def on_campaign_set_interval(event: events.CallbackQuery.Event, action: str, campaign_id: str) -> None:
     await event.answer()
     if action == "menu":
-        text = "⏱ <b>Set Intervals</b>\n\nConfigure how fast the bot sends messages:"
+        text: str = "⏱ <b>Set Intervals</b>\n\nConfigure how fast the bot sends messages:"
         await event.edit(text, buttons=keyboards.campaign_set_interval_keyboard(campaign_id), parse_mode="html")
     elif action == "group":
         await set_context(_uid(event), "awaiting_input", f"cmp_int_group:{campaign_id}")
@@ -306,7 +308,7 @@ async def on_campaign_set_rounds(event: events.CallbackQuery.Event, action: str,
         from services import campaign_service
         camp = await campaign_service.get_campaign(campaign_id)
         max_rounds = getattr(camp, "max_rounds", 0)
-        text = "🔄 <b>Set Rounds</b>\n\nHow many times should the bot loop through all groups?"
+        text: str = "🔄 <b>Set Rounds</b>\n\nHow many times should the bot loop through all groups?"
         await event.edit(text, buttons=keyboards.campaign_set_rounds_keyboard(campaign_id, max_rounds), parse_mode="html")
     elif action == "max":
         await set_context(_uid(event), "awaiting_input", f"cmp_rounds_max:{campaign_id}")
@@ -327,12 +329,12 @@ async def on_campaign_manage_accounts(event: events.CallbackQuery.Event, campaig
         data = await account_cache.get_page(_uid(event), page)
 
     campaign = await _get_campaign_summary(campaign_id)
-    assigned_ids = campaign.get("account_ids", []) if campaign else []
+    assigned_ids: list[str] = campaign.get("account_ids", cast(list[Any], [])) if campaign else cast(list[Any], [])
 
     accounts = data.get("accounts", []) if data else []
     pagination = data.get("pagination", {}) if data else {"current_page": page, "total_pages": 1}
 
-    text = (
+    text: str = (
         f"👥 <b>MANAGE ACCOUNTS</b>\n"
         f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         f"<b>Campaign:</b> {campaign.get('name', 'Untitled') if campaign else '—'}\n"
@@ -345,7 +347,7 @@ async def on_campaign_manage_accounts(event: events.CallbackQuery.Event, campaig
 async def on_campaign_select_all_accounts(event: events.CallbackQuery.Event, campaign_id: str) -> None:
     """Prompt for confirmation to add all accounts."""
     await event.answer()
-    text = (
+    text: str = (
         "<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> <b>SELECT ALL ACCOUNTS</b>\n"
         "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         "Add <b>ALL</b> your accounts to this campaign?\n"
@@ -357,7 +359,7 @@ async def on_campaign_select_all_accounts(event: events.CallbackQuery.Event, cam
 async def on_campaign_unselect_all_accounts(event: events.CallbackQuery.Event, campaign_id: str) -> None:
     """Prompt for confirmation to remove all accounts."""
     await event.answer()
-    text = (
+    text: str = (
         "<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> <b>UNSELECT ALL ACCOUNTS</b>\n"
         "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         "Remove <b>ALL</b> your accounts from this campaign?\n"
@@ -385,8 +387,8 @@ async def on_campaign_account_toggle(event: events.CallbackQuery.Event) -> None:
         return
         
     # Force all IDs to strings to ensure consistent matching
-    current_ids = [str(aid) for aid in camp.account_ids]
-    current_groups = [str(gid) for gid in camp.group_ids]
+    current_ids = [aid for aid in camp.account_ids]
+    current_groups = [gid for gid in camp.group_ids]
     account_id_str = str(account_id)
     
     # Ensure groups are fetched if this account hasn't been synced yet
@@ -429,7 +431,7 @@ async def on_campaign_refresh_all_groups(event: events.CallbackQuery.Event, camp
         return
         
     for acc_id in camp.account_ids:
-        await account_groups_repo.sync_groups_from_telegram(str(acc_id))
+        await account_groups_repo.sync_groups_from_telegram(acc_id)
         
     await on_campaign_manage_accounts(event, campaign_id)
 
@@ -448,7 +450,7 @@ async def on_campaign_acc_detail(event: events.CallbackQuery.Event, account_id: 
     camp = await campaign_service.get_campaign(campaign_id)
     # Ensure ID comparison uses strings to avoid mismatch
     assigned_ids = [str(aid) for aid in (camp.account_ids if camp else [])]
-    is_assigned = str(account_id) in assigned_ids
+    is_assigned = account_id in assigned_ids
     
     account = await accounts_repo.get(account_id)
     if not account:
@@ -473,7 +475,7 @@ async def on_campaign_acc_detail(event: events.CallbackQuery.Event, account_id: 
     
     phone = account.phone or "Unknown"
     
-    text = (
+    text: str = (
         f"<tg-emoji emoji-id='5461117441612462242'>👤</tg-emoji> <b>Account Details</b>\n"
         f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         f"📱 Phone: <b>{phone}</b>\n"
@@ -499,7 +501,7 @@ async def on_campaign_account_groups(event: events.CallbackQuery.Event, page: in
     
     groups, pagination = await account_groups_repo.get_groups_paginated(account_id, page, 10)
     
-    text = (
+    text: str = (
         "👥 <b>Select Groups</b>\n"
         "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         "Select which groups from this account should be used in the campaign."
@@ -522,8 +524,8 @@ async def on_campaign_group_bulk(event: events.CallbackQuery.Event, action: str)
         return
         
     # Force all IDs to strings to ensure consistent matching
-    current_groups = [str(gid) for gid in camp.group_ids]
-    all_account_groups = [str(gid) for gid in await account_groups_repo.get_all_group_ids(account_id)]
+    current_groups = [gid for gid in camp.group_ids]
+    all_account_groups = [gid for gid in await account_groups_repo.get_all_group_ids(account_id)]
     
     new_grp_ids = list(current_groups)
     
@@ -555,8 +557,8 @@ async def on_campaign_toggle_group(event: events.CallbackQuery.Event, group_id_s
         return
         
     # Normalize IDs
-    current_groups = [str(gid) for gid in camp.group_ids]
-    gid_str = str(group_id_str)
+    current_groups = [gid for gid in camp.group_ids]
+    gid_str = group_id_str
     
     new_grp_ids = list(current_groups)
     if gid_str in new_grp_ids:
@@ -573,7 +575,7 @@ async def on_campaign_create(event: events.CallbackQuery.Event) -> None:
     """Prompt user to name a new campaign."""
     await event.answer()  # LINE 1. Non-negotiable.
     await set_context(_uid(event), "awaiting_input", "campaign_name")
-    text = (
+    text: str = (
         "<tg-emoji emoji-id='5424818078833715060'>📢</tg-emoji> <b>Create Campaign</b>\n"
         "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         "Please send the <b>campaign name</b>."
@@ -584,7 +586,7 @@ async def on_campaign_create(event: events.CallbackQuery.Event) -> None:
 async def on_campaign_pause(event: events.CallbackQuery.Event, campaign_id: str) -> None:
     """Confirm campaign pause."""
     await event.answer()  # LINE 1. Non-negotiable.
-    text = "⏸️ Are you sure you want to <b>pause</b> this campaign?"
+    text: str = "⏸️ Are you sure you want to <b>pause</b> this campaign?"
     buttons = keyboards.confirm_keyboard("pause_campaign", campaign_id)
     await event.edit(text, buttons=buttons, parse_mode="html")
 
@@ -592,7 +594,7 @@ async def on_campaign_pause(event: events.CallbackQuery.Event, campaign_id: str)
 async def on_campaign_resume(event: events.CallbackQuery.Event, campaign_id: str) -> None:
     """Confirm campaign start/resume."""
     await event.answer()  # LINE 1. Non-negotiable.
-    text = "▶️ Are you sure you want to <b>start</b> this campaign?"
+    text: str = "▶️ Are you sure you want to <b>start</b> this campaign?"
     buttons = keyboards.confirm_keyboard("resume_campaign", campaign_id)
     await event.edit(text, buttons=buttons, parse_mode="html")
 
@@ -600,7 +602,7 @@ async def on_campaign_resume(event: events.CallbackQuery.Event, campaign_id: str
 async def on_campaign_delete(event: events.CallbackQuery.Event, campaign_id: str) -> None:
     """Confirm campaign deletion."""
     await event.answer()  # LINE 1. Non-negotiable.
-    text = "<tg-emoji emoji-id='5445267414562389170'>🗑️</tg-emoji> Are you sure you want to <b>delete</b> this campaign?\n\n<tg-emoji emoji-id='5420323339723881652'>⚠️</tg-emoji> This action cannot be undone."
+    text: str = "<tg-emoji emoji-id='5445267414562389170'>🗑️</tg-emoji> Are you sure you want to <b>delete</b> this campaign?\n\n<tg-emoji emoji-id='5420323339723881652'>⚠️</tg-emoji> This action cannot be undone."
     buttons = keyboards.confirm_keyboard("delete_campaign", campaign_id)
     await event.edit(text, buttons=buttons, parse_mode="html")
 
@@ -610,7 +612,7 @@ async def on_campaign_duplicate(event: events.CallbackQuery.Event, campaign_id: 
     await event.answer()  # LINE 1. Non-negotiable.
     await set_context(_uid(event), "awaiting_input", "duplicate_campaign")
     await set_context(_uid(event), "duplicate_source", campaign_id)
-    text = (
+    text: str = (
         "📋 <b>Duplicate Campaign</b>\n"
         "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         "Please send a <b>name</b> for the new campaign."
@@ -629,7 +631,7 @@ async def on_health(event: events.CallbackQuery.Event) -> None:
         await warm_user_cache(_uid(event))
         data = await health_cache.get_summary(_uid(event))
         
-    text = menus.render_health_overview(data)
+    text: str = menus.render_health_overview(data)
     buttons = keyboards.health_overview_keyboard()
     await event.edit(text, buttons=buttons, parse_mode="html")
 
@@ -642,7 +644,7 @@ async def on_health_settings(event: events.CallbackQuery.Event) -> None:
     if not user:
         return
         
-    text = menus.render_health_settings()
+    text: str = menus.render_health_settings()
     buttons = keyboards.health_settings_keyboard(user.health_auto_pause)
     await event.edit(text, buttons=buttons, parse_mode="html")
 
@@ -658,7 +660,7 @@ async def on_health_settings_toggle(event: events.CallbackQuery.Event) -> None:
     await users_repo.update(_uid(event), {"health_auto_pause": new_status})
     await event.answer(f"Auto-Pause turned {'ON' if new_status else 'OFF'}")
     
-    text = menus.render_health_settings()
+    text: str = menus.render_health_settings()
     buttons = keyboards.health_settings_keyboard(new_status)
     await event.edit(text, buttons=buttons, parse_mode="html")
 
@@ -679,7 +681,7 @@ async def on_health_view_all(event: events.CallbackQuery.Event, page: int = 1) -
     accounts = data.get("accounts", []) if data else []
     pagination = data.get("pagination", {}) if data else {}
 
-    text = (
+    text: str = (
         "👁 <b>ACCOUNT HEALTH LIST</b>\n"
         "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         "Select an account to view detailed stats and health checks."
@@ -699,7 +701,7 @@ async def on_health_view_all(event: events.CallbackQuery.Event, page: int = 1) -
 async def on_ai_chat(event: events.CallbackQuery.Event) -> None:
     """Enter AI chat mode."""
     await event.answer()
-    text = menus.render_ai_welcome()
+    text: str = menus.render_ai_welcome()
     buttons = keyboards.ai_chat_keyboard()
     await event.edit(text, buttons=buttons, parse_mode="html")
     await set_context(_uid(event), "awaiting_input", "ai_chat")
@@ -797,7 +799,7 @@ async def on_ai_cancel(event: events.CallbackQuery.Event, action_id: str) -> Non
     from services.ai_action_queue import clear_action
     await clear_action(action_id)
     
-    text = menus.render_ai_welcome()
+    text: str = menus.render_ai_welcome()
     buttons = keyboards.ai_chat_keyboard()
     await event.edit(text, buttons=buttons, parse_mode="html")
 
@@ -813,7 +815,7 @@ async def on_groups_autojoin(event: events.CallbackQuery.Event) -> None:
         await event.answer("⚠️ Auto-join already in progress!", alert=True)
         return
 
-    text = menus.render_autojoin_prompt()
+    text: str = menus.render_autojoin_prompt()
     buttons = keyboards.back_keyboard(CB.DASHBOARD)
     await event.edit(text, buttons=buttons, parse_mode="html")
     await set_context(_uid(event), "awaiting_input", "bulk_autojoin")
@@ -826,7 +828,6 @@ async def on_groups_autojoin_cancel(event: events.CallbackQuery.Event) -> None:
         await event.answer("🛑 Joining process cancelled!", alert=True)
     else:
         await event.answer("Nothing to cancel.")
-    from telegram.callbacks import on_dashboard
     await on_dashboard(event)
 
 
@@ -851,7 +852,7 @@ async def on_groups_checker(event: events.CallbackQuery.Event) -> None:
         )
         return
 
-    text = menus.render_checker_prompt()
+    text: str = menus.render_checker_prompt()
     buttons = keyboards.back_keyboard(CB.DASHBOARD)
     await event.edit(text, buttons=buttons, parse_mode="html")
     await set_context(_uid(event), "awaiting_input", "bulk_checker")
@@ -888,7 +889,7 @@ async def on_analytics(event: events.CallbackQuery.Event) -> None:
         "total_failed": data.get("failed", 0),
     }
     
-    text = menus.render_analytics(analytics_data)
+    text: str = menus.render_analytics(analytics_data)
     buttons = keyboards.analytics_keyboard()
     await event.edit(text, buttons=buttons, parse_mode="html")
 
@@ -898,7 +899,7 @@ async def on_analytics_detailed(event: events.CallbackQuery.Event) -> None:
     await event.answer()  # LINE 1. Non-negotiable.
     user_id = _uid(event)
     data = await analytics_cache.get_dashboard(user_id)
-    text = menus.render_analytics_detailed(data)
+    text: str = menus.render_analytics_detailed(data)
     # Re-use the back keyboard to go back to main analytics overview
     buttons = keyboards.back_keyboard(CB.ANALYTICS)
     await event.edit(text, buttons=buttons, parse_mode="html")
@@ -917,7 +918,7 @@ async def on_autoreply_menu(event: events.CallbackQuery.Event) -> None:
     enabled = user.autoreply_enabled
     has_custom = bool(user.autoreply_text)
     
-    text = menus.render_autoreply_menu(enabled, has_custom)
+    text: str = menus.render_autoreply_menu(enabled, has_custom)
     buttons = keyboards.autoreply_keyboard(enabled, has_custom)
     await event.edit(text, buttons=buttons, parse_mode="html")
 
@@ -941,7 +942,7 @@ async def on_autoreply_toggle(event: events.CallbackQuery.Event) -> None:
     
     # Refresh menu
     has_custom = bool(user.autoreply_text)
-    text = menus.render_autoreply_menu(new_status, has_custom)
+    text: str = menus.render_autoreply_menu(new_status, has_custom)
     buttons = keyboards.autoreply_keyboard(new_status, has_custom)
     await event.edit(text, buttons=buttons, parse_mode="html")
 
@@ -954,7 +955,7 @@ async def on_autoreply_view(event: events.CallbackQuery.Event) -> None:
     if not user:
         return
         
-    text = menus.render_autoreply_view(user.autoreply_text or "N/A")
+    text: str = menus.render_autoreply_view(user.autoreply_text or "N/A")
     buttons = keyboards.back_keyboard(CB.SETTINGS_AUTOREPLY)
     await event.edit(text, buttons=buttons, parse_mode="html")
 
@@ -988,7 +989,7 @@ async def on_page_next(event: events.CallbackQuery.Event, screen: str, page: int
     await event.answer()  # LINE 1. Non-negotiable.
     if screen == "accounts":
         data = await account_cache.get_page(_uid(event), page)
-        text = menus.render_account_list(data)
+        text: str = menus.render_account_list(data)
         accounts = data.get("accounts", []) if data else []
         pagination = data.get("pagination", {}) if data else {}
         buttons = keyboards.account_list_keyboard(accounts, pagination)
@@ -997,7 +998,7 @@ async def on_page_next(event: events.CallbackQuery.Event, screen: str, page: int
         data = await campaign_cache.get_page(_uid(event), page)
         campaigns_list = data.get("campaigns", []) if data else []
         pagination = data.get("pagination", {}) if data else {}
-        text = "<tg-emoji emoji-id='5424818078833715060'>📢</tg-emoji> <b>Campaigns</b>\n━━━━━━━━━━━━━━━━━━━━━━━━"
+        text: str = "<tg-emoji emoji-id='5424818078833715060'>📢</tg-emoji> <b>Campaigns</b>\n━━━━━━━━━━━━━━━━━━━━━━━━"
         buttons = keyboards.campaign_list_keyboard(campaigns_list, pagination)
         await event.edit(text, buttons=buttons, parse_mode="html")
     elif screen == "cmp_acc":
@@ -1020,43 +1021,44 @@ async def on_confirm_yes(event: events.CallbackQuery.Event, action: str, target_
     """Handle confirmed action."""
     await event.answer()  # LINE 1. Non-negotiable.
 
+    text: str = ""
     try:
         if action == "delete_account":
             from services import account_service
             await account_service.delete_account(target_id, _uid(event))
-            text = "<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Account deleted successfully."
+            text: str = "<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Account deleted successfully."
         elif action == "delete_all_accounts":
             from services import account_service
             await account_service.delete_all_accounts(_uid(event))
-            text = "<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> All accounts removed."
+            text: str = "<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> All accounts removed."
         elif action == "delete_limited_accounts":
             from services import account_service
             count = await account_service.delete_limited_accounts(_uid(event))
-            text = f"<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> {count} limited accounts removed."
+            text: str = f"<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> {count} limited accounts removed."
         elif action == "select_all_accounts":
             from services import campaign_service
             await campaign_service.select_all_accounts(target_id, _uid(event))
-            text = "<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> All accounts added to campaign."
+            text: str = "<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> All accounts added to campaign."
         elif action == "unselect_all_accounts":
             from services import campaign_service
             await campaign_service.unselect_all_accounts(target_id, _uid(event))
-            text = "<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> All accounts removed from campaign."
+            text: str = "<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> All accounts removed from campaign."
         elif action == "pause_account":
             from services import account_service
             await account_service.pause_account(target_id, _uid(event))
-            text = "⏸️ Account paused."
+            text: str = "⏸️ Account paused."
         elif action == "resume_account":
             from services import account_service
             await account_service.resume_account(target_id, _uid(event))
-            text = "▶️ Account resumed."
+            text: str = "▶️ Account resumed."
         elif action == "delete_campaign":
             from services import campaign_service
             await campaign_service.delete_campaign(target_id, _uid(event))
-            text = "<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Campaign deleted successfully."
+            text: str = "<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Campaign deleted successfully."
         elif action == "pause_campaign":
             from services import campaign_service
             await campaign_service.pause_campaign(target_id, _uid(event))
-            text = "⏸️ Campaign paused."
+            text: str = "⏸️ Campaign paused."
         elif action == "resume_campaign":
             # (Lock removed)
             from repositories import users_repo
@@ -1070,7 +1072,7 @@ async def on_confirm_yes(event: events.CallbackQuery.Event, action: str, target_
                 if not bot_username:
                     await event.answer("Logs bot username is not configured in the environment.", alert=True)
                     return
-                text = (
+                text: str = (
                     "<tg-emoji emoji-id='5420323339723881652'>⚠️</tg-emoji> <b>Logs Bot Not Started</b>\n\n"
                     "To receive real-time campaign notifications and success logs, "
                     "you must first start the Logs Bot.\n\n"
@@ -1088,7 +1090,7 @@ async def on_confirm_yes(event: events.CallbackQuery.Event, action: str, target_
 
             from services import campaign_service
             await campaign_service.resume_campaign(target_id, _uid(event))
-            text = "▶️ Campaign started."
+            text: str = "▶️ Campaign started."
             
         elif action == "bulk_cancel":
             from services.bulk_service import cancel_bulk_task
@@ -1101,7 +1103,7 @@ async def on_confirm_yes(event: events.CallbackQuery.Event, action: str, target_
             await event.edit(render_bulk_progress("Remove Usernames", 0, 0, 0), buttons=bulk_progress_keyboard(), parse_mode="html")
             from services import bulk_service
             async def run_task():
-                async def update_progress(success, failed, total):
+                async def update_progress(success: int, failed: int, total: int):
                     try:
                         await event.edit(render_bulk_progress("Remove Usernames", success, failed, total), buttons=bulk_progress_keyboard(), parse_mode="html")
                     except Exception:
@@ -1121,7 +1123,7 @@ async def on_confirm_yes(event: events.CallbackQuery.Event, action: str, target_
             await event.edit(render_bulk_progress("Remove Photo", 0, 0, 0), buttons=bulk_progress_keyboard(), parse_mode="html")
             from services import bulk_service
             async def run_task():
-                async def update_progress(success, failed, total):
+                async def update_progress(success: int, failed: int, total: int):
                     try:
                         await event.edit(render_bulk_progress("Remove Photo", success, failed, total), buttons=bulk_progress_keyboard(), parse_mode="html")
                     except Exception:
@@ -1141,7 +1143,7 @@ async def on_confirm_yes(event: events.CallbackQuery.Event, action: str, target_
             await event.edit(render_bulk_progress("Clean DMs", 0, 0, 0), buttons=bulk_progress_keyboard(), parse_mode="html")
             from services import bulk_service
             async def run_task():
-                async def update_progress(success, failed, total):
+                async def update_progress(success: int, failed: int, total: int):
                     try:
                         await event.edit(render_bulk_progress("Clean DMs", success, failed, total), buttons=bulk_progress_keyboard(), parse_mode="html")
                     except Exception:
@@ -1161,7 +1163,7 @@ async def on_confirm_yes(event: events.CallbackQuery.Event, action: str, target_
             await event.edit(render_bulk_progress("Archive Chats", 0, 0, 0), buttons=bulk_progress_keyboard(), parse_mode="html")
             from services import bulk_service
             async def run_task():
-                async def update_progress(success, failed, total):
+                async def update_progress(success: int, failed: int, total: int):
                     try:
                         await event.edit(render_bulk_progress("Archive Chats", success, failed, total), buttons=bulk_progress_keyboard(), parse_mode="html")
                     except Exception:
@@ -1181,7 +1183,7 @@ async def on_confirm_yes(event: events.CallbackQuery.Event, action: str, target_
             await event.edit(render_bulk_progress("Leave Groups/Channels", 0, 0, 0), buttons=bulk_progress_keyboard(), parse_mode="html")
             from services import bulk_service
             async def run_task():
-                async def update_progress(success, failed, total):
+                async def update_progress(success: int, failed: int, total: int):
                     try:
                         await event.edit(render_bulk_progress("Leave Groups/Channels", success, failed, total), buttons=bulk_progress_keyboard(), parse_mode="html")
                     except Exception:
@@ -1201,7 +1203,7 @@ async def on_confirm_yes(event: events.CallbackQuery.Event, action: str, target_
             await event.edit(render_bulk_progress("Remove Folders", 0, 0, 0), buttons=bulk_progress_keyboard(), parse_mode="html")
             from services import group_worker
             async def run_task():
-                async def update_progress(success, failed, total):
+                async def update_progress(success: int, failed: int, total: int):
                     try:
                         await event.edit(render_bulk_progress("Remove Folders", success, failed, total), buttons=bulk_progress_keyboard(), parse_mode="html")
                     except Exception:
@@ -1221,7 +1223,7 @@ async def on_confirm_yes(event: events.CallbackQuery.Event, action: str, target_
             await event.edit(render_bulk_progress("Remove 2FA", 0, 0, 0), buttons=bulk_progress_keyboard(), parse_mode="html")
             from services import bulk_service
             async def run_task():
-                async def update_progress(success, failed, total):
+                async def update_progress(success: int, failed: int, total: int):
                     try:
                         await event.edit(render_bulk_progress("Remove 2FA", success, failed, total), buttons=bulk_progress_keyboard(), parse_mode="html")
                     except Exception:
@@ -1236,9 +1238,9 @@ async def on_confirm_yes(event: events.CallbackQuery.Event, action: str, target_
             return
             
         else:
-            text = "❓ Unknown action."
+            text: str = "❓ Unknown action."
     except Exception as exc:
-        text = f"<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> Error: {str(exc)}"
+        text: str = f"<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> Error: {str(exc)}"
 
     await event.edit(text, buttons=keyboards.back_keyboard(), parse_mode="html")
 
@@ -1250,23 +1252,23 @@ async def on_pay_profile(event: events.CallbackQuery.Event) -> None:
         return
     settings = get_settings()
     is_active = user.is_active(settings.admin_user_ids, settings.admin_username)
-    text = menus.render_profile(user.model_dump(), is_active)
+    text: str = menus.render_profile(user.model_dump(), is_active)
     await event.edit(text, buttons=keyboards.profile_keyboard(), parse_mode="html")
 
 async def on_pay_options(event: events.CallbackQuery.Event) -> None:
     from repositories import users_repo
     user = await users_repo.get(_uid(event))
-    text = menus.render_paywall()
+    text: str = menus.render_paywall()
     await event.edit(text, buttons=keyboards.paywall_keyboard(user), parse_mode="html")
 
 async def on_admin_panel(event: events.CallbackQuery.Event) -> None:
-    text = menus.render_admin_panel()
+    text: str = menus.render_admin_panel()
     await event.edit(text, buttons=keyboards.admin_panel_keyboard(), parse_mode="html")
 
 async def on_admin_stats(event: events.CallbackQuery.Event) -> None:
     from repositories import users_repo
     stats = await users_repo.get_stats()
-    text = menus.render_admin_stats(stats)
+    text: str = menus.render_admin_stats(stats)
     await event.edit(text, buttons=keyboards.back_keyboard("admin:panel"), parse_mode="html")
 
 async def on_admin_users(event: events.CallbackQuery.Event) -> None:
@@ -1277,7 +1279,7 @@ async def on_admin_users(event: events.CallbackQuery.Event) -> None:
         await event.answer("No active users found.", alert=True)
         return
         
-    text = "👑 <b>ACTIVE USERS</b>\n━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+    text: str = "👑 <b>ACTIVE USERS</b>\n━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
     for u in users[:20]: # Simple limit for now
         text += f"ID: <code>{u.user_id}</code> | @{u.username or 'NoName'} | {u.plan_type}\n"
         
@@ -1301,7 +1303,7 @@ async def on_noop(event: events.CallbackQuery.Event) -> None:
 async def on_bulk_manager(event: events.CallbackQuery.Event) -> None:
     """Show Bulk Account Manager."""
     await event.answer()
-    text = (
+    text: str = (
         "👥 <b>Bulk Account Manager</b>\n"
         "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         "Perform actions on <b>all connected accounts</b> simultaneously.\n"
@@ -1312,6 +1314,7 @@ async def on_bulk_manager(event: events.CallbackQuery.Event) -> None:
 async def on_bulk_action(event: events.CallbackQuery.Event, action: str) -> None:
     """Handle bulk manager buttons."""
     await event.answer()
+    text: str = ""
     if action == "name":
         await set_context(_uid(event), "awaiting_input", "bulk_name_first")
         await event.edit("Please send the <b>new First Name</b> for all accounts.", buttons=keyboards.back_keyboard(CB.BULK_MANAGER), parse_mode="html")
@@ -1341,7 +1344,7 @@ async def on_bulk_action(event: events.CallbackQuery.Event, action: str) -> None
         await event.edit("📁 Delete ALL custom chat folders from all accounts?\n\n<i>Note: This only deletes the folders, you will NOT leave the groups.</i>", buttons=buttons, parse_mode="html")
 
     elif action == "2fa":
-        text = "🔐 <b>Bulk 2FA Manager</b>\n━━━━━━━━━━━━━━━━━━━━━━━━\n\nChoose an action below."
+        text: str = "🔐 <b>Bulk 2FA Manager</b>\n━━━━━━━━━━━━━━━━━━━━━━━━\n\nChoose an action below."
         await event.edit(text, buttons=keyboards.bulk_2fa_keyboard(), parse_mode="html")
     elif action == "2fa:set":
         await set_context(_uid(event), "awaiting_input", "bulk_2fa_set")
@@ -1357,7 +1360,7 @@ async def on_buy_plan(event: events.CallbackQuery.Event, plan: str) -> None:
     """Show payment methods for the selected plan."""
     await event.answer()
     price = "$35" if plan == "weekly" else "$75"
-    text = (
+    text: str = (
         f"<b>🛒 Purchase Plan</b>\n\n"
         f"<b>Selected:</b> {plan.capitalize()} Pass\n"
         f"<b>Price:</b> {price}\n\n"
@@ -1373,7 +1376,7 @@ async def on_pay_method_select(event: events.CallbackQuery.Event, plan: str, met
     amount_usd = 35 if plan == "weekly" else 75
     
     import uuid
-    order_id = str(uuid.uuid4().hex)
+    order_id = uuid.uuid4().hex
     user_id = _uid(event)
     
     from services.payment_service import create_oxapay_invoice
@@ -1394,7 +1397,7 @@ async def on_pay_method_select(event: events.CallbackQuery.Event, plan: str, met
     inv = Invoice(order_id=order_id, user_id=user_id, plan=plan.upper(), amount=str(amount_usd), gateway=gateway)
     await invoice_repo.create(inv)
     
-    text = (
+    text: str = (
         f"<b>🧾 Invoice Created</b>\n"
         f"━━━━━━━━━━━━━━━━━━━━\n\n"
         f"<b>Order ID:</b> <code>{order_id}</code>\n"
@@ -1413,7 +1416,7 @@ async def on_invoice_cancel(event: events.CallbackQuery.Event) -> None:
     await event.delete()
     
     from telegram import keyboards
-    text = (
+    text: str = (
         "<b>💎 Premium Plans</b>\n"
         "━━━━━━━━━━━━━━━━━━━━\n\n"
         "Select your preferred billing cycle to continue:"

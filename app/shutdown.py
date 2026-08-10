@@ -6,6 +6,8 @@ Stops all systems in reverse startup order to ensure clean teardown.
 
 from __future__ import annotations
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 from core.logging import get_logger
 
 log = get_logger("shutdown")
@@ -42,7 +44,7 @@ async def shutdown() -> None:
         await worker_manager.stop_all()
         
         import app.startup
-        if hasattr(app.startup, "webhook_runner"):
+        if hasattr(app.startup, "webhook_runner") and app.startup.webhook_runner is not None:
             await app.startup.webhook_runner.cleanup()
             
         await log.ainfo("shutdown.workers_stopped")

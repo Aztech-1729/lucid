@@ -4,6 +4,8 @@ Group worker — handles folder actions and bulk joining logic.
 
 from __future__ import annotations
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 from typing import Callable, Coroutine, List
 
 from telethon import functions, types
@@ -14,7 +16,7 @@ from services.joiner_service import start_auto_join
 
 log = get_logger("group_worker")
 
-async def bulk_remove_folders(user_id: int, progress_callback: Callable[[int, int, int], Coroutine]) -> tuple[int, int]:
+async def bulk_remove_folders(user_id: int, progress_callback: Callable[[int, int, int], Coroutine[Any, Any, Any]]) -> tuple[int, int]:
     """
     Remove all custom dialog filters (chat folders) from all accounts.
     """
@@ -41,12 +43,12 @@ async def bulk_remove_folders(user_id: int, progress_callback: Callable[[int, in
                 result = await client(functions.messages.GetDialogFiltersRequest())
                 
                 # Delete all custom filters
-                for f in getattr(result, 'filters', result):
+                for f in getattr(result, 'filters', result) or []:
                     if isinstance(f, types.DialogFilterDefault) or not hasattr(f, 'id'):
                         continue  # Skip Default filter and any unexpected filter without ID
                     await client(functions.messages.UpdateDialogFilterRequest(
                         id=f.id,
-                        filter=None  # Setting to None deletes the folder
+                        filter=None  # type: ignore # Setting to None or omitting deletes the folder
                     ))
                     
                 success += 1
@@ -59,7 +61,7 @@ async def bulk_remove_folders(user_id: int, progress_callback: Callable[[int, in
     return success, failed
 
 
-async def bulk_join_folder(user_id: int, slug: str, progress_callback: Callable[[str], Coroutine]) -> None:
+async def bulk_join_folder(user_id: int, slug: str, progress_callback: Callable[[str], Coroutine[Any, Any, Any]]) -> None:
     """
     Instantly join a chat folder for all connected accounts, then delete the folder.
     """
@@ -97,10 +99,10 @@ async def bulk_join_folder(user_id: int, slug: str, progress_callback: Callable[
                 
                 # 3. Clean up the folder interface immediately
                 result = await client(functions.messages.GetDialogFiltersRequest())
-                for f in getattr(result, 'filters', result):
+                for f in getattr(result, 'filters', result) or []:
                     if isinstance(f, types.DialogFilterDefault) or not hasattr(f, "id"):
                         continue
-                    await client(functions.messages.UpdateDialogFilterRequest(id=f.id, filter=None))
+                    await client(functions.messages.UpdateDialogFilterRequest(id=f.id, filter=None))  # type: ignore
                     
                 success += 1
         except Exception as e:
@@ -112,7 +114,7 @@ async def bulk_join_folder(user_id: int, slug: str, progress_callback: Callable[
     await progress_callback(render_autojoin_progress(success, failed, total_accounts, "✅ Folder joined completely!", 0, total_accounts))
 
 
-async def bulk_join_links(user_id: int, links: List[str], progress_callback: Callable[[str], Coroutine]) -> None:
+async def bulk_join_links(user_id: int, links: List[Any], progress_callback: Callable[[str], Coroutine[Any, Any, Any]]) -> None:
     """
     Wrapper for joining links via txt file using the existing auto-join service.
     """

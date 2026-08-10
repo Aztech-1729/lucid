@@ -7,6 +7,8 @@ monitors heartbeats, and restarts crashed workers.
 
 from __future__ import annotations
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 import asyncio
 from typing import Optional
 
@@ -33,7 +35,7 @@ class WorkerManager:
     """Manages background worker tasks with crash recovery."""
 
     def __init__(self) -> None:
-        self._tasks: dict[str, asyncio.Task] = {}
+        self._tasks: dict[str, asyncio.Task[Any]] = {}
         self._stop_event = asyncio.Event()
         self._generation_id = generate_id()
 
@@ -82,7 +84,7 @@ class WorkerManager:
         self._tasks.clear()
         await log.ainfo("scheduler.all_stopped")
 
-    async def _run_worker_safe(self, name: str, worker_fn) -> None:
+    async def _run_worker_safe(self, name: str, worker_fn: Callable[..., Any]) -> None:
         """
         Run a worker with crash recovery.
 
@@ -157,9 +159,9 @@ class WorkerManager:
         except Exception:
             pass  # Don't let recording failures crash the scheduler
 
-    async def get_status(self) -> dict:
+    async def get_status(self) -> dict[str, Any]:
         """Get the status of all workers."""
-        result = {}
+        result: dict[str, Any] = {}
         for name, task in self._tasks.items():
             result[name] = {
                 "running": not task.done(),

@@ -4,6 +4,8 @@ Account Groups repository — handles groups fetched specifically for an account
 
 from __future__ import annotations
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 from database.mongo import get_db
 from pymongo import UpdateOne
 from core.logging import get_logger
@@ -15,12 +17,12 @@ def _coll():
     return get_db()[GROUPS_COL]
 
 
-async def save_groups(account_id: str, groups: list[dict]) -> None:
+async def save_groups(account_id: str, groups: list[dict[str, Any]]) -> None:
     """Bulk upsert groups for an account."""
     if not groups:
         return
         
-    ops = []
+    ops: list[Any] = []
     for g in groups:
         set_doc = {"title": g["title"]}
         if "access_hash" in g:
@@ -47,7 +49,7 @@ async def sync_groups_from_telegram(account_id: str) -> None:
         from telegram.client_pool import client_pool
         async with client_pool.acquire(account_id) as client:
             dialogs = await client.get_dialogs()
-            groups = []
+            groups: list[Any] = []
             for d in dialogs:
                 if d.is_group and not getattr(d.entity, "broadcast", False):
                     access_hash = getattr(d.entity, "access_hash", 0) if d.entity else 0
@@ -66,7 +68,7 @@ async def sync_groups_from_telegram(account_id: str) -> None:
         await log.aerror("account_groups.sync_failed", error=str(e))
 
 
-async def get_groups_paginated(account_id: str, page: int = 1, limit: int = 10) -> tuple[list[dict], dict]:
+async def get_groups_paginated(account_id: str, page: int = 1, limit: int = 10) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """Get groups for an account with pagination."""
     skip = (page - 1) * limit
     
@@ -116,10 +118,10 @@ async def count_selected(account_id: str) -> int:
     return await _coll().count_documents({"account_id": account_id, "is_selected": True})
 
 
-async def list_by_ids(object_ids: list[str]) -> list[dict]:
+async def list_by_ids(object_ids: list[str]) -> list[dict[str, Any]]:
     """Get account groups by their MongoDB ObjectIds."""
     from bson import ObjectId
-    oids = []
+    oids: list[Any] = []
     for oid in object_ids:
         try:
             oids.append(ObjectId(oid))
@@ -155,7 +157,7 @@ async def fetch_groups_if_missing(account_id: str) -> None:
         from telegram.client_pool import client_pool
         async with client_pool.acquire(account_id) as client:
             dialogs = await client.get_dialogs()
-            groups = []
+            groups: list[Any] = []
             for d in dialogs:
                 if d.is_group and not getattr(d.entity, "broadcast", False):
                     access_hash = getattr(d.entity, "access_hash", 0) if d.entity else 0

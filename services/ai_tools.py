@@ -4,6 +4,8 @@ AI Tools Registry.
 Defines the JSON schemas for the LLM and the Python wrapper functions that securely execute them.
 Crucially, the `user_id` is always injected by the wrapper, never by the AI, ensuring data isolation.
 """
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 
 from typing import Dict, Any, Callable, Coroutine
 import json
@@ -22,8 +24,8 @@ TOOLS = [
             "description": "Get the current dashboard statistics including total accounts, active campaigns, success rates, and overall health.",
             "parameters": {
                 "type": "object",
-                "properties": {},
-                "required": []
+                "properties": typing.cast(dict[str, Any], {}),
+                "required": typing.cast(list[Any], [])
             }
         }
     },
@@ -34,8 +36,8 @@ TOOLS = [
             "description": "Get a list of all campaigns for the user, including their status, success counts, and settings.",
             "parameters": {
                 "type": "object",
-                "properties": {},
-                "required": []
+                "properties": typing.cast(dict[str, Any], {}),
+                "required": typing.cast(list[Any], [])
             }
         }
     },
@@ -129,7 +131,7 @@ TOOLS = [
                 "properties": {
                     "status_filter": {"type": "string", "enum": ["ALL", "ACTIVE", "PAUSED", "BANNED", "DISABLED"], "description": "Filter by status"}
                 },
-                "required": []
+                "required": typing.cast(list[Any], [])
             }
         }
     },
@@ -154,8 +156,8 @@ TOOLS = [
             "description": "Returns infrastructure-level diagnostics covering operational status, queue depth, and error rates.",
             "parameters": {
                 "type": "object",
-                "properties": {},
-                "required": []
+                "properties": typing.cast(dict[str, Any], {}),
+                "required": typing.cast(list[Any], [])
             }
         }
     },
@@ -200,8 +202,8 @@ TOOLS = [
             "description": "WRITE: Emergency tool. Sets all ACTIVE campaigns to PAUSED in a single operation.",
             "parameters": {
                 "type": "object",
-                "properties": {},
-                "required": []
+                "properties": typing.cast(dict[str, Any], {}),
+                "required": typing.cast(list[Any], [])
             }
         }
     }
@@ -210,7 +212,7 @@ TOOLS = [
 # ── 2. Tool Wrappers (READ) ──────────────────────────────────
 # These execute instantly and return data directly to the AI.
 
-async def execute_get_dashboard_stats(user_id: int, kwargs: dict) -> str:
+async def execute_get_dashboard_stats(user_id: int, kwargs: dict[str, Any]) -> str:
     """Fetch dashboard stats for the specific user."""
     # We can use the accounts repo to quickly get basic counts
     accounts = await accounts_repo.list_by_owner(user_id)
@@ -231,10 +233,10 @@ async def execute_get_dashboard_stats(user_id: int, kwargs: dict) -> str:
     return json.dumps(stats)
 
 
-async def execute_get_campaigns_summary(user_id: int, kwargs: dict) -> str:
+async def execute_get_campaigns_summary(user_id: int, kwargs: dict[str, Any]) -> str:
     """Fetch campaign details for the specific user."""
     campaigns = await campaigns_repo.list_by_owner(user_id)
-    summary = []
+    summary: list[Any] = []
     for c in campaigns:
         summary.append({
             "name": c.name,
@@ -248,7 +250,7 @@ async def execute_get_campaigns_summary(user_id: int, kwargs: dict) -> str:
     return json.dumps(summary)
 
 
-async def execute_get_account_list(user_id: int, kwargs: dict) -> str:
+async def execute_get_account_list(user_id: int, kwargs: dict[str, Any]) -> str:
     status_filter = kwargs.get("status_filter", "ALL")
     accounts = await accounts_repo.list_by_owner(user_id)
     
@@ -274,7 +276,7 @@ async def execute_get_account_list(user_id: int, kwargs: dict) -> str:
     return json.dumps(result)
 
 
-async def execute_get_campaign_detail(user_id: int, kwargs: dict) -> str:
+async def execute_get_campaign_detail(user_id: int, kwargs: dict[str, Any]) -> str:
     name = str(kwargs.get("campaign_name", ""))
     if not name:
         return json.dumps({"error": "campaign_name is required"})
@@ -317,7 +319,7 @@ async def execute_get_campaign_detail(user_id: int, kwargs: dict) -> str:
     return json.dumps(result)
 
 
-async def execute_get_system_health(user_id: int, kwargs: dict) -> str:
+async def execute_get_system_health(user_id: int, kwargs: dict[str, Any]) -> str:
     result = {
         "status": "OPERATIONAL",
         "redis_connected": True,
@@ -335,7 +337,7 @@ async def execute_get_system_health(user_id: int, kwargs: dict) -> str:
 # These do NOT execute instantly. They return a special trigger object
 # that the AI service will catch and pass to the Action Queue.
 
-async def propose_delete_account(user_id: int, kwargs: dict) -> str:
+async def propose_delete_account(user_id: int, kwargs: dict[str, Any]) -> str:
     """Propose an account deletion. Returns an action_request for user confirmation."""
     phone = kwargs.get("phone")
     if not phone:
@@ -357,7 +359,7 @@ async def propose_delete_account(user_id: int, kwargs: dict) -> str:
         }
     })
 
-async def propose_create_campaign(user_id: int, kwargs: dict) -> str:
+async def propose_create_campaign(user_id: int, kwargs: dict[str, Any]) -> str:
     name = kwargs.get("name")
     ad_type = kwargs.get("ad_type")
     
@@ -368,7 +370,7 @@ async def propose_create_campaign(user_id: int, kwargs: dict) -> str:
     accounts = await accounts_repo.list_by_owner(user_id)
     account_ids = [str(a.id) for a in accounts]
     
-    all_group_ids = []
+    all_group_ids: list[Any] = []
     if account_ids:
         from repositories import account_groups_repo
         import asyncio
@@ -416,7 +418,7 @@ async def propose_create_campaign(user_id: int, kwargs: dict) -> str:
         "message": f"Campaign '{name}' created with {len(account_ids)} accounts and {len(all_group_ids)} groups assigned."
     })
 
-async def propose_edit_campaign_status(user_id: int, kwargs: dict) -> str:
+async def propose_edit_campaign_status(user_id: int, kwargs: dict[str, Any]) -> str:
     name = str(kwargs.get("campaign_name", ""))
     status = kwargs.get("status")
     
@@ -456,7 +458,7 @@ async def propose_edit_campaign_status(user_id: int, kwargs: dict) -> str:
         "message": f"Campaign '{name}' is now {status}. Verified in database."
     })
 
-async def propose_edit_campaign_interval(user_id: int, kwargs: dict) -> str:
+async def propose_edit_campaign_interval(user_id: int, kwargs: dict[str, Any]) -> str:
     name = str(kwargs.get("campaign_name", ""))
     g_delay = kwargs.get("group_delay_seconds")
     r_delay = kwargs.get("round_delay_seconds")
@@ -469,8 +471,8 @@ async def propose_edit_campaign_interval(user_id: int, kwargs: dict) -> str:
     if not target or not target.id:
         return json.dumps({"error": f"You do not own a campaign named '{name}'."})
         
-    updates = {}
-    msgs = []
+    updates: dict[str, Any] = {}
+    msgs: list[Any] = []
     if g_delay is not None:
         updates["group_delay_seconds"] = int(g_delay)
         msgs.append(f"group delay to {g_delay}s")
@@ -493,7 +495,7 @@ async def propose_edit_campaign_interval(user_id: int, kwargs: dict) -> str:
         "message": f"Campaign '{name}' updated: " + " and ".join(msgs) + "."
     })
 
-async def propose_delete_campaign(user_id: int, kwargs: dict) -> str:
+async def propose_delete_campaign(user_id: int, kwargs: dict[str, Any]) -> str:
     name = str(kwargs.get("campaign_name", ""))
     
     campaigns = await campaigns_repo.list_by_owner(user_id)
@@ -516,7 +518,7 @@ async def propose_delete_campaign(user_id: int, kwargs: dict) -> str:
         "message": f"Campaign '{name}' deleted successfully."
     })
 
-async def propose_edit_campaign_message(user_id: int, kwargs: dict) -> str:
+async def propose_edit_campaign_message(user_id: int, kwargs: dict[str, Any]) -> str:
     name = str(kwargs.get("campaign_name", ""))
     message = kwargs.get("message")
     
@@ -540,7 +542,7 @@ async def propose_edit_campaign_message(user_id: int, kwargs: dict) -> str:
         "message": f"Campaign '{name}' message updated successfully."
     })
 
-async def propose_edit_campaign_accounts(user_id: int, kwargs: dict) -> str:
+async def propose_edit_campaign_accounts(user_id: int, kwargs: dict[str, Any]) -> str:
     name = str(kwargs.get("campaign_name", ""))
     phones = kwargs.get("account_phones", [])
     
@@ -553,8 +555,7 @@ async def propose_edit_campaign_accounts(user_id: int, kwargs: dict) -> str:
         return json.dumps({"error": f"campaign_not_found: You do not own a campaign named '{name}'."})
         
     accounts = await accounts_repo.list_by_owner(user_id)
-    account_ids = []
-    
+    account_ids: list[Any] = []
     for phone in phones:
         acc = next((a for a in accounts if a.phone == phone), None)
         if acc:
@@ -576,7 +577,7 @@ async def propose_edit_campaign_accounts(user_id: int, kwargs: dict) -> str:
         if i < len(account_ids) - 1:
             await asyncio.sleep(random.uniform(1, 3))
         
-    all_group_ids = []
+    all_group_ids: list[Any] = []
     for aid in account_ids:
         group_ids = await account_groups_repo.get_all_group_ids(aid)
         for gid in group_ids:
@@ -597,7 +598,7 @@ async def propose_edit_campaign_accounts(user_id: int, kwargs: dict) -> str:
         "message": f"Campaign '{name}' accounts updated and {len(all_group_ids)} groups auto-selected."
     })
 
-async def propose_pause_all_campaigns(user_id: int, kwargs: dict) -> str:
+async def propose_pause_all_campaigns(user_id: int, kwargs: dict[str, Any]) -> str:
     from services import campaign_service
     campaigns = await campaigns_repo.list_by_owner(user_id)
     for c in campaigns:
@@ -616,7 +617,7 @@ async def propose_pause_all_campaigns(user_id: int, kwargs: dict) -> str:
 
 # ── Registry ────────────────────────────────────────────────
 
-TOOL_REGISTRY: Dict[str, Callable[[int, dict], Coroutine[Any, Any, str]]] = {
+TOOL_REGISTRY: Dict[str, Callable[[int, dict[str, Any]], Coroutine[Any, Any, str]]] = {
     "get_dashboard_stats": execute_get_dashboard_stats,
     "get_campaigns_summary": execute_get_campaigns_summary,
     "get_account_list": execute_get_account_list,

@@ -6,6 +6,8 @@ This is the single source of truth for all magic values in the system.
 
 from __future__ import annotations
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 from enum import StrEnum
 
 

@@ -4,6 +4,8 @@ Log Queue service — Buffers logging events to prevent Telegram API FloodWaits.
 
 from __future__ import annotations
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 import asyncio
 from collections import defaultdict
 from typing import TypedDict, Dict, List

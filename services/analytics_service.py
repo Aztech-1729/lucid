@@ -8,6 +8,8 @@ Writes results to analytics cache.
 from __future__ import annotations
 
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 from cache import analytics_cache
 from core.logging import get_logger
 from repositories import analytics_repo
@@ -16,7 +18,7 @@ from utils.helpers import now_utc_naive
 log = get_logger("analytics_service")
 
 
-async def aggregate_daily(owner_id: int, date_str: str | None = None) -> dict:
+async def aggregate_daily(owner_id: int, date_str: str | None = None) -> dict[str, Any]:
     """
     Aggregate daily stats for a user.
 
@@ -46,7 +48,7 @@ async def update_top_performers(owner_id: int) -> None:
     await analytics_cache.set_top_campaigns(top_campaigns)
 
 
-async def build_dashboard(owner_id: int) -> dict:
+async def build_dashboard(owner_id: int) -> dict[str, Any]:
     """
     Build the analytics dashboard payload for a user.
     """

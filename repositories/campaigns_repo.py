@@ -4,6 +4,8 @@ Campaigns repository — CRUD operations for the campaigns collection.
 
 from __future__ import annotations
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 from typing import AsyncGenerator, Optional
 
 from utils.helpers import now_utc_naive
@@ -20,7 +22,7 @@ def _coll():
     return get_db()[collections.CAMPAIGNS]
 
 
-async def create(data: dict) -> Campaign:
+async def create(data: dict[str, Any]) -> Campaign:
     """Create a new campaign."""
     owner_id = data.get("owner_id")
     name = data.get("name")
@@ -56,7 +58,7 @@ async def get(campaign_id: str) -> Optional[Campaign]:
 async def list_by_owner(owner_id: int) -> list[Campaign]:
     """Get all campaigns for a user."""
     cursor = _coll().find({"owner_id": owner_id}).sort("created_at", -1)
-    campaigns = []
+    campaigns: list[Any] = []
     async for doc in cursor:
         doc["_id"] = str(doc["_id"])
         campaigns.append(Campaign.model_validate(doc))
@@ -99,7 +101,7 @@ async def update_status(campaign_id: str, status: CampaignStatus) -> bool:
     return result.modified_count > 0
 
 
-async def update_stats(campaign_id: str, stats: dict) -> bool:
+async def update_stats(campaign_id: str, stats: dict[str, Any]) -> bool:
     """Update cached campaign stats."""
     result = await _coll().update_one(
         {"_id": ObjectId(campaign_id)},
@@ -108,7 +110,7 @@ async def update_stats(campaign_id: str, stats: dict) -> bool:
     return result.modified_count > 0
 
 
-async def update_fields(campaign_id: str, data: dict) -> bool:
+async def update_fields(campaign_id: str, data: dict[str, Any]) -> bool:
     """Update arbitrary campaign fields."""
     data["updated_at"] = now_utc_naive()
     result = await _coll().update_one(
@@ -133,7 +135,7 @@ async def duplicate(campaign_id: str, new_name: str) -> Optional[Campaign]:
     new_doc = original.model_dump(by_alias=False, exclude={"id"})
     new_doc["name"] = new_name
     new_doc["status"] = CampaignStatus.DRAFT
-    new_doc["stats"] = {}
+    new_doc["stats"] = typing.cast(dict[str, Any], {})
     new_doc["created_at"] = now
     new_doc["updated_at"] = now
     return await create(new_doc)

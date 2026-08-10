@@ -4,6 +4,8 @@ Joiner service — Handles automated group joining across accounts.
 
 from __future__ import annotations
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 import asyncio
 import random
 import re
@@ -24,7 +26,7 @@ from telegram.client_pool import client_pool
 log = get_logger("joiner_service")
 
 # Global state to track if joiner is running per user
-_active_joiners: Dict[int, asyncio.Task] = {}
+_active_joiners: Dict[int, asyncio.Task[Any]] = {}
 
 def is_joiner_running(user_id: int) -> bool:
     """Check if an auto-join task is running for a user."""
@@ -39,7 +41,7 @@ async def cancel_joiner(user_id: int) -> bool:
         return True
     return False
 
-async def start_auto_join(user_id: int, links: List[str], update_callback) -> None:
+async def start_auto_join(user_id: int, links: List[str], update_callback: Callable[..., Any]) -> None:
     """Start the auto-join background task."""
     if is_joiner_running(user_id):
         return
@@ -47,8 +49,10 @@ async def start_auto_join(user_id: int, links: List[str], update_callback) -> No
     task = asyncio.create_task(_run_joiner_task(user_id, links, update_callback))
     _active_joiners[user_id] = task
 
-async def _run_joiner_task(user_id: int, links: List[str], update_callback) -> None:
+async def _run_joiner_task(user_id: int, links: List[str], update_callback: Callable[..., Any]) -> None:
     """The background task that executes the joining logic for all accounts in parallel."""
+    state: dict[str, Any] = {}
+    total_joins: int = 0
     try:
         accounts = await accounts_repo.list_by_owner(user_id)
         if not accounts:
@@ -69,7 +73,7 @@ async def _run_joiner_task(user_id: int, links: List[str], update_callback) -> N
                 state["failed"] += failed_inc
                 await update_callback(state["joined"], state["failed"], total_joins, status)
                 
-        async def _account_worker(account) -> None:
+        async def _account_worker(account: Any) -> None:
             account_id = str(account.id)
             for i, link in enumerate(links):
                 clean_link = _sanitize_link(link)
@@ -130,14 +134,14 @@ async def _run_joiner_task(user_id: int, links: List[str], update_callback) -> N
 
     except asyncio.CancelledError:
         await log.ainfo("joiner.cancelled", user_id=user_id)
-        if 'state' in locals():
+        if state and "lock" in state:
             async with state["lock"]:
-                await update_callback(state["joined"], state["failed"], total_joins, "🛑 Process Cancelled")
+                await update_callback(state.get("joined", 0), state.get("failed", 0), total_joins, "🛑 Process Cancelled")
     except Exception as e:
         await log.aerror("joiner.fatal_error", error=str(e))
-        if 'state' in locals():
+        if state and "lock" in state:
             async with state["lock"]:
-                await update_callback(state["joined"], state["failed"], total_joins, f"❌ Error: {str(e)[:20]}")
+                await update_callback(state.get("joined", 0), state.get("failed", 0), total_joins, f"❌ Error: {str(e)[:20]}")
     finally:
         _active_joiners.pop(user_id, None)
 

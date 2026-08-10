@@ -9,6 +9,8 @@ This is the Telegram bot entry point. It:
 
 from __future__ import annotations
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 from telethon import TelegramClient, events
 
 from core.config import get_settings
@@ -87,7 +89,7 @@ async def stop_bot() -> None:
         await log.ainfo("bot.stopped")
         _bot = None
 
-async def get_missing_force_joins(event, bot) -> list[str]:
+async def get_missing_force_joins(event: Any, bot: Any) -> list[str]:
     settings = get_settings()
     if not settings.force_join_enabled:
         return []
@@ -103,8 +105,7 @@ async def get_missing_force_joins(event, bot) -> list[str]:
 
     from telethon.errors import UserNotParticipantError
     
-    missing = []
-
+    missing: list[Any] = []
     # Check channel
     if settings.force_join_channel:
         try:
@@ -131,12 +132,11 @@ async def get_missing_force_joins(event, bot) -> list[str]:
     await cache_set(cache_key, {"missing": missing}, ttl=600)
     return missing
 
-async def enforce_join(event, bot):
+async def enforce_join(event: Any, bot: Any):
     settings = get_settings()
     from telethon.tl.custom import Button
     from telethon.tl.types import KeyboardButtonStyle
-    buttons = []
-    
+    buttons: list[Any] = []
     if settings.force_join_channel:
         btn1 = Button.url("Join Channel", settings.force_join_channel)
         btn1.style = KeyboardButtonStyle(bg_primary=True, icon=5447410659077661506)
@@ -204,7 +204,7 @@ def _register_handlers(bot: TelegramClient) -> None:
         if not data:
             data = await dashboard_service.build_dashboard(user_id)
             
-        text = menus.render_dashboard(data)
+        text: str = menus.render_dashboard(data)
 
         if settings.bot_image_url:
             await event.respond(
@@ -389,7 +389,7 @@ def _register_handlers(bot: TelegramClient) -> None:
                 data = await dashboard_cache.get(sender_id)
                 if not data:
                     data = await dashboard_service.build_dashboard(sender_id)
-                text = menus.render_dashboard(data)
+                text: str = menus.render_dashboard(data)
                 settings = get_settings()
                 if settings.bot_image_url:
                     await event.respond(file=settings.bot_image_url, message=text, buttons=keyboards.main_menu_keyboard(), parse_mode="html")
@@ -476,9 +476,9 @@ def _register_handlers(bot: TelegramClient) -> None:
             )
 
             # Define update callback
-            async def update_progress(joined, failed, total, status="Importing Sessions"):
+            async def update_progress(joined: int, failed: int, total: int, status: str = "Importing Sessions") -> None:
                 try:
-                    text = (
+                    text: str = (
                         f"📂 <b>SESSIONS IMPORT</b>\n"
                         f"━━━━━━━━━━━━━━━━━━━━\n\n"
                         f"⏳ <b>Status: {status}</b>\n\n"
@@ -512,13 +512,13 @@ def _register_handlers(bot: TelegramClient) -> None:
                 action_id = await enqueue_action(user_id, response)
                 if action_id:
                     action_data = __import__('json').loads(response)
-                    text = menus.render_ai_action(action_data.get("description", "Unknown Action"))
+                    text: str = menus.render_ai_action(action_data.get("description", "Unknown Action"))
                     await msg.edit(text, buttons=keyboards.ai_action_keyboard(action_id), parse_mode="html")
                 else:
                     await msg.edit("<tg-emoji emoji-id='5420323339723881652'>⚠️</tg-emoji> Failed to enqueue action.", parse_mode="html")
             else:
                 # Normal chat response
-                text = f"<tg-emoji emoji-id='6256032707470428424'>🤖</tg-emoji> <b>AI:</b>\n\n{response}"
+                text: str = f"<tg-emoji emoji-id='6256032707470428424'>🤖</tg-emoji> <b>AI:</b>\n\n{response}"
                 await msg.edit(text, buttons=keyboards.ai_chat_keyboard(), parse_mode="html")
                 
             return
@@ -633,7 +633,7 @@ def _register_handlers(bot: TelegramClient) -> None:
             _last_progress_edit = [0.0]
             _terminal_statuses = ("✅", "🛑", "❌", "⚠️")
 
-            async def update_progress_checker(checked, valid, invalid, total, status="Processing", flood=0, skipped=0, accounts_count=0):
+            async def update_progress_checker(checked: int, valid: int, invalid: int, total: int, status: str = "Processing", flood: int = 0, skipped: int = 0, accounts_count: int = 0) -> None:
                 # Throttle edits: Telegram rate-limits message edits (~1/s per message)
                 now = _time.monotonic()
                 if status.startswith(_terminal_statuses) or now - _last_progress_edit[0] >= 0.6:
@@ -646,7 +646,7 @@ def _register_handlers(bot: TelegramClient) -> None:
                     except Exception:
                         pass
 
-            async def on_checker_result(valid_links, stats):
+            async def on_checker_result(valid_links: Any, stats: Any):
                 try:
                     if stats.get("cancelled"):
                         caption = (

@@ -9,6 +9,8 @@ Group checker service — validates group links using dedicated checker accounts
 
 from __future__ import annotations
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 import asyncio
 import httpx
 import os
@@ -39,7 +41,7 @@ from utils.helpers import now_utc_naive
 log = get_logger("group_checker")
 
 # Global state: one checker run per user
-_active_checkers: Dict[int, asyncio.Task] = {}
+_active_checkers: Dict[int, asyncio.Task[Any]] = {}
 
 # Matches t.me/<username>, t.me/+<hash>, t.me/joinchat/<hash>, t.me/addlist/<slug>
 LINK_RE = re.compile(r"(t\.me/(?:joinchat/|addlist/|\+)?[A-Za-z0-9_+\-]+)", re.I)
@@ -229,7 +231,7 @@ async def _check_links_web(links: List[str], on_result: Callable[[str, str], Awa
 
     async def _run_pass(pass_links: List[str], concurrency: int, jitter: Optional[Tuple[float, float]], adaptive: bool) -> Dict[str, str]:
         out: Dict[str, str] = {}
-        window: deque = deque(maxlen=WEB_GUARD_LOOKBACK)
+        window: deque[Any] = deque(maxlen=WEB_GUARD_LOOKBACK)
         pos = [0]
         pop_lock = asyncio.Lock()
         throttle_until = [0.0]
@@ -316,7 +318,7 @@ async def _check_links_web(links: List[str], on_result: Callable[[str, str], Awa
                 pass
 
 
-async def _check_link(client: TelegramClient, link: str) -> dict:
+async def _check_link(client: TelegramClient, link: str) -> dict[str, Any]:
     """
     Validate one link. Returns:
       status: valid_group | valid_channel | valid_folder | invalid | user | flood
@@ -331,7 +333,7 @@ async def _check_link(client: TelegramClient, link: str) -> dict:
             if isinstance(res, types.chatlists.ChatlistInviteAlready):
                 return {"status": "valid_folder", "peers_links": []}
             if isinstance(res, types.chatlists.ChatlistInvite):
-                peers_links = []
+                peers_links: list[Any] = []
                 for peer in res.peers:
                     username = getattr(peer, "username", None)
                     if username:
@@ -395,8 +397,8 @@ async def _check_link(client: TelegramClient, link: str) -> dict:
 async def start_check(
     user_id: int,
     links: List[str],
-    update_callback: Callable,
-    result_callback: Callable,
+    update_callback: Callable[..., Any],
+    result_callback: Callable[..., Any],
 ) -> None:
     """Start the checker background task."""
     if is_checker_running(user_id):
@@ -410,8 +412,8 @@ async def start_check(
 async def _run_checker_task(
     user_id: int,
     links: List[str],
-    update_callback: Callable,
-    result_callback: Callable,
+    update_callback: Callable[..., Any],
+    result_callback: Callable[..., Any],
 ) -> None:
     """Two-phase checker pipeline:
 
@@ -425,9 +427,9 @@ async def _run_checker_task(
     folder_links = [link for link in links if _is_folder_link(link)]
     web_links = [link for link in links if not _is_folder_link(link)]
 
-    state = {
-        "valid_links": [],
-        "peers_links": [],
+    state: dict[str, Any] = {
+        "valid_links": cast(list[Any], []),
+        "peers_links": cast(list[Any], []),
         "checked": 0,
         "valid": 0,
         "invalid": 0,
@@ -436,13 +438,13 @@ async def _run_checker_task(
         "lock": asyncio.Lock(),
     }
 
-    accounts = []
+    accounts: list[Any] = []
     try:
         accounts = await checker_repo.get_available()
     except Exception as e:
         await log.awarning("checker.accounts_query_error", error=str(e)[:120])
 
-    async def _safe_update(status: str = "Processing", **extra) -> None:
+    async def _safe_update(status: str = "Processing", **extra: Any) -> None:
         async with state["lock"]:
             await update_callback(
                 checked=state["checked"],
@@ -462,7 +464,7 @@ async def _run_checker_task(
             accounts_count=len(accounts),
         )
 
-        async def _account_worker(checker_doc: dict, idx: int, worker_links: List[str]) -> None:
+        async def _account_worker(checker_doc: dict[str, Any], idx: int, worker_links: List[str]) -> None:
             checker_id = str(checker_doc["_id"])
             settings = get_settings()
             client = TelegramClient(
@@ -561,8 +563,8 @@ async def _run_checker_task(
         # Phase 2a: verify expanded folder members through the web preview
         if state["peers_links"]:
             members = list(dict.fromkeys(state["peers_links"]))
-            state["peers_links"] = []
-            verified_members = []
+            state["peers_links"] = cast(list[Any], [])
+            verified_members: list[Any] = []
             await _safe_update(status="🌐 Verifying folder members via web preview...")
 
             async def member_result(link: str, status: str) -> None:

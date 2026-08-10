@@ -7,6 +7,8 @@ MongoDB and Redis are ready. No bot starts before workers are running.
 
 from __future__ import annotations
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 from core.config import get_settings
 from core.logging import get_logger, setup_logging
 from database.mongo import init_mongo

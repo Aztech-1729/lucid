@@ -6,6 +6,8 @@ Uses pymongo.AsyncMongoClient (Motor is deprecated).
 
 from __future__ import annotations
 
+import typing
+from typing import Any, Callable, Coroutine, cast, Optional
 from typing import Optional
 
 from pymongo import AsyncMongoClient
@@ -17,8 +19,8 @@ log = get_logger("mongo")
 
 # ── Module-level singleton ──────────────────────────────────
 
-_client: Optional[AsyncMongoClient] = None
-_db: Optional[AsyncDatabase] = None
+_client: Optional[AsyncMongoClient[Any]] = None
+_db: Optional[AsyncDatabase[Any]] = None
 
 
 async def init_mongo(uri: str, db_name: str) -> None:
@@ -61,14 +63,14 @@ async def close_mongo() -> None:
         _db = None
 
 
-def get_db() -> AsyncDatabase:
+def get_db() -> AsyncDatabase[Any]:
     """Return the database instance. Raises if not initialized."""
     if _db is None:
         raise RuntimeError("MongoDB not initialized. Call init_mongo() first.")
     return _db
 
 
-def get_client() -> AsyncMongoClient:
+def get_client() -> AsyncMongoClient[Any]:
     """Return the raw client instance. Raises if not initialized."""
     if _client is None:
         raise RuntimeError("MongoDB not initialized. Call init_mongo() first.")
