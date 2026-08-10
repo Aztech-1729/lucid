@@ -647,16 +647,30 @@ def _register_handlers(bot: TelegramClient) -> None:
 
             async def on_checker_result(valid_links, stats):
                 try:
-                    caption = (
-                        f"<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> <b>CHECK COMPLETE</b>\n"
-                        f"━━━━━━━━━━━━━━━━━━━━\n\n"
-                        f"<tg-emoji emoji-id='5231200819986047254'>📊</tg-emoji> <b>RESULT:</b>\n"
-                        f"├ <b>Checked: {stats['checked']}/{stats['total']}</b>\n"
-                        f"├ <b>✅ Valid: {len(valid_links)}</b>\n"
-                        f"├ <b>❌ Invalid: {stats['invalid']}</b>\n"
-                        f"├ <b>🌊 Flood waits: {stats['flood']}</b>\n"
-                        f"└ <b>⏭ Skipped: {stats['skipped']}</b>"
-                    )
+                    if stats.get("cancelled"):
+                        caption = (
+                            f"<tg-emoji emoji-id='5260293700088511294'>🛑</tg-emoji> <b>CHECK STOPPED</b>\n"
+                            f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                            f"⏳ <b>Status:</b> Stopped early — partial result\n\n"
+                            f"📊 <b>RESULT:</b>\n"
+                            f"├ Checker Accounts: {stats['accounts_count']}\n"
+                            f"├ Checked: {stats['checked']}/{stats['total']}\n"
+                            f"├ <b>✅ Valid: {len(valid_links)}</b>\n"
+                            f"├ ❌ Invalid: {stats['invalid']}\n"
+                            f"├ 🌊 Flood waits: {stats['flood']}\n"
+                            f"└ ⏭ Skipped: {stats['skipped']}"
+                        )
+                    else:
+                        caption = (
+                            f"<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> <b>CHECK COMPLETE</b>\n"
+                            f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                            f"<tg-emoji emoji-id='5231200819986047254'>📊</tg-emoji> <b>RESULT:</b>\n"
+                            f"├ Checked: {stats['checked']}/{stats['total']}\n"
+                            f"├ <b>✅ Valid: {len(valid_links)}</b>\n"
+                            f"├ ❌ Invalid: {stats['invalid']}\n"
+                            f"├ 🌊 Flood waits: {stats['flood']}\n"
+                            f"└ ⏭ Skipped: {stats['skipped']}"
+                        )
                     if valid_links:
                         content = "\n".join(valid_links)
                         await event.client.send_file(  # type: ignore[union-attr]
@@ -740,7 +754,6 @@ def _register_handlers(bot: TelegramClient) -> None:
         lines.append(f"  Idle: <b>{pool['idle_clients']}</b>")
 
         await event.respond("\n".join(lines), parse_mode="html")
-
 
 
 

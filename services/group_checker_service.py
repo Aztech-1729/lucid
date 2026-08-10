@@ -341,12 +341,27 @@ async def _run_checker_task(
 
     except asyncio.CancelledError:
         await log.ainfo("checker.cancelled", user_id=user_id)
+        # Send a partial result with everything checked so far
+        partial_links = list(dict.fromkeys(state["valid_links"] + state["peers_links"]))
+        partial_stats = {
+            "checked": state["checked"],
+            "valid": len(state["valid_links"]),
+            "invalid": state["invalid"],
+            "flood": state["flood"],
+            "skipped": state["skipped"],
+            "total": total,
+            "accounts_count": len(accounts),
+            "cancelled": True,
+        }
         try:
             await update_callback(
-                checked=0, valid=0, invalid=0, total=len(links),
-                status="🛑 Check cancelled", flood=0, skipped=0,
+                checked=state["checked"], valid=len(state["valid_links"]),
+                invalid=state["invalid"], total=total,
+                status="🛑 Check stopped — sending partial result...",
+                flood=state["flood"], skipped=state["skipped"],
                 accounts_count=len(accounts),
             )
+            await result_callback(partial_links, partial_stats)
         except Exception:
             pass
     except Exception as e:
