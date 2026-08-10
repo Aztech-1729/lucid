@@ -202,5 +202,5 @@ async def _import_single_session_file(owner_id: int, file_path: str) -> bool:
     except Exception as e:
         await log.aerror("session_importer.import_failed", error=str(e))
         if client and client.is_connected():
-            await client.disconnect()
+            await client.disconnect()  # type: ignore[misc]
         return False

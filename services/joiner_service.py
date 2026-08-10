@@ -93,7 +93,7 @@ async def _run_joiner_task(user_id: int, links: List[str], update_callback) -> N
                         if not is_group:
                             failed_inc = 1
                         else:
-                            await client(functions.channels.JoinChannelRequest(channel=entity))
+                            await client(functions.channels.JoinChannelRequest(channel=entity))  # type: ignore[arg-type]
                             
                             # Refresh groups
                             dialogs = await client.get_dialogs()

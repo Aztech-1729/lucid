@@ -59,7 +59,7 @@ async def main() -> None:
 
         while True:
             try:
-                await bot.run_until_disconnected()
+                await bot.run_until_disconnected()  # type: ignore[misc]
                 break  # Clean disconnect
             except KeyboardInterrupt:
                 raise

@@ -288,7 +288,7 @@ class ClientPool:
             client = TelegramClient(session, settings.api_id, settings.api_hash, connection_retries=3, request_retries=3, retry_delay=2)
             
             # Attach account ID and Auto Reply handler
-            client.account_id = account_id
+            client.account_id = account_id  # type: ignore[attr-defined]
             from telethon import events
             from services.autoreply_service import handle_incoming_message
             client.add_event_handler(handle_incoming_message, events.NewMessage(incoming=True))

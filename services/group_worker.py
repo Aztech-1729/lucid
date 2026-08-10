@@ -29,6 +29,7 @@ async def bulk_remove_folders(user_id: int, progress_callback: Callable[[int, in
     await progress_callback(0, 0, total_accounts)
     
     for account in accounts:
+        if not account.id: continue
         try:
             async with client_pool.acquire(account.id) as client:
                 if not client or not client.is_connected():
@@ -74,6 +75,7 @@ async def bulk_join_folder(user_id: int, slug: str, progress_callback: Callable[
     await progress_callback(render_autojoin_progress(0, 0, total_accounts, "Joining folder...", 0, total_accounts))
     
     for account in accounts:
+        if not account.id: continue
         try:
             async with client_pool.acquire(account.id) as client:
                 if not client or not client.is_connected():

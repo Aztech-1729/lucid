@@ -104,6 +104,7 @@ async def warm_user_cache(user_id: int) -> None:
 
     # Account summaries
     for account in accounts:
+        if not account.id: continue
         await account_cache.set_summary(account.id, {
             "id": account.id,
             "display_name": account.display_name,
@@ -156,11 +157,12 @@ async def warm_user_cache(user_id: int) -> None:
 
     # Build individual campaign summaries
     for c in campaigns:
+        if not c.id: continue
         c_data = c.model_dump(mode="json")
         c_data["account_count"] = len(c.account_ids)
         c_data["group_count"] = len(c.group_ids)
-        c_data["success_count"] = c.stats.success_count if hasattr(c.stats, "success_count") else 0
-        c_data["failure_count"] = c.stats.failure_count if hasattr(c.stats, "failure_count") else 0
+        c_data["success_count"] = getattr(c.stats, "success_count", 0) if c.stats else 0
+        c_data["failure_count"] = getattr(c.stats, "failure_count", 0) if c.stats else 0
         await campaign_cache.set_summary(c.id, c_data)
 
     # Health summary

@@ -16,6 +16,7 @@ class AccountStatus(StrEnum):
     PAUSED = "PAUSED"
     BANNED = "BANNED"
     DISABLED = "DISABLED"
+    LIMITED = "LIMITED"
 
 
 # ── Health State ────────────────────────────────────────────

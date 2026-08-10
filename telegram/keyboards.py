@@ -22,7 +22,7 @@ def _b(text: str) -> str:
 
 # ── 1. MAIN MENU (DASHBOARD) ───────────────────────────────
 
-def main_menu_keyboard() -> list[list[Button]]:
+def main_menu_keyboard() -> list[list[Any]]:
     """Main menu buttons — 2-column grid + full-width My Plan."""
     
     btn_accounts = Button.inline(_b("Accounts"), CB.ACCOUNTS)
@@ -62,7 +62,7 @@ def main_menu_keyboard() -> list[list[Button]]:
     
     return grid
 
-def build_dashboard_keyboard(is_admin: bool = False) -> list[list[Button]]:
+def build_dashboard_keyboard(is_admin: bool = False) -> list[list[Any]]:
     grid = main_menu_keyboard()
     from core.config import get_settings
     from telethon.tl.types import KeyboardButtonStyle
@@ -88,9 +88,9 @@ def account_list_keyboard(
     action_prefix: str = "acc:view",
     show_actions: bool = True,
     screen: str = "accounts"
-) -> list[list[Button]]:
+) -> list[list[Any]]:
     """Account list with account buttons, pagination, and actions."""
-    rows: list[list[Button]] = []
+    rows: list[list[Any]] = []
 
     # Account buttons — one per row with phone + health
     for acc in accounts:
@@ -157,7 +157,7 @@ def account_list_keyboard(
 
 # ── 3. ACCOUNT DETAILS ────────────────────────────────────
 
-def account_detail_keyboard(account_id: str, status: str, back_cb: str = CB.ACCOUNTS) -> list[list[Button]]:
+def account_detail_keyboard(account_id: str, status: str, back_cb: str = CB.ACCOUNTS) -> list[list[Any]]:
     """Account detail action buttons."""
     rows = []
 
@@ -184,7 +184,7 @@ def account_detail_keyboard(account_id: str, status: str, back_cb: str = CB.ACCO
 
 # ── 3.5 BULK ACCOUNT MANAGER ───────────────────────────────
 
-def bulk_manager_keyboard() -> list[list[Button]]:
+def bulk_manager_keyboard() -> list[list[Any]]:
     """Bulk actions for all accounts."""
     return [
         [
@@ -213,7 +213,7 @@ def bulk_manager_keyboard() -> list[list[Button]]:
     ]
 
 
-def bulk_2fa_keyboard() -> list[list[Button]]:
+def bulk_2fa_keyboard() -> list[list[Any]]:
     """Bulk 2FA actions for all accounts."""
     return [
         [
@@ -225,7 +225,7 @@ def bulk_2fa_keyboard() -> list[list[Button]]:
         [Button.inline(_b("← Back"), CB.BULK_MANAGER, style="danger")],
     ]
 
-def bulk_progress_keyboard() -> list[list[Button]]:
+def bulk_progress_keyboard() -> list[list[Any]]:
     """Keyboard shown during active bulk operations."""
     return [
         [Button.inline(_b("Cancel"), CB.BULK_CANCEL, style="danger", icon=5260293700088511294)]
@@ -237,9 +237,9 @@ def bulk_progress_keyboard() -> list[list[Button]]:
 def campaign_list_keyboard(
     campaigns: list[dict],
     pagination: dict,
-) -> list[list[Button]]:
+) -> list[list[Any]]:
     """Campaign list with campaign buttons, pagination, and actions."""
-    rows: list[list[Button]] = []
+    rows: list[list[Any]] = []
 
     for c in campaigns:
         cmp_id = c.get("id", "")
@@ -295,7 +295,7 @@ def campaign_list_keyboard(
 
 # ── 5. CAMPAIGN DETAILS ───────────────────────────────────
 
-def campaign_detail_keyboard(campaign_id: str, status: str) -> list[list[Button]]:
+def campaign_detail_keyboard(campaign_id: str, status: str) -> list[list[Any]]:
     """Campaign detail action buttons."""
     rows = []
 
@@ -331,7 +331,7 @@ def campaign_detail_keyboard(campaign_id: str, status: str) -> list[list[Button]
 
     return rows
 
-def campaign_set_ad_keyboard(campaign_id: str, current_ad_type: str = "custom") -> list[list[Button]]:
+def campaign_set_ad_keyboard(campaign_id: str, current_ad_type: str = "custom") -> list[list[Any]]:
     """Menu to choose ad type."""
     c_mark = "✅ " if current_ad_type == "custom" else ""
     f_mark = "✅ " if current_ad_type == "forward" else ""
@@ -344,7 +344,7 @@ def campaign_set_ad_keyboard(campaign_id: str, current_ad_type: str = "custom") 
     ]
 
 
-def campaign_set_interval_keyboard(campaign_id: str) -> list[list[Button]]:
+def campaign_set_interval_keyboard(campaign_id: str) -> list[list[Any]]:
     """Menu to set intervals."""
     return [
         [
@@ -355,7 +355,7 @@ def campaign_set_interval_keyboard(campaign_id: str) -> list[list[Button]]:
     ]
 
 
-def campaign_set_rounds_keyboard(campaign_id: str, max_rounds: int = 0) -> list[list[Button]]:
+def campaign_set_rounds_keyboard(campaign_id: str, max_rounds: int = 0) -> list[list[Any]]:
     """Menu to set rounds."""
     m_mark = "✅ " if max_rounds > 0 else ""
     i_mark = "✅ " if max_rounds == 0 else ""
@@ -373,7 +373,7 @@ def campaign_manage_accounts_keyboard(
     accounts: list[Any], 
     assigned_ids: list[str],
     pagination: dict
-) -> list[list[Button]]:
+) -> list[list[Any]]:
     """Menu to select accounts for a campaign with pagination."""
     rows = []
     
@@ -421,7 +421,7 @@ def campaign_manage_accounts_keyboard(
     return rows
 
 
-def campaign_account_detail_keyboard(campaign_id: str, account_id: str, is_assigned: bool) -> list[list[Button]]:
+def campaign_account_detail_keyboard(campaign_id: str, account_id: str, is_assigned: bool) -> list[list[Any]]:
     """Account details within a campaign."""
     toggle_text = _b("Remove from Campaign") if is_assigned else _b("Add to Campaign")
     icon_val = 5260293700088511294 if is_assigned else 5206607081334906820
@@ -443,7 +443,7 @@ def campaign_account_groups_keyboard(
     groups: list[dict], 
     assigned_group_ids: list[str],
     pagination: dict
-) -> list[list[Button]]:
+) -> list[list[Any]]:
     """Paginated list of groups for an account."""
     rows = []
     
@@ -500,14 +500,14 @@ def campaign_account_groups_keyboard(
 
 # ── 6. ANALYTICS ──────────────────────────────────────────
 
-def analytics_keyboard() -> list[list[Button]]:
+def analytics_keyboard() -> list[list[Any]]:
     """Analytics overview buttons."""
     return [
         [Button.inline(_b("Refresh"), CB.ANALYTICS, style="primary", icon=5386367538735104399)],
         [Button.inline(_b("← Back"), CB.DASHBOARD, style="danger")],
     ]
 
-def autoreply_view_keyboard() -> list[list[Button]]:
+def autoreply_view_keyboard() -> list[list[Any]]:
     """Auto Reply View Keyboard."""
     return [
         [Button.inline(_b("Delete Custom Message"), CB.SETTINGS_AUTOREPLY_CUSTOM, style="danger", icon=5445267414562389170)],
@@ -516,13 +516,13 @@ def autoreply_view_keyboard() -> list[list[Button]]:
 
 # ── 9. PERSONAL AI ──────────────────────────────────────────
 
-def ai_chat_keyboard() -> list[list[Button]]:
+def ai_chat_keyboard() -> list[list[Any]]:
     """Keyboard for when user is in AI chat mode."""
     return [
         [Button.inline(_b("Exit AI Chat"), CB.DASHBOARD, style="danger", icon=5260293700088511294)]
     ]
 
-def ai_action_keyboard(action_id: str) -> list[list[Button]]:
+def ai_action_keyboard(action_id: str) -> list[list[Any]]:
     """Keyboard for confirming or cancelling an AI action."""
     return [
         [
@@ -534,7 +534,7 @@ def ai_action_keyboard(action_id: str) -> list[list[Button]]:
 
 # ── 7. HEALTH OVERVIEW ───────────────────────────────────
 
-def health_overview_keyboard() -> list[list[Button]]:
+def health_overview_keyboard() -> list[list[Any]]:
     """Health overview buttons."""
     return [
         [
@@ -548,7 +548,7 @@ def health_overview_keyboard() -> list[list[Button]]:
     ]
 
 
-def health_settings_keyboard(auto_pause: bool) -> list[list[Button]]:
+def health_settings_keyboard(auto_pause: bool) -> list[list[Any]]:
     """Health settings menu buttons."""
     toggle_text = _b("Auto-Pause Unhealthy: ON") if auto_pause else _b("Auto-Pause Unhealthy: OFF")
     icon_val = 5206607081334906820 if auto_pause else 5260293700088511294
@@ -563,14 +563,14 @@ def health_settings_keyboard(auto_pause: bool) -> list[list[Button]]:
 
 
 
-def autojoin_progress_keyboard() -> list[list[Button]]:
+def autojoin_progress_keyboard() -> list[list[Any]]:
     """Keyboard for joiner progress with cancel button."""
     return [
         [Button.inline(_b("Cancel Joining"), "groups:autojoin:cancel", style="danger", icon=5260293700088511294)],
     ]
 
 
-def checker_progress_keyboard() -> list[list[Button]]:
+def checker_progress_keyboard() -> list[list[Any]]:
     """Keyboard for checker progress with cancel button."""
     return [
         [Button.inline(_b("Cancel Checking"), CB.GROUPS_CHECKER_CANCEL, style="danger", icon=5260293700088511294)],
@@ -579,7 +579,7 @@ def checker_progress_keyboard() -> list[list[Button]]:
 
 # ── SETTINGS ─────────────────────────────────────────────
 
-def settings_keyboard() -> list[list[Button]]:
+def settings_keyboard() -> list[list[Any]]:
     """Settings menu buttons."""
     return [
         [
@@ -589,7 +589,7 @@ def settings_keyboard() -> list[list[Button]]:
     ]
 
 
-def autoreply_keyboard(enabled: bool, has_custom: bool) -> list[list[Button]]:
+def autoreply_keyboard(enabled: bool, has_custom: bool) -> list[list[Any]]:
     """Auto Reply settings menu."""
     toggle_text = _b("Turn OFF") if enabled else _b("Turn ON")
     toggle_style = "danger" if enabled else "success"
@@ -610,12 +610,12 @@ def autoreply_keyboard(enabled: bool, has_custom: bool) -> list[list[Button]]:
 
 # ── SHARED ───────────────────────────────────────────────
 
-def back_keyboard(target: str = CB.DASHBOARD) -> list[list[Button]]:
+def back_keyboard(target: str = CB.DASHBOARD) -> list[list[Any]]:
     """Single back button."""
     return [[Button.inline(_b("← Back"), target, style="danger")]]
 
 
-def confirm_keyboard(action: str, target_id: str) -> list[list[Button]]:
+def confirm_keyboard(action: str, target_id: str) -> list[list[Any]]:
     """Yes/No confirmation buttons."""
     return [
         [
@@ -624,7 +624,7 @@ def confirm_keyboard(action: str, target_id: str) -> list[list[Button]]:
         ],
     ]
 
-def logs_bot_activation_keyboard(bot_username: str, campaign_id: str) -> list[list[Button]]:
+def logs_bot_activation_keyboard(bot_username: str, campaign_id: str) -> list[list[Any]]:
     """Keyboard shown when user hasn't started the logs bot."""
     return [
         [Button.url(_b("Start Logs Bot"), f"https://t.me/{bot_username.replace('@', '')}")],
@@ -632,14 +632,14 @@ def logs_bot_activation_keyboard(bot_username: str, campaign_id: str) -> list[li
         [Button.inline(_b("← Back"), f"cmp:view:{campaign_id}", style="danger")],
     ]
 
-def profile_keyboard() -> list[list[Button]]:
+def profile_keyboard() -> list[list[Any]]:
     """User profile and subscription info."""
     return [
         [Button.inline(_b("Buy / Upgrade Plan"), "pay:options", style="success", icon=5438496463044752972)],
         [Button.inline(_b("← Back"), CB.DASHBOARD, style="danger")]
     ]
 
-def paywall_keyboard(user=None) -> list[list[Button]]:
+def paywall_keyboard(user=None) -> list[list[Any]]:
     """Subscription options."""
     from telethon.tl.types import KeyboardButtonStyle
     
@@ -655,7 +655,7 @@ def paywall_keyboard(user=None) -> list[list[Button]]:
         [Button.inline(_b("← Back"), b"pay:profile", style="danger")]
     ]
 
-def payment_method_keyboard(plan: str) -> list[list[Button]]:
+def payment_method_keyboard(plan: str) -> list[list[Any]]:
     """Choose payment method."""
     from telethon.tl.types import KeyboardButtonStyle
     
@@ -667,7 +667,7 @@ def payment_method_keyboard(plan: str) -> list[list[Button]]:
         [Button.inline(_b("← Cancel"), b"pay:profile", style="danger")]
     ]
 
-def invoice_keyboard(pay_url: str, show_link: bool = True) -> list[list[Button]]:
+def invoice_keyboard(pay_url: str, show_link: bool = True) -> list[list[Any]]:
     """Invoice with link and cancel."""
     from telethon.tl.types import KeyboardButtonStyle
     
@@ -679,7 +679,7 @@ def invoice_keyboard(pay_url: str, show_link: bool = True) -> list[list[Button]]
         
     buttons.append([Button.inline(_b("❌ Cancel Invoice"), b"invoice:cancel", style="danger")])
     return buttons
-def admin_panel_keyboard() -> list[list[Button]]:
+def admin_panel_keyboard() -> list[list[Any]]:
     """Admin panel actions."""
     return [
         [Button.inline(_b("📊 View Stats"), "admin:stats", style="primary")],
@@ -687,7 +687,7 @@ def admin_panel_keyboard() -> list[list[Button]]:
         [Button.inline(_b("← Back to Dashboard"), CB.DASHBOARD, style="danger")]
     ]
 
-def admin_users_keyboard(page: int, total_pages: int) -> list[list[Button]]:
+def admin_users_keyboard(page: int, total_pages: int) -> list[list[Any]]:
     """Pagination for admin active users."""
     rows = []
     if total_pages > 1:

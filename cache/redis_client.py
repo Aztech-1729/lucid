@@ -72,8 +72,8 @@ def make_key(template: str, **kwargs: Any) -> str:
 
 # ── Convenience helpers ─────────────────────────────────────
 
-async def cache_get(key: str) -> Optional[dict]:
-    """Get a JSON-serialized value from Redis, returning parsed dict or None."""
+async def cache_get(key: str) -> Any:
+    """Get a JSON-serialized value from Redis, returning parsed data or None."""
     raw = await get_redis().get(key)
     if raw is None:
         return None

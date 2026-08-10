@@ -275,16 +275,16 @@ async def execute_get_account_list(user_id: int, kwargs: dict) -> str:
 
 
 async def execute_get_campaign_detail(user_id: int, kwargs: dict) -> str:
-    name = kwargs.get("campaign_name")
+    name = str(kwargs.get("campaign_name", ""))
     if not name:
         return json.dumps({"error": "campaign_name is required"})
         
     campaigns = await campaigns_repo.list_by_owner(user_id)
     target = next((c for c in campaigns if c.name == name), None)
-    if not target:
+    if not target or not target.id:
         target = next((c for c in campaigns if c.name.lower() == name.lower()), None)
     
-    if not target:
+    if not target or not target.id:
         return json.dumps({"error": f"campaign_not_found: You do not own a campaign named '{name}'."})
         
     result = {
@@ -306,7 +306,7 @@ async def execute_get_campaign_detail(user_id: int, kwargs: dict) -> str:
         "group_delay_seconds": getattr(target, 'group_delay_seconds', 15),
         "round_delay_seconds": getattr(target, 'round_delay_seconds', 600),
         "created_at": target.created_at.isoformat() + "Z" if getattr(target, "created_at", None) else None,
-        "last_active_at": target.last_active_at.isoformat() + "Z" if getattr(target, "last_active_at", None) else None
+        "last_active_at": getattr(target, "last_active_at").isoformat() + "Z" if getattr(target, "last_active_at", None) else None
     }
     
     if result["stats"]["total_sent"] > 0:
@@ -344,7 +344,7 @@ async def propose_delete_account(user_id: int, kwargs: dict) -> str:
     accounts = await accounts_repo.list_by_owner(user_id)
     target = next((a for a in accounts if a.phone == phone), None)
 
-    if not target:
+    if not target or not target.id:
         return json.dumps({"error": f"You do not own an account with phone number {phone}."})
 
     return json.dumps({
@@ -417,7 +417,7 @@ async def propose_create_campaign(user_id: int, kwargs: dict) -> str:
     })
 
 async def propose_edit_campaign_status(user_id: int, kwargs: dict) -> str:
-    name = kwargs.get("campaign_name")
+    name = str(kwargs.get("campaign_name", ""))
     status = kwargs.get("status")
     
     if not name or not status:
@@ -425,10 +425,10 @@ async def propose_edit_campaign_status(user_id: int, kwargs: dict) -> str:
     
     campaigns = await campaigns_repo.list_by_owner(user_id)
     target = next((c for c in campaigns if c.name == name), None)
-    if not target:
+    if not target or not target.id:
         target = next((c for c in campaigns if c.name.lower() == name.lower()), None)
     
-    if not target:
+    if not target or not target.id:
         available = [c.name for c in campaigns]
         return json.dumps({"error": f"Campaign '{name}' not found. Your campaigns: {available}"})
     
@@ -457,16 +457,16 @@ async def propose_edit_campaign_status(user_id: int, kwargs: dict) -> str:
     })
 
 async def propose_edit_campaign_interval(user_id: int, kwargs: dict) -> str:
-    name = kwargs.get("campaign_name")
+    name = str(kwargs.get("campaign_name", ""))
     g_delay = kwargs.get("group_delay_seconds")
     r_delay = kwargs.get("round_delay_seconds")
     
     campaigns = await campaigns_repo.list_by_owner(user_id)
     target = next((c for c in campaigns if c.name == name), None)
-    if not target:
+    if not target or not target.id:
         target = next((c for c in campaigns if c.name.lower() == name.lower()), None)
     
-    if not target:
+    if not target or not target.id:
         return json.dumps({"error": f"You do not own a campaign named '{name}'."})
         
     updates = {}
@@ -494,14 +494,14 @@ async def propose_edit_campaign_interval(user_id: int, kwargs: dict) -> str:
     })
 
 async def propose_delete_campaign(user_id: int, kwargs: dict) -> str:
-    name = kwargs.get("campaign_name")
+    name = str(kwargs.get("campaign_name", ""))
     
     campaigns = await campaigns_repo.list_by_owner(user_id)
     target = next((c for c in campaigns if c.name == name), None)
-    if not target:
+    if not target or not target.id:
         target = next((c for c in campaigns if c.name.lower() == name.lower()), None)
     
-    if not target:
+    if not target or not target.id:
         return json.dumps({"error": f"You do not own a campaign named '{name}'."})
         
     await campaigns_repo.delete(target.id)
@@ -517,15 +517,15 @@ async def propose_delete_campaign(user_id: int, kwargs: dict) -> str:
     })
 
 async def propose_edit_campaign_message(user_id: int, kwargs: dict) -> str:
-    name = kwargs.get("campaign_name")
+    name = str(kwargs.get("campaign_name", ""))
     message = kwargs.get("message")
     
     campaigns = await campaigns_repo.list_by_owner(user_id)
     target = next((c for c in campaigns if c.name == name), None)
-    if not target:
+    if not target or not target.id:
         target = next((c for c in campaigns if c.name.lower() == name.lower()), None)
     
-    if not target:
+    if not target or not target.id:
         return json.dumps({"error": f"campaign_not_found: You do not own a campaign named '{name}'."})
         
     await campaigns_repo.update_fields(target.id, {"message": message})
@@ -541,15 +541,15 @@ async def propose_edit_campaign_message(user_id: int, kwargs: dict) -> str:
     })
 
 async def propose_edit_campaign_accounts(user_id: int, kwargs: dict) -> str:
-    name = kwargs.get("campaign_name")
+    name = str(kwargs.get("campaign_name", ""))
     phones = kwargs.get("account_phones", [])
     
     campaigns = await campaigns_repo.list_by_owner(user_id)
     target = next((c for c in campaigns if c.name == name), None)
-    if not target:
+    if not target or not target.id:
         target = next((c for c in campaigns if c.name.lower() == name.lower()), None)
     
-    if not target:
+    if not target or not target.id:
         return json.dumps({"error": f"campaign_not_found: You do not own a campaign named '{name}'."})
         
     accounts = await accounts_repo.list_by_owner(user_id)
@@ -601,7 +601,7 @@ async def propose_pause_all_campaigns(user_id: int, kwargs: dict) -> str:
     from services import campaign_service
     campaigns = await campaigns_repo.list_by_owner(user_id)
     for c in campaigns:
-        if getattr(c, "status", "") == "ACTIVE":
+        if getattr(c, "status", "") == "ACTIVE" and c.id:
             try:
                 await campaign_service.pause_campaign(c.id, user_id)
             except Exception:

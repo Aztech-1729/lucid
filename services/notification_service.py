@@ -48,7 +48,7 @@ async def notify_user(user_id: int, message: str) -> bool:
 async def notify_health_change(
     user_id: int,
     account_name: str,
-    old_state: HealthState,
+    old_state: HealthState | None,
     new_state: HealthState,
     score: int,
 ) -> None:

@@ -102,6 +102,7 @@ def _health_label(score: int) -> str:
         return "Limited"
     if score >= 10:
         return "Critical"
+    return "Banned"
 
 
 def _flood_risk(score: int) -> str:
@@ -605,7 +606,7 @@ def render_paywall() -> str:
         "<i>Select a plan below to contact the admin for instant activation.</i>"
     )
 
-def render_admin_panel(stats: dict = None) -> str:
+def render_admin_panel(stats: dict | None = None) -> str:
     """Render the main admin dashboard."""
     return (
         "👑 <b>ADMIN PANEL</b>\n"

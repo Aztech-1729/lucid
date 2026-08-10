@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Any
 from database.mongo import get_db
 from models.invoice import Invoice
 
@@ -20,7 +20,7 @@ class InvoiceRepository:
         return None
 
     async def update_status(self, order_id: str, status: str) -> bool:
-        update_data = {"status": status}
+        update_data: dict[str, Any] = {"status": status}
         if status == "paid":
             update_data["paid_at"] = datetime.utcnow()
             

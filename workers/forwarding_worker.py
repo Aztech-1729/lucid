@@ -35,6 +35,7 @@ async def run_forwarding_cycle() -> None:
     started_count = 0
 
     async for campaign in campaigns_repo.get_active():
+        if not campaign.id: continue
         active_ids.add(campaign.id)
         if campaign.id not in _active_campaign_tasks or _active_campaign_tasks[campaign.id].done():
             # Start background loop for this campaign
@@ -203,7 +204,7 @@ async def execute_single_round(campaign) -> None:
     
     # We still register it with task_manager in case old stop logic needs it
     from services.task_manager import register_task
-    register_task(campaign.id, task_bundle)
+    register_task(campaign.id, task_bundle)  # type: ignore[arg-type]
     
     results = await task_bundle
 

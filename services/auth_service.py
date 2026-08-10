@@ -128,17 +128,17 @@ async def finalize_auth(user_id: int) -> dict:
                     "is_selected": True
                 })
         
-        raw_session = client.session.save()
+        raw_session = client.session.save() if client.session else ""
         
         # Determine Bio (Telethon get_me doesn't include bio, need full user)
         # Using GetFullUserRequest to get bio
         from telethon.tl.functions.users import GetFullUserRequest
-        full_user = await client(GetFullUserRequest(me.id))
+        full_user = await client(GetFullUserRequest(me.id))  # type: ignore
         bio = full_user.full_user.about or "No Bio"
         
         summary = {
-            "name": f"{me.first_name or ''} {me.last_name or ''}".strip(),
-            "username": f"@{me.username}" if me.username else "No Username",
+            "name": f"{getattr(me, 'first_name', '') or ''} {getattr(me, 'last_name', '') or ''}".strip(),
+            "username": f"@{getattr(me, 'username')}" if getattr(me, 'username', None) else "No Username",
             "bio": bio,
             "groups_count": len(groups),
             "groups": groups,

@@ -5,7 +5,7 @@ Log Worker — Background task to process buffered logs, batch them, and send to
 import asyncio
 import json
 import uuid
-from typing import Dict, List
+from typing import Dict, List, Any
 
 from core.logging import get_logger
 from services import log_queue
@@ -14,7 +14,7 @@ from telegram.logs_bot import send_batch_summary
 
 log = get_logger("log_worker")
 
-async def run(stop_event: asyncio.Event = None):
+async def run(stop_event: asyncio.Event | None = None):
     """
     Infinite loop that pulls logs from the queue every 5 seconds,
     batches them into Redis, and sends a single summary message per campaign.
@@ -31,7 +31,7 @@ async def run(stop_event: asyncio.Event = None):
                 # 2. Process logs per owner
                 for owner_id, logs in logs_by_owner.items():
                     # Group by campaign_name
-                    campaigns: Dict[str, List[dict]] = {}
+                    campaigns: Dict[str, List[Any]] = {}
                     for entry in logs:
                         c_name = entry["campaign_name"]
                         if c_name not in campaigns:

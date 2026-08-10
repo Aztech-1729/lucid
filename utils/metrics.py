@@ -34,7 +34,7 @@ class Metrics:
         async with self._lock:
             result = dict(self._counters)
         result["uptime_seconds"] = int((now_utc_naive() - self._started_at).total_seconds())
-        return result
+        return result  # type: ignore[return-value]
 
     async def reset(self) -> None:
         """Reset all counters."""

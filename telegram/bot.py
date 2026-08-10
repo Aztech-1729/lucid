@@ -74,7 +74,7 @@ async def init_bot() -> TelegramClient:
     notification_service.set_bot(_bot)
 
     me = await _bot.get_me()
-    await log.ainfo("bot.started", username=me.username, id=me.id)
+    await log.ainfo("bot.started", username=getattr(me, "username", None), id=getattr(me, "id", None))
 
     return _bot
 
@@ -83,7 +83,7 @@ async def stop_bot() -> None:
     """Disconnect the bot client."""
     global _bot
     if _bot is not None:
-        await _bot.disconnect()
+        await _bot.disconnect()  # type: ignore[misc]
         await log.ainfo("bot.stopped")
         _bot = None
 
@@ -260,9 +260,9 @@ def _register_handlers(bot: TelegramClient) -> None:
                     )
                     
                     if settings.plan_image_url:
-                        await event.client.send_message(target_id, message=caption, file=settings.plan_image_url, parse_mode="html")
+                        await event.client.send_message(target_id, message=caption, file=settings.plan_image_url, parse_mode="html")  # type: ignore[union-attr]
                     else:
-                        await event.client.send_message(target_id, message=caption, parse_mode="html")
+                        await event.client.send_message(target_id, message=caption, parse_mode="html")  # type: ignore[union-attr]
                 except Exception as e:
                     await event.respond(f"⚠️ Could not send notification to user: {e}")
             else:
@@ -352,22 +352,25 @@ def _register_handlers(bot: TelegramClient) -> None:
     _button_cooldowns: dict[int, float] = {}
     _BUTTON_COOLDOWN_SECS = 1.5
 
-    @bot.on(events.CallbackQuery)
+    @bot.on(events.CallbackQuery())
     async def on_callback(event: events.CallbackQuery.Event) -> None:
         """Handle all inline button presses."""
         
+        sender_id = event.sender_id
+        if not sender_id: return
+        
         # ── Anti-spam throttle ──────────────────────────────────
         now = _time.monotonic()
-        last_press = _button_cooldowns.get(event.sender_id, 0.0)
+        last_press = _button_cooldowns.get(sender_id, 0.0)
         if now - last_press < _BUTTON_COOLDOWN_SECS:
             await event.answer("⏳ Please slow down! Wait a moment...", alert=False)
             return
-        _button_cooldowns[event.sender_id] = now
+        _button_cooldowns[sender_id] = now
         # ────────────────────────────────────────────────────────
         
         if event.data == b"force_join_check":
             from cache.redis_client import cache_delete
-            await cache_delete(f"force_join:{event.sender_id}")
+            await cache_delete(f"force_join:{sender_id}")
             
             missing = await get_missing_force_joins(event, bot)
             if not missing:
@@ -376,15 +379,15 @@ def _register_handlers(bot: TelegramClient) -> None:
                 sender = await event.get_sender()
                 username = getattr(sender, "username", None)
                 await users_repo.get_or_create(
-                    user_id=event.sender_id,
+                    user_id=sender_id,
                     username=username,
                     first_name=getattr(sender, "first_name", None),
                 )
                 from cache import dashboard_cache
                 from services import dashboard_service
-                data = await dashboard_cache.get(event.sender_id)
+                data = await dashboard_cache.get(sender_id)
                 if not data:
-                    data = await dashboard_service.build_dashboard(event.sender_id)
+                    data = await dashboard_service.build_dashboard(sender_id)
                 text = menus.render_dashboard(data)
                 settings = get_settings()
                 if settings.bot_image_url:
@@ -495,7 +498,6 @@ def _register_handlers(bot: TelegramClient) -> None:
 
         if awaiting == "ai_chat" and event.text:
             from services.ai_service import chat_with_ai
-            from telegram import menus, keyboards
             
             # Show typing...
             msg = await event.respond("<tg-emoji emoji-id='5291969869875522399'>⏳</tg-emoji> <i>Thinking...</i>", parse_mode="html")
@@ -659,7 +661,7 @@ def _register_handlers(bot: TelegramClient) -> None:
                     if valid_links:
                         content = "\n".join(valid_links)
                         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-                        await event.client.send_file(
+                        await event.client.send_file(  # type: ignore[union-attr]
                             event.chat_id,
                             io.BytesIO(content.encode("utf-8")),
                             file_name=f"checked_groups_{ts}.txt",

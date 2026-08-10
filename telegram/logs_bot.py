@@ -140,7 +140,7 @@ async def init_logs_bot() -> None:
 
     await _logs_bot.start(bot_token=settings.logs_bot_token) # type: ignore
     me = await _logs_bot.get_me()
-    await log.ainfo("logs_bot.started", bot_username=me.username)
+    await log.ainfo("logs_bot.started", bot_username=getattr(me, "username", "unknown"))
 
 async def send_campaign_start_log(owner_id: int, campaign: Any) -> None:
     """Send a notification that a campaign started with details."""
@@ -186,7 +186,7 @@ async def send_campaign_pause_log(owner_id: int, campaign_name: str) -> None:
     except Exception as e:
         await log.aerror("logs_bot.send_error", owner_id=owner_id, error=str(e))
 
-async def send_ad_success_log(owner_id: int, campaign_name: str, account_phone: str, group_id: int, message_link: str) -> None:
+async def send_ad_success_log(owner_id: int, campaign_name: str, account_phone: str, group_id: int | str, message_link: str) -> None:
     """Safely queue a success log instead of instant sending."""
     if not _logs_bot:
         return

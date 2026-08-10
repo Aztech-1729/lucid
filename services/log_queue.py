@@ -11,14 +11,14 @@ from typing import TypedDict, Dict, List
 class SuccessLogEntry(TypedDict):
     campaign_name: str
     account_phone: str
-    group_id: int
+    group_id: int | str
     message_link: str
 
 # Queue: owner_id -> list of SuccessLogEntry
 _success_logs: Dict[int, List[SuccessLogEntry]] = defaultdict(list)
 _lock = asyncio.Lock()
 
-async def add_success_log(owner_id: int, campaign_name: str, account_phone: str, group_id: int, message_link: str) -> None:
+async def add_success_log(owner_id: int, campaign_name: str, account_phone: str, group_id: int | str, message_link: str) -> None:
     """Safely append a success log to the queue."""
     entry: SuccessLogEntry = {
         "campaign_name": campaign_name,

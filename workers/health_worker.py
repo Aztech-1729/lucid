@@ -81,7 +81,7 @@ async def check_single_account(account) -> None:
                 await account_service.handle_unauthorized_account(account.id)
                 return
 
-            new_name = f"{me.first_name} {me.last_name or ''}".strip() or me.username or account.phone
+            new_name = f"{getattr(me, 'first_name', '')} {getattr(me, 'last_name', '') or ''}".strip() or getattr(me, 'username', '') or account.phone
             if new_name != account.name:
                 await accounts_repo.update_name(account.id, new_name)
                 account.name = new_name # Update local object for evaluate_account notifications
@@ -89,7 +89,7 @@ async def check_single_account(account) -> None:
             # Unblock SpamBot to ensure delivery
             from telethon.tl.functions.contacts import UnblockRequest
             try:
-                await client(UnblockRequest(id='SpamBot'))
+                await client(UnblockRequest(id='SpamBot'))  # type: ignore[arg-type]
             except Exception:
                 pass
 
@@ -101,14 +101,14 @@ async def check_single_account(account) -> None:
 
             # Get latest response
             messages = await client.get_messages("SpamBot", limit=1)
-            if not messages or messages[0].out:
+            if not messages or messages[0].out:  # type: ignore[index]
                 await log.awarning(
                     "health_worker.no_response",
                     account_id=account.id,
                 )
                 return
 
-            response_text = messages[0].text or ""
+            response_text = messages[0].text or ""  # type: ignore[index]
 
     except Exception as exc:
         await log.awarning(

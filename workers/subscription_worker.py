@@ -27,6 +27,7 @@ async def run_subscription_cycle() -> None:
         user = users_cache[owner_id]
         if user and not user.is_active():
             # Plan expired!
+            if not camp.id: continue
             await campaigns_repo.update_status(camp.id, CampaignStatus.PAUSED)
             await log.awarning("campaign_paused", reason="subscription_expired", campaign_id=camp.id, owner_id=owner_id)
             paused_count += 1

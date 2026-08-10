@@ -148,8 +148,8 @@ async def safe_forward(
                     # Actually, Telethon Message sometimes has `.message_link` or we can just try to get it.
                     if hasattr(first_msg, 'chat') and getattr(first_msg.chat, 'username', None):
                         msg_link = f"https://t.me/{first_msg.chat.username}/{first_msg.id}"
-                elif hasattr(sent_msgs, 'chat') and getattr(sent_msgs.chat, 'username', None):
-                    msg_link = f"https://t.me/{sent_msgs.chat.username}/{sent_msgs.id}"
+                elif hasattr(sent_msgs, 'chat') and getattr(sent_msgs.chat, 'username', None):  # type: ignore[attr-defined]
+                    msg_link = f"https://t.me/{getattr(sent_msgs.chat, 'username')}/{sent_msgs.id}"  # type: ignore[attr-defined]
 
             # Success
             await accounts_repo.increment_counters(account_id, success=1)
@@ -238,7 +238,7 @@ async def safe_forward(
             )
             await asyncio.sleep(wait_time)
 
-        except (ChatWriteForbiddenError, UserBannedInChannelError, ChannelPrivateError) as e:
+        except (UserBannedInChannelError, ChannelPrivateError) as e:
             # Permanent failures — don't retry, mark group as restricted
             await accounts_repo.increment_counters(account_id, failure=1)
             await analytics_repo.log_forward(

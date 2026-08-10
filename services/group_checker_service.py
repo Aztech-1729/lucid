@@ -97,7 +97,9 @@ async def _check_link(client: TelegramClient, link: str) -> dict:
       peers_links: expanded chat links (for folder links)
     """
     if _is_folder_link(link):
-        slug = FOLDER_RE.search(link).group(1)
+        m = FOLDER_RE.search(link)
+        assert m
+        slug = m.group(1)
         try:
             res = await client(functions.chatlists.CheckChatlistInviteRequest(slug=slug))
             if isinstance(res, types.chatlists.ChatlistInviteAlready):
@@ -120,12 +122,13 @@ async def _check_link(client: TelegramClient, link: str) -> dict:
 
     if _is_private_link(link):
         m = HASH_RE.search(link)
+        assert m
         hash_id = m.group(1) or m.group(2)
         try:
             res = await client(
                 functions.messages.CheckChatInviteRequest(hash=hash_id)
             )
-            if isinstance(res, (types.ChatInvite, types.ChannelInvite)):
+            if isinstance(res, types.ChatInvite):
                 return {"status": "valid_group"}
             return {"status": "valid_group"}
         except UserAlreadyParticipantError:

@@ -30,7 +30,7 @@ class User(BaseModel):
     created_at: datetime = Field(default_factory=now_utc_naive)
     updated_at: datetime = Field(default_factory=now_utc_naive)
 
-    def is_active(self, admin_user_ids: list[int] = None, admin_username: str = None) -> bool:
+    def is_active(self, admin_user_ids: Optional[list[int]] = None, admin_username: Optional[str] = None) -> bool:
         """Check if user has an active subscription or trial. Admins are always active."""
         if admin_user_ids and self.user_id in admin_user_ids:
             return True

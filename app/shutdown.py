@@ -31,7 +31,7 @@ async def shutdown() -> None:
         await stop_bot()
         logs_bot = get_logs_bot()
         if logs_bot:
-            await logs_bot.disconnect()
+            await logs_bot.disconnect()  # type: ignore[misc]
         await log.ainfo("shutdown.bots_stopped")
     except Exception as exc:
         await log.awarning("shutdown.bots_error", error=str(exc))

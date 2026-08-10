@@ -81,8 +81,8 @@ async def import_session(owner_id: int, raw_string: str) -> Account:
         ) from exc
 
     # 3. Check for duplicates using Telegram User ID
-    telegram_id = me.id
-    phone = me.phone or "unknown"
+    telegram_id = me.id  # type: ignore[attr-defined]
+    phone = me.phone or "unknown"  # type: ignore[attr-defined]
     
     # We must check by telegram_id to prevent duplicates even if phone is hidden
     existing = await accounts_repo.get_by_telegram_id(owner_id, telegram_id)
@@ -95,7 +95,7 @@ async def import_session(owner_id: int, raw_string: str) -> Account:
         owner_id=owner_id,
         phone=phone,
         session=encrypted,
-        name=me.first_name or me.username or phone,
+        name=getattr(me, 'first_name', None) or getattr(me, 'username', None) or phone,
         telegram_id=telegram_id,
     )
 
@@ -103,7 +103,7 @@ async def import_session(owner_id: int, raw_string: str) -> Account:
         "session.imported",
         account_id=account.id,
         owner_id=owner_id,
-        username=me.username,
+        username=getattr(me, 'username', None),
     )
 
     return account

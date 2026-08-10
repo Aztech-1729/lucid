@@ -52,7 +52,7 @@ async def startup() -> None:
     # Pre-warm pool for only up to MAX_CLIENTS accounts to prevent startup storms
     from repositories import accounts_repo
     active_accounts = await accounts_repo.get_all_active()
-    account_ids = [acc.id for acc in active_accounts]
+    account_ids = [acc.id for acc in active_accounts if acc.id]
     if account_ids:
         # Don't try to prewarm 50 accounts if our pool max is 15 (causes thrashing)
         warm_limit = settings.pool_max_clients
