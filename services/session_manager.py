@@ -71,7 +71,7 @@ async def import_session(owner_id: int, raw_string: str) -> Account:
         me = await client.get_me()
         if me is None:
             raise SessionInvalidError("Session returned no user info")
-        await client.disconnect()
+        await client.disconnect()  # type: ignore[misc]
     except SessionInvalidError:
         raise
     except Exception as exc:
@@ -137,7 +137,7 @@ async def validate(account_id: str) -> bool:
         client = TelegramClient(session, settings.api_id, settings.api_hash)
         await client.connect()
         me = await client.get_me()
-        await client.disconnect()
+        await client.disconnect()  # type: ignore[misc]
         return me is not None
     except Exception:
         return False

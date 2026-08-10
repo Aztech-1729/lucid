@@ -53,13 +53,15 @@ async def notify_health_change(
     score: int,
 ) -> None:
     """Notify user of an account health state change."""
-    old_emoji = HEALTH_EMOJI.get(old_state, "❓")
+    old_emoji = HEALTH_EMOJI.get(old_state, "❓") if old_state else "❓"  # type: ignore[arg-type]
     new_emoji = HEALTH_EMOJI.get(new_state, "❓")
+
+    old_state_str = old_state.value if old_state else "Unknown"
 
     message = (
         f"🩺 <b>Health Alert</b>\n\n"
         f"Account: <b>{account_name}</b>\n"
-        f"Status: {old_emoji} {old_state.value} → {new_emoji} {new_state.value}\n"
+        f"Status: {old_emoji} {old_state_str} → {new_emoji} {new_state.value}\n"
         f"Health Score: <b>{score}/100</b>"
     )
     await notify_user(user_id, message)
