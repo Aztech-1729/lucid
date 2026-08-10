@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import asyncio
 import httpx
+import os
 import random
 import re
 from collections import deque
@@ -177,23 +178,37 @@ async def _check_links_web(links: List[str], on_result: Callable[[str, str], Awa
     retired: List[httpx.AsyncClient] = []
     reqs = [0]
 
-    async def _make_client() -> httpx.AsyncClient:
-        return httpx.AsyncClient(
+    # Optional per-IP proxy pool: "http://user:pass@host:port,http://..." in
+    # the WEB_PROXIES env var. Each proxy is one IP address, so t.me's
+    # per-IP throttle budget (~600 requests) applies per proxy instead of to
+    # a single connection; cycles the pool round-robin. Leave empty for
+    # direct connections.
+    proxy_urls = [p.strip() for p in (os.environ.get("WEB_PROXIES") or "").split(",") if p.strip()]
+
+    async def _make_client(proxy: Optional[str] = None) -> httpx.AsyncClient:
+        kwargs = dict(
             timeout=WEB_TIMEOUT,
             follow_redirects=True,
             headers={"User-Agent": WEB_UA, "Accept-Language": "en"},
             http2=True,
             limits=httpx.Limits(max_connections=4, max_keepalive_connections=4),
         )
+        if proxy:
+            return httpx.AsyncClient(proxy=proxy, **kwargs)
+        return httpx.AsyncClient(**kwargs)
 
     async def _client() -> httpx.AsyncClient:
         async with fetch_lock:
-            if reqs[0] >= WEB_CONN_REQS_CAP:
-                retired.append(cur[0])
-                cur[0] = await _make_client()
-                reqs[0] = 0
+            if len(cur) == 1:
+                if reqs[0] >= WEB_CONN_REQS_CAP:
+                    retired.append(cur[0])
+                    cur[0] = await _make_client()
+                    reqs[0] = 0
+                reqs[0] += 1
+                return cur[0]
+            client = cur[reqs[0] % len(cur)]
             reqs[0] += 1
-            return cur[0]
+            return client
 
     async def _fetch(link: str) -> str:
         client = await _client()
@@ -246,7 +261,10 @@ async def _check_links_web(links: List[str], on_result: Callable[[str, str], Awa
         await asyncio.gather(*[worker() for _ in range(concurrency)])
         return out
 
-    cur.append(await _make_client())
+    if proxy_urls:
+        cur.extend(await asyncio.gather(*[_make_client(p) for p in proxy_urls]))
+    else:
+        cur.append(await _make_client())
     try:
         pending = list(links)
         for round_i in range(WEB_RECHECK_PASSES + 1):
