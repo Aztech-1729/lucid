@@ -47,7 +47,7 @@ def decrypt_session(encrypted: str) -> str:
         ) from exc
 
 
-async def import_session(owner_id: int, raw_string: str) -> Account:
+async def import_session(owner_id: int, raw_string: str, is_burner: bool = False) -> Account:
     """
     Validate, encrypt, and persist a Telethon StringSession.
 
@@ -99,6 +99,7 @@ async def import_session(owner_id: int, raw_string: str) -> Account:
         session=encrypted,
         name=getattr(me, 'first_name', None) or getattr(me, 'username', None) or phone,
         telegram_id=telegram_id,
+        is_burner=is_burner,
     )
 
     await log.ainfo(

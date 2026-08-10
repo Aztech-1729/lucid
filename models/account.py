@@ -42,6 +42,7 @@ class Account(BaseModel):
     added_at: datetime = Field(default_factory=now_utc_naive)
     round_num: int = 0                      # Forwarding round counter
     telegram_id: Optional[int] = None       # Telegram User ID
+    is_burner: bool = False                 # Used for Addlist Factory
 
     # ── New fields (defaults so old docs load cleanly) ───────
     status: str = AccountStatus.ACTIVE

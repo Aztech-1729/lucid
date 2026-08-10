@@ -558,25 +558,85 @@ def _register_handlers(bot: TelegramClient) -> None:
                     await event.respond("<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> Invalid file encoding. Must be UTF-8 txt.")
                     return
                 
+                is_factory = False
+                if links and links[0].upper() == "FACTORY":
+                    is_factory = True
+                    links.pop(0)
+                elif "factory" in filename.lower():
+                    is_factory = True
+                    
                 if not links:
                     await event.respond("<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> No links found in the file.")
                     return
                     
-                await set_context(user_id, "awaiting_input", None)
-                msg = await event.respond(f"⏳ <b>Processing {len(links)} links from file...</b>", parse_mode="html")
-                
-                async def update_progress_links(text: str):
-                    try:
-                        await msg.edit(text, parse_mode="html")
-                    except Exception:
-                        pass
-                
-                import asyncio
-                asyncio.create_task(group_worker.bulk_join_links(user_id, links, update_progress_links))
-                return
+                if is_factory:
+                    import math
+                    accounts_needed = math.ceil(len(links) / 200) # 100 per folder, 2 folders per account
+                    accounts_needed = max(1, accounts_needed)
+                    
+                    # Save links to state
+                    await set_context(user_id, "factory_links", links)
+                    await set_context(user_id, "awaiting_input", "factory_zip")
+                    
+                    text = (
+                        f"🏭 <b>ADDLIST FACTORY ACTIVATED</b>\n"
+                        f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                        f"I found <b>{len(links)} links</b>. To convert these into Chat Folders, "
+                        f"we need <b>{accounts_needed} burner accounts</b>.\n\n"
+                        f"👉 <b>Please upload a <code>.zip</code> or <code>.session</code> file</b> containing at least {accounts_needed} accounts.\n"
+                        f"<i>Note: These accounts will join the groups slowly in the background and might get flood-waited. Do not use your main accounts.</i>"
+                    )
+                    await event.respond(text, parse_mode="html")
+                    return
+                else:
+                    await set_context(user_id, "awaiting_input", None)
+                    msg = await event.respond(f"⏳ <b>Processing {len(links)} links from file...</b>", parse_mode="html")
+                    
+                    async def update_progress_links(text: str):
+                        try:
+                            await msg.edit(text, parse_mode="html")
+                        except Exception:
+                            pass
+                    
+                    import asyncio
+                    asyncio.create_task(group_worker.bulk_join_links(user_id, links, update_progress_links))
+                    return
             else:
                 await event.respond("<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> Please send a <b>.txt file</b> or a <b>t.me/addlist/</b> link.", parse_mode="html")
                 return
+
+        if awaiting == "factory_zip":
+            if not event.document:
+                await event.respond("❌ Please upload a .zip or .session file.", parse_mode="html")
+                return
+            
+            filename = event.document.attributes[0].file_name if event.document.attributes else ""
+            if not (filename.lower().endswith(".zip") or filename.lower().endswith(".session")):
+                await event.respond("❌ Unsupported file. Please upload a .zip or .session file.", parse_mode="html")
+                return
+                
+            msg = await event.respond("⏳ <b>Importing Burner Accounts...</b>", parse_mode="html")
+            file_bytes = await event.download_media(bytes)
+            
+            async def import_cb(joined: int, failed: int, total: int, status: str = "Processing") -> None:
+                try:
+                    await msg.edit(f"⏳ <b>{status}</b>\n\n✅ Joined: {joined}\n❌ Failed: {failed}\nTotal: {total}", parse_mode="html")
+                except Exception:
+                    pass
+            
+            from services import session_importer
+            await session_importer.import_from_file(user_id, file_bytes, filename, import_cb, is_burner=True)
+            
+            # Now trigger the factory worker
+            from workers import factory_worker
+            links = await get_context(user_id, "factory_links") or []
+            await set_context(user_id, "awaiting_input", None)
+            await set_context(user_id, "factory_links", None)
+            
+            await event.respond(f"🏭 <b>Factory Worker Started!</b>\nProcessing {len(links)} links across burner accounts in the background.\nYou will receive Addlist folder links here as they are generated.", parse_mode="html")
+            import asyncio
+            asyncio.create_task(factory_worker.run_factory(user_id, links))
+            return
 
         if awaiting == "bulk_checker":
             from services import group_checker_service

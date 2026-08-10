@@ -19,12 +19,12 @@ from services import session_manager
 
 log = get_logger("session_importer")
 
-async def import_from_file(owner_id: int, file_bytes: bytes, filename: str, update_callback: Callable[..., Any]) -> None:
+async def import_from_file(owner_id: int, file_bytes: bytes, filename: str, update_callback: Callable[..., Any], is_burner: bool = False) -> None:
     """Import sessions from a .session file or a .zip archive."""
     if filename.lower().endswith(".session"):
-        await _process_session_file(owner_id, file_bytes, filename, update_callback)
+        await _process_session_file(owner_id, file_bytes, filename, update_callback, is_burner)
     elif filename.lower().endswith(".zip"):
-        await _process_zip_file(owner_id, file_bytes, update_callback)
+        await _process_zip_file(owner_id, file_bytes, update_callback, is_burner)
     else:
         await update_callback(0, 0, 0, "❌ Unsupported file type. Send .session or .zip")
         return
@@ -34,7 +34,7 @@ async def import_from_file(owner_id: int, file_bytes: bytes, filename: str, upda
     await account_cache.invalidate_list(owner_id)
     await dashboard_cache.invalidate(owner_id)
 
-async def _process_session_file(owner_id: int, file_bytes: bytes, filename: str, update_callback: Callable[..., Any]) -> None:
+async def _process_session_file(owner_id: int, file_bytes: bytes, filename: str, update_callback: Callable[..., Any], is_burner: bool = False) -> None:
     """Process a single Telethon/Pyrogram .session file."""
     await update_callback(0, 0, 1, "Processing session file...")
     
@@ -44,7 +44,7 @@ async def _process_session_file(owner_id: int, file_bytes: bytes, filename: str,
             tmp.write(file_bytes)
             temp_path = tmp.name
 
-        success = await _import_single_session_file(owner_id, temp_path)
+        success = await _import_single_session_file(owner_id, temp_path, is_burner)
 
         # Cleanup
         if os.path.exists(temp_path):
@@ -58,7 +58,7 @@ async def _process_session_file(owner_id: int, file_bytes: bytes, filename: str,
     except Exception as e:
         await update_callback(0, 1, 1, f"❌ Error: {str(e)[:20]}")
 
-async def _process_zip_file(owner_id: int, file_bytes: bytes, update_callback: Callable[..., Any]) -> None:
+async def _process_zip_file(owner_id: int, file_bytes: bytes, update_callback: Callable[..., Any], is_burner: bool = False) -> None:
     """Extract and process all .session files from a ZIP archive."""
     try:
         with zipfile.ZipFile(io.BytesIO(file_bytes)) as z:
@@ -81,7 +81,7 @@ async def _process_zip_file(owner_id: int, file_bytes: bytes, update_callback: C
                         tmp.write(z.read(filename))
                         temp_path = tmp.name
 
-                    if await _import_single_session_file(owner_id, temp_path):
+                    if await _import_single_session_file(owner_id, temp_path, is_burner):
                         joined += 1
                     else:
                         failed += 1
@@ -110,7 +110,7 @@ async def _process_zip_file(owner_id: int, file_bytes: bytes, update_callback: C
     except Exception as e:
         await update_callback(0, 0, 0, f"❌ Fatal Error: {str(e)[:20]}")
 
-async def _import_single_session_file(owner_id: int, file_path: str) -> bool:
+async def _import_single_session_file(owner_id: int, file_path: str, is_burner: bool = False) -> bool:
     """Convert a physical .session file (Telethon or Pyrogram) to a StringSession and import it."""
     client = None
     try:

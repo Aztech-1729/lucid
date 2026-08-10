@@ -31,6 +31,7 @@ async def create(
     session: str,
     name: str = "",
     telegram_id: Optional[int] = None,
+    is_burner: bool = False,
 ) -> Account:
     """Create a new account record (matches existing DB schema)."""
     now = now_utc_naive()
@@ -44,6 +45,7 @@ async def create(
         "two_fa_password": "",
         "added_at": now,
         "round_num": 0,
+        "is_burner": is_burner,
         # New fields
         "status": AccountStatus.ACTIVE,
         "health_score": 100,
@@ -72,7 +74,17 @@ async def get(account_id: str) -> Optional[Account]:
 
 async def list_by_owner(owner_id: int) -> list[Account]:
     """Get all accounts for a user."""
-    cursor = _coll().find({"owner_id": owner_id}).sort("added_at", -1)
+    cursor = _coll().find({"owner_id": owner_id, "is_burner": {"$ne": True}}).sort("added_at", -1)
+    accounts: list[Any] = []
+    async for doc in cursor:
+        doc["_id"] = str(doc["_id"])
+        accounts.append(Account.model_validate(doc))
+    return accounts
+
+
+async def list_burner_accounts(owner_id: int) -> list[Account]:
+    """Get all burner accounts for a user."""
+    cursor = _coll().find({"owner_id": owner_id, "is_burner": True}).sort("added_at", -1)
     accounts: list[Any] = []
     async for doc in cursor:
         doc["_id"] = str(doc["_id"])
@@ -82,7 +94,7 @@ async def list_by_owner(owner_id: int) -> list[Account]:
 
 async def count_by_owner(owner_id: int) -> int:
     """Count accounts owned by a user."""
-    return await _coll().count_documents({"owner_id": owner_id})
+    return await _coll().count_documents({"owner_id": owner_id, "is_burner": {"$ne": True}})
 
 
 async def update_status(account_id: str, status: str) -> bool:

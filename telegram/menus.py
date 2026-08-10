@@ -463,7 +463,8 @@ def render_autojoin_prompt() -> str:
         "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         "<b>👇 No buttons needed! Just do ONE of the following right here in the chat:</b>\n\n"
         "<b>📁 Option 1: Paste your <code>t.me/addlist/...</code> folder link (Instant Join)</b>\n\n"
-        "<b>📄 Option 2: Upload a <code>.txt</code> file containing group links (Slower Join)</b>"
+        "<b>📄 Option 2: Upload a <code>.txt</code> file containing group links (Slower Join)</b>\n\n"
+        "<b>🏭 Option 3: Send a <code>.txt</code> file starting with <code>FACTORY</code> to auto-generate <code>t.me/addlist/...</code> folders!</b>"
     )
 
 
