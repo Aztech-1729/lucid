@@ -183,7 +183,7 @@ async def _check_links_web(links: List[str], on_result: Callable[[str, str], Awa
     # per-IP throttle budget (~600 requests) applies per proxy instead of to
     # a single connection; cycles the pool round-robin. Leave empty for
     # direct connections.
-    proxy_urls = [p.strip() for p in (os.environ.get("WEB_PROXIES") or "").split(",") if p.strip()]
+    proxy_urls = [p.strip() for p in (get_settings().web_proxies or os.environ.get("WEB_PROXIES") or "").split(",") if p.strip()]
 
     async def _make_client(proxy: Optional[str] = None) -> httpx.AsyncClient:
         kwargs = dict(
@@ -276,13 +276,38 @@ async def _check_links_web(links: List[str], on_result: Callable[[str, str], Awa
             still_unknown: List[str] = []
             for link in pending:
                 status = results.get(link, "unknown")
-                if status == "unknown" and round_i < WEB_RECHECK_PASSES:
+                if status == "unknown":
                     still_unknown.append(link)
                 else:
                     await on_result(link, status)
             pending = still_unknown
             if not pending:
                 break
+        if pending:
+            # Tiebreak: fetch each leftover directly (fresh non-proxy IP).
+            # A page that still renders "Telegram: Contact @" after all
+            # recheck rounds is a genuine user account — not a group —
+            # so report it "invalid" instead of leaving it skipped.
+            direct = await _make_client()
+            sem = asyncio.Semaphore(8)
+            try:
+                async def tiebreak(link: str) -> None:
+                    async with sem:
+                        resp = await direct.get(_web_url(link))
+                        html = resp.text if resp.status_code == 200 else ""
+                        status = _classify_web(link, html)
+                        if status == "unknown" and re.search(
+                            r"<title>\s*Telegram:\s*Contact\s+@", html, re.IGNORECASE
+                        ):
+                            status = "invalid"
+                        await on_result(link, status)
+
+                await asyncio.gather(*[tiebreak(link) for link in pending])
+            finally:
+                try:
+                    await direct.aclose()
+                except Exception:
+                    pass
     finally:
         for c in retired + cur:
             try:

@@ -92,3 +92,6 @@ class Settings(BaseSettings):
     oxapay_key: str = ""
     webhook_base_url: str = ""
     oxapay_webhook_url: str = ""
+
+    # ── Group Checker Web ───────────────────────────────────
+    web_proxies: str = ""  # comma-separated http://user:pass@ip:port (per-IP pool)
