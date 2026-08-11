@@ -196,9 +196,8 @@ async def _import_single_session_file(owner_id: int, file_path: str, is_burner: 
             await log.awarning("session_importer.missing_data", file=file_path)
             return False
 
-        # 3. Import using existing manager
-        # 3. Import using existing manager
-        await session_manager.import_session(owner_id, raw_string)
+        # 3. Import using existing manager (propagate burner flag!)
+        await session_manager.import_session(owner_id, raw_string, is_burner=is_burner)
         return True
             
     except Exception as e:

@@ -102,7 +102,7 @@ async def on_account_export_sessions(event: events.CallbackQuery.Event) -> None:
     await event.answer()  # LINE 1. Non-negotiable.
     
     # 1. Update UI to show processing
-    await event.edit("⏳ <b>Generating ZIP...</b>\n\nPlease wait while your sessions are securely decrypted and packaged.", buttons=[], parse_mode="html")
+    await event.edit("⏳ <b>Generating ZIP...</b>\n\nPlease wait while your sessions are securely decrypted and packaged.", buttons=None, parse_mode="html")
     
     # 2. Call exporter service
     from services.session_exporter import export_sessions_zip
