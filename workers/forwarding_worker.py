@@ -215,10 +215,12 @@ async def execute_single_round(campaign: Any) -> None:
     # Update campaign stats
     total_success = 0
     total_failed = 0
+    total_skipped = 0
     for result in results:
         if isinstance(result, dict):
             total_success += result.get("success", 0)
             total_failed += result.get("failed", 0)
+            total_skipped += result.get("skipped", 0)
 
     # Refresh campaign stats since they might have been updated by other tasks
     latest_camp = await campaigns_repo.get(campaign.id)
@@ -229,6 +231,7 @@ async def execute_single_round(campaign: Any) -> None:
         "total_sent": latest_camp.stats.total_sent + total_success + total_failed,
         "total_success": latest_camp.stats.total_success + total_success,
         "total_failed": latest_camp.stats.total_failed + total_failed,
+        "total_skipped": latest_camp.stats.total_skipped + total_skipped,
         "last_run_at": now_utc_naive(),
     })
     
@@ -247,15 +250,23 @@ async def forward_for_account(
     # Skip accounts in Telegram flood-wait — don't hammer them with sends
     if await is_flooded(account_id):
         await log.ainfo("forwarding_worker.skipping_flooded_account", account_id=account_id)
-        return {"success": 0, "failed": len(groups), "total": len(groups)}
+        return {"success": 0, "failed": 0, "skipped": len(groups), "total": len(groups)}
 
     try:
         from repositories import accounts_repo as acc_repo
         account = await acc_repo.get(account_id)
         health_score = account.health_score if account else 100
 
-        # Timeout: 5 minutes to handle accounts with many groups
-        async with asyncio.timeout(300):
+        # Round budget derived from workload: a fixed 300s cap killed rounds
+        # for accounts with many groups, losing already-counted successes
+        # (stats then showed everything as failed even though ads were sent).
+        health_multiplier = 1.0
+        if health_score < 100:
+            health_multiplier = max(1.0, 100 / max(health_score, 10))
+        per_group_estimate = max(10.0, float(delay or 2.0) * health_multiplier) + 15.0
+        round_budget = max(300.0, len(groups) * per_group_estimate + 120.0)
+
+        async with asyncio.timeout(round_budget):
             async with client_pool.acquire(account_id) as client:
                 return await forwarding_service.forward_to_groups(
                     client=client,
@@ -267,7 +278,7 @@ async def forward_for_account(
                 )
     except CircuitOpenError:
         await log.ainfo("forwarding_worker.skipping_circuit_open", account_id=account_id)
-        return {"success": 0, "failed": len(groups), "total": len(groups)}
+        return {"success": 0, "failed": 0, "skipped": len(groups), "total": len(groups)}
     except asyncio.TimeoutError:
         await log.awarning(
             "forwarding_worker.account_timeout",

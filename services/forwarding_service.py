@@ -385,10 +385,23 @@ async def forward_to_groups(
     """
     success = 0
     failed = 0
+    skipped = 0
 
     # Safety: default delay if campaign has None/null
     if delay is None:
         delay = get_settings().default_forward_delay_seconds
+
+    # Dynamic Usage Reduction based on account health
+    # Full health (100) -> 1.0x delay
+    # Low health (50) -> 2.0x delay
+    # Critical health (30) -> 3.3x delay
+    health_multiplier = 1.0
+    if health_score < 100:
+        health_multiplier = max(1.0, 100 / max(health_score, 10))
+
+    # Per-group timeout: one slow/hung group must not kill the whole round
+    # (a cancelled round loses already-counted successes). Bounded per send.
+    per_group_timeout = max(90.0, float(delay) * health_multiplier + 60.0)
 
     message_obj = campaign.message
     # If ad_type is forward, resolve the link to get the message to forward
@@ -443,22 +456,33 @@ async def forward_to_groups(
         from repositories import group_health_repo
         if await group_health_repo.is_toxic(str(target)):
             await log.awarning("forward.skipping_toxic_group", group_id=target)
-            failed += 1
+            skipped += 1
             continue
 
-        result = await safe_forward(
-            client=client,
-            account_id=account_id,
-            campaign_id=campaign.id,
-            group_id=group_id,
-            owner_id=campaign.owner_id,
-            message=message_obj,
-            target=target,
-            topic_id=topic_id,
-            access_hash=group.get("access_hash", 0),
-            campaign_name=campaign_name,
-            account_phone=account_phone,
-        )
+        try:
+            async with asyncio.timeout(per_group_timeout):
+                result = await safe_forward(
+                    client=client,
+                    account_id=account_id,
+                    campaign_id=campaign.id,
+                    group_id=group_id,
+                    owner_id=campaign.owner_id,
+                    message=message_obj,
+                    target=target,
+                    topic_id=topic_id,
+                    access_hash=group.get("access_hash", 0),
+                    campaign_name=campaign_name,
+                    account_phone=account_phone,
+                )
+        except asyncio.TimeoutError:
+            await log.awarning(
+                "forward.group_timeout",
+                group_id=str(target),
+                account_id=account_id,
+            )
+            result = False
+        except asyncio.CancelledError:
+            raise
 
         if result:
             success += 1
@@ -466,20 +490,15 @@ async def forward_to_groups(
             failed += 1
             
         # Log to Group Health
-        await group_health_repo.log_interaction(str(target), success=result)
+        try:
+            await group_health_repo.log_interaction(str(target), success=result)
+        except Exception:
+            pass
 
         # Inter-message delay
         if delay > 0:
-            # Calculate Dynamic Usage Reduction based on account health
-            # Full health (100) -> 1.0x delay
-            # Low health (50) -> 2.0x delay
-            # Critical health (30) -> 3.3x delay
-            health_multiplier = 1.0
-            if health_score < 100:
-                health_multiplier = max(1.0, 100 / max(health_score, 10))
-            
             safe_delay = delay * health_multiplier
             # Base delay + random jitter between 0 and 0.2s for human-like pattern
             await asyncio.sleep(safe_delay + random.uniform(0, 0.2))
 
-    return {"success": success, "failed": failed, "total": len(groups)}
+    return {"success": success, "failed": failed, "skipped": skipped, "total": len(groups)}

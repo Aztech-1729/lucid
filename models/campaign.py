@@ -32,6 +32,7 @@ class CampaignStats(BaseModel):
     total_sent: int = 0
     total_success: int = 0
     total_failed: int = 0
+    total_skipped: int = 0
     last_run_at: Optional[datetime] = None
     last_error: Optional[str] = None
 
