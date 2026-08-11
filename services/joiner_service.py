@@ -20,7 +20,9 @@ from telethon.errors import (
 )
 
 from core.logging import get_logger
+from core.exceptions import CircuitOpenError
 from repositories import accounts_repo, account_groups_repo
+from services.flood_guard import flood_remaining, is_flooded, mark_flood
 from telegram.client_pool import client_pool
 
 log = get_logger("joiner_service")
@@ -75,6 +77,13 @@ async def _run_joiner_task(user_id: int, links: List[str], update_callback: Call
                 
         async def _account_worker(account: Any) -> None:
             account_id = str(account.id)
+            # Skip accounts currently in Telegram flood-wait — don't hammer them
+            if await is_flooded(account_id):
+                remaining = await flood_remaining(account_id)
+                await log.ainfo("joiner.skipping_flooded_account", account_id=account_id, wait_seconds=int(remaining))
+                await _safe_update(failed_inc=len(links))
+                return
+
             for i, link in enumerate(links):
                 clean_link = _sanitize_link(link)
                 if not clean_link:
@@ -113,11 +122,17 @@ async def _run_joiner_task(user_id: int, links: List[str], update_callback: Call
                 except (ChatWriteForbiddenError, InviteRequestSentError):
                     joined_inc = 1
                 except FloodWaitError as e:
-                    await log.awarning("joiner.flood_wait", seconds=e.seconds)
-                    failed_inc = 1
-                    await asyncio.sleep(min(e.seconds, 10))
+                    # Register the flood and stop attempting this account until it clears
+                    await mark_flood(account_id, e.seconds)
+                    await log.awarning("joiner.flood_wait", seconds=e.seconds, account_id=account_id)
+                    failed_inc = len(links) - i  # remaining links will also fail
+                    break
+                except CircuitOpenError:
+                    await log.ainfo("joiner.skipping_circuit_open", account_id=account_id)
+                    failed_inc = len(links) - i
+                    break
                 except Exception as e:
-                    await log.aerror("joiner.error", error=str(e), link=link)
+                    await log.aerror("joiner.error", error=str(e), link=link, account_id=account_id)
                     failed_inc = 1
                 
                 await _safe_update(joined_inc=joined_inc, failed_inc=failed_inc)

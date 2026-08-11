@@ -14,9 +14,11 @@ import asyncio
 from cache import health_cache
 from core.config import get_settings
 from core.constants import HealthState
+from core.exceptions import CircuitOpenError
 from core.logging import get_logger
 from repositories import accounts_repo
 from services import health_service, notification_service
+from services.flood_guard import is_flooded
 from telegram.client_pool import client_pool
 from utils.helpers import now_utc_naive
 from utils.metrics import HEALTH_CHECKS, metrics
@@ -73,6 +75,11 @@ async def check_single_account(account: Any) -> None:
     """
     Check a single account against SpamBot.
     """
+    # Skip accounts in Telegram flood-wait — SpamBot checks would just fail again
+    if await is_flooded(str(account.id)):
+        await log.ainfo("health_worker.skipping_flooded_account", account_id=account.id)
+        return
+
     try:
         async with client_pool.acquire(account.id) as client:
             # Refresh name from Telegram (to catch external changes)
@@ -112,6 +119,9 @@ async def check_single_account(account: Any) -> None:
 
             response_text = messages[0].text or ""  # type: ignore[index]
 
+    except CircuitOpenError:
+        await log.ainfo("health_worker.skipping_circuit_open", account_id=account.id)
+        return  # Circuit breaker OPEN — skip quietly, retry next cycle
     except Exception as exc:
         await log.awarning(
             "health_worker.spambot_error",

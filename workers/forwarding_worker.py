@@ -14,9 +14,11 @@ import asyncio
 from utils.helpers import now_utc_naive
 
 from core.config import get_settings
+from core.exceptions import CircuitOpenError
 from core.logging import get_logger
 from repositories import accounts_repo, campaigns_repo, account_groups_repo
 from services import forwarding_service, rotation_service
+from services.flood_guard import is_flooded
 from telegram.client_pool import client_pool
 from utils.metrics import WORKER_RUNS, metrics
 from core.constants import CampaignStatus
@@ -242,6 +244,11 @@ async def forward_for_account(
     delay: float,
 ) -> dict[str, Any]:
     """Forward message from a specific account to a set of groups."""
+    # Skip accounts in Telegram flood-wait — don't hammer them with sends
+    if await is_flooded(account_id):
+        await log.ainfo("forwarding_worker.skipping_flooded_account", account_id=account_id)
+        return {"success": 0, "failed": len(groups), "total": len(groups)}
+
     try:
         from repositories import accounts_repo as acc_repo
         account = await acc_repo.get(account_id)
@@ -258,6 +265,9 @@ async def forward_for_account(
                     delay=delay,
                     health_score=health_score,
                 )
+    except CircuitOpenError:
+        await log.ainfo("forwarding_worker.skipping_circuit_open", account_id=account_id)
+        return {"success": 0, "failed": len(groups), "total": len(groups)}
     except asyncio.TimeoutError:
         await log.awarning(
             "forwarding_worker.account_timeout",
