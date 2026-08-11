@@ -9,6 +9,7 @@ import typing
 from typing import Any, Callable, Coroutine, cast, Optional
 import asyncio
 from core.constants import CampaignStatus
+from core.config import get_settings
 from core.logging import get_logger
 from repositories import campaigns_repo, users_repo
 
@@ -17,7 +18,8 @@ log = get_logger("subscription_worker")
 async def run_subscription_cycle() -> None:
     """Check all active campaigns, and pause them if the owner's subscription has expired."""
     await log.ainfo("subscription_worker.cycle_start")
-    
+    settings = get_settings()
+
     users_cache: dict[Any, Any] = {}
     paused_count = 0
     
@@ -27,7 +29,7 @@ async def run_subscription_cycle() -> None:
             users_cache[owner_id] = await users_repo.get(owner_id)
             
         user = users_cache[owner_id]
-        if user and not user.is_active():
+        if user and not user.is_active(settings.admin_user_ids, settings.admin_username):
             # Plan expired!
             if not camp.id: continue
             await campaigns_repo.update_status(camp.id, CampaignStatus.PAUSED)

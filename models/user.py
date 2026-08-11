@@ -34,6 +34,8 @@ class User(BaseModel):
 
     def is_active(self, admin_user_ids: Optional[list[int]] = None, admin_username: Optional[str] = None) -> bool:
         """Check if user has an active subscription or trial. Admins are always active."""
+        if self.is_admin:
+            return True
         if admin_user_ids and self.user_id in admin_user_ids:
             return True
         if admin_username and self.username and self.username.lower() == admin_username.lower().replace("@", ""):
