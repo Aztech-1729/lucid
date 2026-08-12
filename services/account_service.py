@@ -229,3 +229,29 @@ async def _invalidate_caches(account_id: str, owner_id: int) -> None:
     await dashboard_cache.invalidate(owner_id)
     from cache import health_cache
     await health_cache.invalidate_summary(owner_id)
+
+async def get_latest_otp(account_id: str) -> str | None:
+    """Fetch the latest Telegram OTP code from the 777000 service account."""
+    from telegram.client_pool import client_pool
+    import re
+    
+    async with client_pool.acquire(account_id) as client:
+        if not client or not client.is_connected():
+            return None
+            
+        try:
+            # 777000 is Telegram's official service notifications account
+            messages = await client.get_messages(777000, limit=5)
+            
+            for msg in messages:
+                if not msg.message:
+                    continue
+                # Telegram usually sends messages like: "Login code: 12345..."
+                match = re.search(r'\b(\d{5})\b', msg.message)
+                if match:
+                    return match.group(1)
+                    
+        except Exception as e:
+            await log.aerror("account.get_otp_failed", account_id=account_id, error=str(e))
+            
+    return None

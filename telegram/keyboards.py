@@ -180,6 +180,10 @@ def account_detail_keyboard(account_id: str, status: str, back_cb: str = CB.ACCO
         rows.append([
             Button.inline(_b("Remove"), f"acc:del:{account_id}", style="danger", icon=5445267414562389170),
         ])
+        
+    rows.append([
+        Button.inline(_b("🔑 Get OTP"), f"acc:otp:{account_id}", style="primary"),
+    ])
 
     rows.append([Button.inline(_b("← Back"), back_cb, style="danger")])
 

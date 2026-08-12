@@ -136,6 +136,18 @@ async def on_account_add(event: events.CallbackQuery.Event) -> None:
     )
     await event.edit(text, buttons=keyboards.back_keyboard(CB.ACCOUNTS), parse_mode="html")
 
+async def on_account_get_otp(event: events.CallbackQuery.Event, account_id: str) -> None:
+    """Fetch the latest Telegram OTP code for this account."""
+    await event.answer("⏳ Fetching OTP...", alert=False)
+    
+    from services.account_service import get_latest_otp
+    otp = await get_latest_otp(account_id)
+    
+    if otp:
+        await event.answer(f"✅ Code: {otp}", alert=True)
+    else:
+        await event.answer("❌ No recent Telegram login code found. Please request a new code and try again.", alert=True)
+
 
 async def on_account_pause(event: events.CallbackQuery.Event, account_id: str) -> None:
     """Confirm account pause."""
@@ -1534,6 +1546,9 @@ async def route_callback(event: events.CallbackQuery.Event) -> None:
     elif data.startswith("acc:view:"):
         account_id = data.split(":", 2)[2]
         await on_account_view(event, account_id)
+    elif data.startswith("acc:otp:"):
+        account_id = data.split(":", 2)[2]
+        await on_account_get_otp(event, account_id)
     elif data.startswith("acc:del:"):
         account_id = data.split(":", 2)[2]
         await on_account_delete(event, account_id)

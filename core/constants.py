@@ -197,6 +197,7 @@ class CB:
     ACCOUNT_HEALTH = "acc:health:{account_id}"
     ACCOUNT_STATS = "acc:stats:{account_id}"
     ACCOUNT_NOTES = "acc:notes:{account_id}"
+    ACCOUNT_GET_OTP = "acc:otp:{account_id}"
     
     # Bulk Account Manager
     BULK_MANAGER = "bulk:manager"

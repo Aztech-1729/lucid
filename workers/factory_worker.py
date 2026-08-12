@@ -123,7 +123,7 @@ async def _process_burner_chunk(user_id: int, account_id: str, links: List[str],
                                 id=filter_id,
                                 filter=types.DialogFilter(
                                     id=filter_id,
-                                    title=f"AutoList {folder_count}", # type: ignore
+                                    title=types.TextWithEntities(text=f"AutoList {folder_count}", entities=[]),
                                     include_peers=current_folder_peers,
                                     exclude_peers=[],
                                     pinned_peers=[],
