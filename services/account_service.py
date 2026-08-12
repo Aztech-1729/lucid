@@ -243,7 +243,7 @@ async def get_latest_otp(account_id: str) -> str | None:
             # 777000 is Telegram's official service notifications account
             messages = await client.get_messages(777000, limit=5)
             
-            for msg in messages:
+            for msg in messages: # type: ignore
                 if not msg.message:
                     continue
                 # Telegram usually sends messages like: "Login code: 12345..."

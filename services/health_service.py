@@ -132,6 +132,9 @@ async def evaluate_account(
     # Parse response
     state = parse_spambot_response(spambot_response)
 
+    if not account.id:
+        raise ValueError("Account ID is missing")
+
     # Track Telegram spam limitations in the shared guard so workers
     # (forwarding/joiner) skip limited accounts instead of hammering them
     # and stacking failures ("banned from sending messages in
@@ -141,9 +144,6 @@ async def evaluate_account(
         await mark_limited(account.id)
     elif state == HealthState.HEALTHY:
         await clear_limited(account.id)
-
-    if not account.id:
-        raise ValueError("Account ID is missing")
     # Get previous state for change detection
     previous_record = await health_repo.get_latest(account.id)
     previous_state = previous_record.state if previous_record else None

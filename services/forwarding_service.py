@@ -55,14 +55,14 @@ async def safe_forward(
 
     This is the core forwarding function used by the forwarding worker.
     """
+    # Keep the raw target (telegram id like "-100...") — after entity
+    # resolution `target` becomes an InputPeer whose str() is
+    # "InputPeerChannel(...)", which never matches is_toxic() lookups.
+    raw_target = str(target)
+    
     for attempt in range(retries):
         try:
             sent_msgs = None
-            
-            # Keep the raw target (telegram id like "-100...") — after entity
-            # resolution `target` becomes an InputPeer whose str() is
-            # "InputPeerChannel(...)", which never matches is_toxic() lookups.
-            raw_target = str(target)
             
             # Resolve target entity
             if isinstance(target, (int, str)):
