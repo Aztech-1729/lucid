@@ -128,12 +128,11 @@ async def select_accounts(
         weights[aid] = float(raw) if raw else 0.5
 
     # Filter out zero-weight accounts AND accounts on FloodWait cooldown
-    from cache.redis_client import cache_get
+    from services.flood_guard import is_flooded
     eligible: dict[str, Any] = {}
     for aid, w in weights.items():
         if w > 0:
-            flood_key = _make_key(RedisKeys.FLOOD_LOCK, account_id=aid)
-            if await cache_get(flood_key):
+            if await is_flooded(aid):
                 await log.ainfo("rotation.skipping_floodwait", account_id=aid)
                 continue
             eligible[aid] = w

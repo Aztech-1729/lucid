@@ -240,14 +240,24 @@ async def get_latest_otp(account_id: str) -> str | None:
             return None
             
         try:
-            # 777000 is Telegram's official service notifications account
-            messages = await client.get_messages(777000, limit=5)
+            messages = None
+            try:
+                messages = await client.get_messages(777000, limit=5)
+            except ValueError:
+                # Telethon might not have 777000 in its entity cache
+                async for dialog in client.iter_dialogs(limit=30):
+                    if dialog.entity and getattr(dialog.entity, 'id', 0) == 777000:
+                        messages = await client.get_messages(dialog.entity, limit=5)
+                        break
             
+            if not messages:
+                return None
+                
             for msg in messages: # type: ignore
                 if not msg.message:
                     continue
-                # Telegram usually sends messages like: "Login code: 12345..."
-                match = re.search(r'\b(\d{5})\b', msg.message)
+                # Relaxed regex to match 5 digits anywhere in the service message
+                match = re.search(r'(\d{5})', msg.message)
                 if match:
                     return match.group(1)
                     
