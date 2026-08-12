@@ -325,6 +325,21 @@ async def safe_forward(
                 return False
 
         except Exception as e:
+            err_str = str(e).lower()
+            
+            # Auto-join discussion group if required
+            if "join the discussion group before commenting" in err_str:
+                try:
+                    from telethon.tl.functions.channels import GetFullChannelRequest, JoinChannelRequest
+                    full_channel = await client(GetFullChannelRequest(target))
+                    if full_channel.full_chat.linked_chat_id:
+                        await log.ainfo("forward.auto_joining_discussion_group", account_id=account_id, target=raw_target)
+                        await client(JoinChannelRequest(full_channel.full_chat.linked_chat_id))
+                        await asyncio.sleep(2 + random.uniform(0, 1))
+                        continue  # Skip failure logging, retry the forward
+                except Exception as join_err:
+                    await log.awarning("forward.auto_join_failed", account_id=account_id, error=str(join_err))
+
             await accounts_repo.increment_counters(account_id, failure=1)
             await analytics_repo.log_forward(
                 campaign_id=campaign_id,
@@ -339,7 +354,6 @@ async def safe_forward(
             await metrics.increment(MESSAGES_FAILED)
             
             # Detect permanent peer/entity errors and mark as restricted
-            err_str = str(e).lower()
             is_permanent = any(keyword in err_str for keyword in [
                 "invalid peer", "not found",
                 "channel private", "payment required",
