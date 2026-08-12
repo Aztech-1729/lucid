@@ -16,7 +16,7 @@ from core.config import get_settings
 from core.logging import get_logger
 from repositories import accounts_repo, campaigns_repo, users_repo
 from services import dashboard_service, health_service, rotation_service
-from utils.formatters import format_account_status, format_health_score, mask_phone
+from utils.formatters import format_account_status, format_health_score
 from utils.metrics import WORKER_RUNS, metrics
 from utils.pagination import Paginator
 
@@ -92,7 +92,7 @@ async def warm_user_cache(user_id: int, force: bool = False) -> None:
                 {
                     "id": a.id,
                     "display_name": a.display_name,
-                    "phone": mask_phone(a.phone),
+                    "phone": a.phone,
                     "status": a.status,
                     "status_display": format_account_status(a.status),
                     "health_score": a.health_score,
@@ -112,7 +112,7 @@ async def warm_user_cache(user_id: int, force: bool = False) -> None:
         await account_cache.set_summary(account.id, {
             "id": account.id,
             "display_name": account.display_name,
-            "phone": mask_phone(account.phone),
+            "phone": account.phone,
             "name": account.name,
             "status": account.status,
             "status_display": format_account_status(account.status),
