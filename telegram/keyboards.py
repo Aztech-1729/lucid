@@ -573,6 +573,7 @@ def health_settings_keyboard(auto_pause: bool) -> list[list[Any]]:
     , style="primary", icon=icon_val)
     return [
         [toggle_btn],
+        [Button.inline(_b("♻️ Clear Toxic Backlog"), CB.HEALTH_CLEAR_TOXIC, style="danger")],
         [Button.inline(_b("← Back"), CB.HEALTH, style="danger")],
     ]
 

@@ -786,6 +786,21 @@ async def on_health_settings_toggle(event: events.CallbackQuery.Event) -> None:
     await event.edit(text, buttons=buttons, parse_mode="html")
 
 
+async def on_health_clear_toxic(event: events.CallbackQuery.Event) -> None:
+    """Show confirmation to clear toxic backlog."""
+    await event.answer()
+    text: str = (
+        "<tg-emoji emoji-id='5445267414562389170'>♻️</tg-emoji> <b>CLEAR TOXIC BACKLOG</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        "Are you sure you want to completely clear the entire health history for all groups?\n\n"
+        "All groups currently marked as 'toxic' will be reset to 100 Health and the bot will attempt to message them again.\n\n"
+        "<tg-emoji emoji-id='5420323339723881652'>⚠️</tg-emoji> This action <b>CANNOT</b> be undone."
+    )
+    from telegram import keyboards
+    buttons = keyboards.confirm_keyboard("clear_toxic", "all")
+    await event.edit(text, buttons=buttons, parse_mode="html")
+
+
 async def on_health_view_all(event: events.CallbackQuery.Event, page: int = 1) -> None:
     """Display paginated list of accounts with health info."""
     await event.answer("Fetching health data...")
@@ -1154,6 +1169,10 @@ async def on_confirm_yes(event: events.CallbackQuery.Event, action: str, target_
             from services import account_service
             await account_service.delete_all_accounts(_uid(event))
             text: str = "<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> All accounts removed."
+        elif action == "clear_toxic":
+            from repositories import group_health_repo
+            count = await group_health_repo.clear_all_health()
+            text: str = f"<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Toxic backlog cleared. Reset health for {count} groups."
         elif action == "delete_limited_accounts":
             from services import account_service
             count = await account_service.delete_limited_accounts(_uid(event))
@@ -1378,6 +1397,8 @@ async def on_confirm_yes(event: events.CallbackQuery.Event, action: str, target_
         back_target = CB.ACCOUNT_VIEW.format(account_id=target_id)
     elif action in ("pause_campaign", "resume_campaign", "select_all_accounts", "unselect_all_accounts"):
         back_target = CB.CAMPAIGN_VIEW.format(campaign_id=target_id)
+    elif action == "clear_toxic":
+        back_target = CB.HEALTH
     else:
         back_target = CB.DASHBOARD
 
@@ -1595,6 +1616,7 @@ async def route_callback(event: events.CallbackQuery.Event) -> None:
         CB.HEALTH_VIEW_ALL: on_health_view_all,
         CB.HEALTH_SETTINGS: on_health_settings,
         CB.HEALTH_SETTINGS_TOGGLE: on_health_settings_toggle,
+        CB.HEALTH_CLEAR_TOXIC: on_health_clear_toxic,
         CB.ANALYTICS: on_analytics,
         CB.BACK: on_back,
         CB.NOOP: on_noop,

@@ -164,6 +164,7 @@ class CB:
     HEALTH_VIEW_ALL = "health:all"
     HEALTH_SETTINGS = "health:settings"
     HEALTH_SETTINGS_TOGGLE = "health:settings:toggle"
+    HEALTH_CLEAR_TOXIC = "health:clear_toxic"
     ANALYTICS = "analytics"
     SETTINGS = "settings"
     GROUPS = "groups"

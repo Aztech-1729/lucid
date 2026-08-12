@@ -97,3 +97,8 @@ async def get_toxic_groups() -> list[str]:
             toxic.append(doc["group_id"])
     return toxic
 
+
+async def clear_all_health() -> int:
+    """Clear the entire group health history. Returns number of deleted records."""
+    result = await _coll().delete_many({})
+    return result.deleted_count
