@@ -300,7 +300,10 @@ def campaign_list_keyboard(
     ])
     if campaigns:
         rows.append([
-            Button.inline(_b("⏸ Pause All"), CB.CAMPAIGN_PAUSE_ALL, style="danger"),
+            Button.inline(_b("▶️ Start All"), CB.CAMPAIGN_START_ALL, style="success"),
+            Button.inline(_b("⏸ Pause All"), CB.CAMPAIGN_PAUSE_ALL, style="warning"),
+        ])
+        rows.append([
             Button.inline(_b("Delete All"), CB.CAMPAIGN_DELETE_ALL, style="danger", icon=5445267414562389170),
         ])
 

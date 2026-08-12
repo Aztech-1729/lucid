@@ -206,6 +206,21 @@ async def pause_all_campaigns(owner_id: int) -> None:
     await log.ainfo("campaign.pause_all", owner_id=owner_id)
 
 
+async def start_all_campaigns(owner_id: int) -> None:
+    """Start all paused/draft campaigns for a user."""
+    campaigns = await campaigns_repo.list_by_owner(owner_id)
+    for c in campaigns:
+        if c.status in (CampaignStatus.PAUSED, CampaignStatus.DRAFT):
+            await campaigns_repo.update_status(str(c.id), CampaignStatus.ACTIVE)
+            
+    # Trigger forwarding instantly
+    from services.forwarding_trigger import trigger_forwarding
+    trigger_forwarding()
+    
+    await _invalidate_caches(owner_id)
+    await log.ainfo("campaign.start_all", owner_id=owner_id)
+
+
 async def delete_all_campaigns(owner_id: int) -> None:
     """Delete all campaigns for a user."""
     campaigns = await campaigns_repo.list_by_owner(owner_id)

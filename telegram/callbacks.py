@@ -567,6 +567,44 @@ async def on_campaign_auto_distribute(event: events.CallbackQuery.Event) -> None
     await on_campaigns(event)
 
 
+async def on_campaign_start_all(event: events.CallbackQuery.Event) -> None:
+    """Start all paused/draft campaigns for the user."""
+    # (Lock removed)
+    from repositories import users_repo
+    from core.config import get_settings
+    
+    user = await users_repo.get(_uid(event))
+    settings = get_settings()
+    
+    if settings.logs_bot_token and user and not user.has_started_logs_bot:
+        bot_username = settings.logs_bot_username
+        if not bot_username:
+            await event.answer("Logs bot username is not configured in the environment.", alert=True)
+            return
+        text: str = (
+            "<tg-emoji emoji-id='5420323339723881652'>⚠️</tg-emoji> <b>Logs Bot Not Started</b>\n\n"
+            "To receive real-time campaign notifications and success logs, "
+            "you must first start the Logs Bot.\n\n"
+            "Please click the button below to start it, then try again."
+        )
+        from telegram import keyboards
+        buttons = keyboards.logs_bot_activation_keyboard(bot_username, "all")
+        try:
+            await event.edit(text, buttons=buttons, parse_mode="html")
+        except Exception as e:
+            if "Message is not modified" in str(e) or "not modified" in str(e).lower():
+                await event.answer("⚠️ You haven't started the Logs Bot yet! Please click the link to start it first.", alert=True)
+            else:
+                raise e
+        return
+
+    await event.answer("▶️ Starting all campaigns...")
+    from services import campaign_service
+    await campaign_service.start_all_campaigns(_uid(event))
+    await event.answer("✅ All campaigns started.", alert=True)
+    await on_campaigns(event)
+
+
 async def on_campaign_pause_all(event: events.CallbackQuery.Event) -> None:
     """Pause all active campaigns for the user."""
     await event.answer("⏸️ Pausing all campaigns...")
@@ -1567,6 +1605,7 @@ async def route_callback(event: events.CallbackQuery.Event) -> None:
         CB.ACCOUNT_EXPORT_SESSIONS: on_account_export_sessions,
         CB.CAMPAIGN_CREATE: on_campaign_create,
         CB.CAMPAIGN_AUTO_DISTRIBUTE: on_campaign_auto_distribute,
+        CB.CAMPAIGN_START_ALL: on_campaign_start_all,
         CB.CAMPAIGN_PAUSE_ALL: on_campaign_pause_all,
         CB.CAMPAIGN_DELETE_ALL: on_campaign_delete_all_confirm,
         CB.CONFIRM_NO: on_confirm_no,
