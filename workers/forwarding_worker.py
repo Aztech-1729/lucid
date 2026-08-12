@@ -18,7 +18,7 @@ from core.exceptions import CircuitOpenError
 from core.logging import get_logger
 from repositories import accounts_repo, campaigns_repo, account_groups_repo
 from services import forwarding_service, rotation_service
-from services.flood_guard import is_flooded
+from services.flood_guard import is_flooded, is_limited
 from telegram.client_pool import client_pool
 from utils.metrics import WORKER_RUNS, metrics
 from core.constants import CampaignStatus
@@ -250,6 +250,12 @@ async def forward_for_account(
     # Skip accounts in Telegram flood-wait — don't hammer them with sends
     if await is_flooded(account_id):
         await log.ainfo("forwarding_worker.skipping_flooded_account", account_id=account_id)
+        return {"success": 0, "failed": 0, "skipped": len(groups), "total": len(groups)}
+
+    # Skip Telegram-limited accounts: every send fails with "banned from
+    # sending messages in supergroups/channels" until the limitation lifts.
+    if await is_limited(account_id):
+        await log.ainfo("forwarding_worker.skipping_limited_account", account_id=account_id)
         return {"success": 0, "failed": 0, "skipped": len(groups), "total": len(groups)}
 
     try:

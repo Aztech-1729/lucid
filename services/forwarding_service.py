@@ -59,6 +59,11 @@ async def safe_forward(
         try:
             sent_msgs = None
             
+            # Keep the raw target (telegram id like "-100...") — after entity
+            # resolution `target` becomes an InputPeer whose str() is
+            # "InputPeerChannel(...)", which never matches is_toxic() lookups.
+            raw_target = str(target)
+            
             # Resolve target entity
             if isinstance(target, (int, str)):
                 resolved = False
@@ -258,7 +263,7 @@ async def safe_forward(
             # Mark this group as permanently restricted so we never try again
             try:
                 from repositories import group_health_repo
-                await group_health_repo.mark_restricted(str(target), reason=type(e).__name__)
+                await group_health_repo.mark_restricted(raw_target, reason=type(e).__name__)
             except Exception:
                 pass
             return False
@@ -344,7 +349,7 @@ async def safe_forward(
             if is_permanent:
                 try:
                     from repositories import group_health_repo
-                    await group_health_repo.mark_restricted(str(target), reason=str(e)[:200])
+                    await group_health_repo.mark_restricted(raw_target, reason=str(e)[:200])
                 except Exception:
                     pass
                 return False

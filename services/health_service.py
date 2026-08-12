@@ -132,6 +132,16 @@ async def evaluate_account(
     # Parse response
     state = parse_spambot_response(spambot_response)
 
+    # Track Telegram spam limitations in the shared guard so workers
+    # (forwarding/joiner) skip limited accounts instead of hammering them
+    # and stacking failures ("banned from sending messages in
+    # supergroups/channels" on every send).
+    from services.flood_guard import clear_limited, mark_limited
+    if state == HealthState.LIMITED:
+        await mark_limited(account.id)
+    elif state == HealthState.HEALTHY:
+        await clear_limited(account.id)
+
     if not account.id:
         raise ValueError("Account ID is missing")
     # Get previous state for change detection
@@ -155,8 +165,16 @@ async def evaluate_account(
     new_status = None
     if state == HealthState.BANNED:
         new_status = AccountStatus.BANNED
+    elif state == HealthState.LIMITED:
+        # Auto-pause limited accounts: every send would fail until the
+        # spam limitation lifts. SpamBot still checks them and they get
+        # re-activated when the limitation clears.
+        new_status = AccountStatus.PAUSED
     elif score < settings.health_pause_threshold:
         new_status = AccountStatus.PAUSED
+    elif previous_state == HealthState.LIMITED:
+        # Limitation lifted or state changed — resume the account
+        new_status = AccountStatus.ACTIVE
 
     await accounts_repo.update_health(account.id, score, new_status)
 

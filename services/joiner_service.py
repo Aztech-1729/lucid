@@ -22,7 +22,7 @@ from telethon.errors import (
 from core.logging import get_logger
 from core.exceptions import CircuitOpenError
 from repositories import accounts_repo, account_groups_repo
-from services.flood_guard import flood_remaining, is_flooded, mark_flood
+from services.flood_guard import flood_remaining, is_flooded, is_limited, mark_flood
 from telegram.client_pool import client_pool
 
 log = get_logger("joiner_service")
@@ -81,6 +81,12 @@ async def _run_joiner_task(user_id: int, links: List[str], update_callback: Call
             if await is_flooded(account_id):
                 remaining = await flood_remaining(account_id)
                 await log.ainfo("joiner.skipping_flooded_account", account_id=account_id, wait_seconds=int(remaining))
+                await _safe_update(failed_inc=len(links))
+                return
+
+            # Skip Telegram-limited accounts — joins will fail/risk the limitation
+            if await is_limited(account_id):
+                await log.ainfo("joiner.skipping_limited_account", account_id=account_id)
                 await _safe_update(failed_inc=len(links))
                 return
 
