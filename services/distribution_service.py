@@ -29,64 +29,60 @@ async def auto_distribute_all_groups(user_id: int) -> dict[str, int]:
     
     account_ids = [str(acc.id) for acc in accounts if acc.id]
     
-    # 2. Fetch all account_groups for these accounts
-    cursor = account_groups_repo._coll().find({"account_id": {"$in": account_ids}})
-    all_docs = [doc async for doc in cursor]
+    results = {}
+    from bson import ObjectId
     
-    # Group by Telegram group_id
-    unique_groups: dict[int, list[dict[str, Any]]] = {}
-    for doc in all_docs:
-        gid = doc.get("group_id")
-        if gid:
-            unique_groups.setdefault(gid, []).append(doc)
-            
     # 3. Fetch all campaigns
     campaigns = await campaigns_repo.list_by_owner(user_id)
     if not campaigns:
         return {}
-        
-    campaign_assignments: dict[str, list[str]] = {str(c.id): [] for c in campaigns if c.id}
-    campaign_counts: dict[str, int] = {str(c.id): 0 for c in campaigns if c.id}
     
-    # 4. Distribute
-    for gid, docs in unique_groups.items():
-        valid_options: list[tuple[str, dict[str, Any]]] = []
-        
-        for c in campaigns:
-            if not c.id:
-                continue
-            c_id = str(c.id)
-            # Find docs that belong to an account assigned to this campaign
-            for doc in docs:
-                if doc.get("account_id") in c.account_ids:
-                    valid_options.append((c_id, doc))
-                    
-        if not valid_options:
+    # Process each campaign independently
+    for c in campaigns:
+        if not c.id or not c.account_ids:
             continue
             
-        # Pick the campaign that currently has the fewest groups
-        # To handle ties fairly, we shuffle valid_options first
-        random.shuffle(valid_options)
-        best_option = min(valid_options, key=lambda opt: campaign_counts[opt[0]])
-        
-        c_id, chosen_doc = best_option
-        campaign_assignments[c_id].append(str(chosen_doc["_id"]))
-        campaign_counts[c_id] += 1
-        
-    # 5. Save updates
-    results = {}
-    from bson import ObjectId
-    for c in campaigns:
-        if not c.id:
-            continue
         c_id = str(c.id)
-        new_groups = campaign_assignments[c_id]
         
+        # 1. Fetch account_groups ONLY for the accounts in this campaign
+        cursor = account_groups_repo._coll().find({"account_id": {"$in": c.account_ids}})
+        camp_docs = [doc async for doc in cursor]
+        
+        # 2. Group by Telegram group_id
+        unique_groups: dict[int, list[dict[str, Any]]] = {}
+        for doc in camp_docs:
+            gid = doc.get("group_id")
+            if gid:
+                unique_groups.setdefault(gid, []).append(doc)
+                
+        # 3. Distribute these unique groups evenly among the accounts in this campaign
+        account_counts: dict[str, int] = {acc_id: 0 for acc_id in c.account_ids}
+        new_group_ids: list[str] = []
+        
+        for gid, docs in unique_groups.items():
+            valid_options = []
+            for doc in docs:
+                acc_id = doc.get("account_id")
+                if acc_id in c.account_ids:
+                    valid_options.append((acc_id, doc))
+                    
+            if not valid_options:
+                continue
+                
+            # Pick the account in this campaign with the fewest groups assigned so far
+            random.shuffle(valid_options)
+            best_option = min(valid_options, key=lambda opt: account_counts[opt[0]])
+            
+            acc_id, chosen_doc = best_option
+            new_group_ids.append(str(chosen_doc["_id"]))
+            account_counts[acc_id] += 1
+            
+        # 4. Save to campaign
         await campaigns_repo._coll().update_one(
             {"_id": ObjectId(c.id)},
-            {"$set": {"group_ids": new_groups}}
+            {"$set": {"group_ids": new_group_ids}}
         )
-        results[c.name] = len(new_groups)
+        results[c.name] = len(new_group_ids)
         
     from services.campaign_service import _invalidate_caches
     await _invalidate_caches(user_id)
