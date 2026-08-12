@@ -219,6 +219,7 @@ class CB:
     # Campaigns
     CAMPAIGN_VIEW = "cmp:view:{campaign_id}"
     CAMPAIGN_CREATE = "cmp:create"
+    CAMPAIGN_AUTO_DISTRIBUTE = "cmp:auto_distribute"
     CAMPAIGN_PAUSE = "cmp:pause:{campaign_id}"
     CAMPAIGN_RESUME = "cmp:resume:{campaign_id}"
     CAMPAIGN_DELETE = "cmp:del:{campaign_id}"

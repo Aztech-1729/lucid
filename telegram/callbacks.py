@@ -548,6 +548,25 @@ async def on_campaign_account_groups(event: events.CallbackQuery.Event, page: in
     )
     await event.edit(text, buttons=keyboards.campaign_account_groups_keyboard(campaign_id, account_id, groups, assigned_group_ids, pagination), parse_mode="html")
 
+async def on_campaign_auto_distribute(event: events.CallbackQuery.Event) -> None:
+    """Trigger the global auto-distribute groups function."""
+    await event.answer("🪄 Auto-distributing groups... Please wait.", alert=False)
+    from services.distribution_service import auto_distribute_all_groups
+    results = await auto_distribute_all_groups(_uid(event))
+    
+    if not results:
+        await event.answer("❌ No campaigns or accounts found to distribute.", alert=True)
+        return
+        
+    msg = "✅ **Groups Auto-Distributed Successfully!**\n\n"
+    for camp_name, count in results.items():
+        msg += f"• **{camp_name}**: {count} groups\n"
+    msg += "\n*No two campaigns will target the same group!*"
+        
+    await event.answer(msg, alert=True)
+    await on_campaigns(event)
+
+
 async def on_campaign_group_bulk(event: events.CallbackQuery.Event, action: str) -> None:
     """Select or clear all groups for the current account in a campaign."""
     await event.answer("Updating groups...")
@@ -1520,6 +1539,7 @@ async def route_callback(event: events.CallbackQuery.Event) -> None:
         CB.ACCOUNT_UPLOAD_SESSIONS: on_account_upload_sessions,
         CB.ACCOUNT_EXPORT_SESSIONS: on_account_export_sessions,
         CB.CAMPAIGN_CREATE: on_campaign_create,
+        CB.CAMPAIGN_AUTO_DISTRIBUTE: on_campaign_auto_distribute,
         CB.CONFIRM_NO: on_confirm_no,
         CB.SETTINGS_AUTOREPLY: on_autoreply_menu,
         CB.SETTINGS_AUTOREPLY_TOGGLE: on_autoreply_toggle,

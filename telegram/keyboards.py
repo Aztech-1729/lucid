@@ -292,6 +292,9 @@ def campaign_list_keyboard(
 
     # Actions
     rows.append([
+        Button.inline(_b("🪄 Auto-Distribute Groups"), CB.CAMPAIGN_AUTO_DISTRIBUTE, style="primary"),
+    ])
+    rows.append([
         Button.inline(_b("New Campaign"), CB.CAMPAIGN_CREATE, style="success", icon=5397916757333654639),
         Button.inline(_b("Refresh"), CB.CAMPAIGNS, style="primary", icon=5386367538735104399),
     ])
