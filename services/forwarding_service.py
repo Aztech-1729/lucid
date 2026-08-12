@@ -406,7 +406,7 @@ async def forward_to_groups(
 
     # Per-group timeout: one slow/hung group must not kill the whole round
     # (a cancelled round loses already-counted successes). Bounded per send.
-    per_group_timeout = max(90.0, float(delay) * health_multiplier + 60.0)
+    per_group_timeout = max(90.0, delay * health_multiplier + 60.0)
 
     message_obj = campaign.message
     # If ad_type is forward, resolve the link to get the message to forward
