@@ -567,6 +567,29 @@ async def on_campaign_auto_distribute(event: events.CallbackQuery.Event) -> None
     await on_campaigns(event)
 
 
+async def on_campaign_pause_all(event: events.CallbackQuery.Event) -> None:
+    """Pause all active campaigns for the user."""
+    await event.answer("⏸️ Pausing all campaigns...")
+    from services import campaign_service
+    await campaign_service.pause_all_campaigns(_uid(event))
+    await event.answer("✅ All campaigns paused.", alert=True)
+    await on_campaigns(event)
+
+
+async def on_campaign_delete_all_confirm(event: events.CallbackQuery.Event) -> None:
+    """Confirm deletion of all campaigns."""
+    await event.answer()
+    text: str = (
+        "<tg-emoji emoji-id='5445267414562389170'>🗑️</tg-emoji> <b>DELETE ALL CAMPAIGNS</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        "Are you sure you want to completely remove <b>ALL</b> your campaigns?\n\n"
+        "<tg-emoji emoji-id='5420323339723881652'>⚠️</tg-emoji> This action <b>CANNOT</b> be undone."
+    )
+    from telegram import keyboards
+    buttons = keyboards.confirm_keyboard("delete_all_campaigns", "all")
+    await event.edit(text, buttons=buttons, parse_mode="html")
+
+
 async def on_campaign_group_bulk(event: events.CallbackQuery.Event, action: str) -> None:
     """Select or clear all groups for the current account in a campaign."""
     await event.answer("Updating groups...")
@@ -1117,6 +1140,10 @@ async def on_confirm_yes(event: events.CallbackQuery.Event, action: str, target_
             from services import campaign_service
             await campaign_service.delete_campaign(target_id, _uid(event))
             text: str = "<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Campaign deleted successfully."
+        elif action == "delete_all_campaigns":
+            from services import campaign_service
+            await campaign_service.delete_all_campaigns(_uid(event))
+            text: str = "<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> All campaigns deleted."
         elif action == "pause_campaign":
             from services import campaign_service
             await campaign_service.pause_campaign(target_id, _uid(event))
@@ -1307,7 +1334,7 @@ async def on_confirm_yes(event: events.CallbackQuery.Event, action: str, target_
     # One-step-back target depends on the confirmed action
     if action in ("delete_account", "delete_all_accounts", "delete_limited_accounts"):
         back_target: str = CB.ACCOUNTS
-    elif action == "delete_campaign":
+    elif action in ("delete_campaign", "delete_all_campaigns"):
         back_target = CB.CAMPAIGNS
     elif action in ("pause_account", "resume_account"):
         back_target = CB.ACCOUNT_VIEW.format(account_id=target_id)
@@ -1540,6 +1567,8 @@ async def route_callback(event: events.CallbackQuery.Event) -> None:
         CB.ACCOUNT_EXPORT_SESSIONS: on_account_export_sessions,
         CB.CAMPAIGN_CREATE: on_campaign_create,
         CB.CAMPAIGN_AUTO_DISTRIBUTE: on_campaign_auto_distribute,
+        CB.CAMPAIGN_PAUSE_ALL: on_campaign_pause_all,
+        CB.CAMPAIGN_DELETE_ALL: on_campaign_delete_all_confirm,
         CB.CONFIRM_NO: on_confirm_no,
         CB.SETTINGS_AUTOREPLY: on_autoreply_menu,
         CB.SETTINGS_AUTOREPLY_TOGGLE: on_autoreply_toggle,

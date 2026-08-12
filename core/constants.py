@@ -224,6 +224,8 @@ class CB:
     CAMPAIGN_RESUME = "cmp:resume:{campaign_id}"
     CAMPAIGN_DELETE = "cmp:del:{campaign_id}"
     CAMPAIGN_DUPLICATE = "cmp:dup:{campaign_id}"
+    CAMPAIGN_PAUSE_ALL = "cmp:pauseall"
+    CAMPAIGN_DELETE_ALL = "cmp:delall"
 
     # Health
     HEALTH_DETAIL = "health:detail:{account_id}"

@@ -196,6 +196,24 @@ async def delete_campaign(campaign_id: str, owner_id: int) -> None:
     await log.ainfo("campaign.deleted", campaign_id=campaign_id)
 
 
+async def pause_all_campaigns(owner_id: int) -> None:
+    """Pause all active campaigns for a user."""
+    campaigns = await campaigns_repo.list_by_owner(owner_id)
+    for c in campaigns:
+        if c.status == CampaignStatus.ACTIVE:
+            await campaigns_repo.update_status(str(c.id), CampaignStatus.PAUSED)
+    await _invalidate_caches(owner_id)
+    await log.ainfo("campaign.pause_all", owner_id=owner_id)
+
+
+async def delete_all_campaigns(owner_id: int) -> None:
+    """Delete all campaigns for a user."""
+    campaigns = await campaigns_repo.list_by_owner(owner_id)
+    for c in campaigns:
+        await campaigns_repo.delete(str(c.id))
+    await _invalidate_caches(owner_id)
+    await log.ainfo("campaign.delete_all", owner_id=owner_id)
+
 async def duplicate_campaign(campaign_id: str, owner_id: int, new_name: str) -> Campaign:
     """Duplicate a campaign with a new name."""
     campaign = await get_campaign(campaign_id)

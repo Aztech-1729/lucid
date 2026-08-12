@@ -298,6 +298,11 @@ def campaign_list_keyboard(
         Button.inline(_b("New Campaign"), CB.CAMPAIGN_CREATE, style="success", icon=5397916757333654639),
         Button.inline(_b("Refresh"), CB.CAMPAIGNS, style="primary", icon=5386367538735104399),
     ])
+    if campaigns:
+        rows.append([
+            Button.inline(_b("⏸ Pause All"), CB.CAMPAIGN_PAUSE_ALL, style="danger"),
+            Button.inline(_b("Delete All"), CB.CAMPAIGN_DELETE_ALL, style="danger", icon=5445267414562389170),
+        ])
 
     rows.append([Button.inline(_b("← Back"), CB.DASHBOARD, style="danger")])
 
