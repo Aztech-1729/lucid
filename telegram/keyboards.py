@@ -301,7 +301,7 @@ def campaign_list_keyboard(
     if campaigns:
         rows.append([
             Button.inline(_b("▶️ Start All"), CB.CAMPAIGN_START_ALL, style="success"),
-            Button.inline(_b("⏸ Pause All"), CB.CAMPAIGN_PAUSE_ALL, style="warning"),
+            Button.inline(_b("⏸ Pause All"), CB.CAMPAIGN_PAUSE_ALL, style="danger"),
         ])
         rows.append([
             Button.inline(_b("Delete All"), CB.CAMPAIGN_DELETE_ALL, style="danger", icon=5445267414562389170),
@@ -482,7 +482,7 @@ def campaign_account_groups_keyboard(
             
         page = pagination.get("page", 1)
         current_row.append(
-            Button.inline(btn_text, f"cmp:grp_tg:{account_id}:{group_id_str}", style="primary" if is_assigned else "secondary", icon=btn_icon)
+            Button.inline(btn_text, f"cmp:grp_tg:{account_id}:{group_id_str}", style="primary" if is_assigned else None, icon=btn_icon)
         )
         
         if len(current_row) == 2:
