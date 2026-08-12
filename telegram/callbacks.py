@@ -134,7 +134,7 @@ async def on_account_add(event: events.CallbackQuery.Event) -> None:
         "Please send the <b>Phone Number</b> of the account you want to add.\n\n"
         "<i>Include the country code (e.g. +91...)</i>"
     )
-    await event.edit(text, buttons=keyboards.back_keyboard(), parse_mode="html")
+    await event.edit(text, buttons=keyboards.back_keyboard(CB.ACCOUNTS), parse_mode="html")
 
 
 async def on_account_pause(event: events.CallbackQuery.Event, account_id: str) -> None:
@@ -222,7 +222,7 @@ async def on_account_health(event: events.CallbackQuery.Event, account_id: str) 
         )
     else:
         text: str = "🩺 No health data available for this account yet."
-    await event.edit(text, buttons=keyboards.back_keyboard(), parse_mode="html")
+    await event.edit(text, buttons=keyboards.back_keyboard(CB.ACCOUNT_VIEW.format(account_id=account_id)), parse_mode="html")
 
 
 async def on_account_stats(event: events.CallbackQuery.Event, account_id: str) -> None:
@@ -242,7 +242,7 @@ async def on_account_stats(event: events.CallbackQuery.Event, account_id: str) -
         )
     else:
         text: str = "<tg-emoji emoji-id='5231200819986047254'>📊</tg-emoji> No statistics available for this account."
-    await event.edit(text, buttons=keyboards.back_keyboard(), parse_mode="html")
+    await event.edit(text, buttons=keyboards.back_keyboard(CB.ACCOUNT_VIEW.format(account_id=account_id)), parse_mode="html")
 
 
 # ── Campaigns ───────────────────────────────────────────────
@@ -250,6 +250,7 @@ async def on_account_stats(event: events.CallbackQuery.Event, account_id: str) -
 async def on_campaigns(event: events.CallbackQuery.Event) -> None:
     """Display the campaign list."""
     await event.answer()  # LINE 1. Non-negotiable.
+    await push_screen(_uid(event), "campaigns")
     page = 1
     data = await campaign_cache.get_page(_uid(event), page)
     if not data:
@@ -312,10 +313,10 @@ async def on_campaign_set_ad(event: events.CallbackQuery.Event, action: str, cam
         await event.edit(text, buttons=keyboards.campaign_set_ad_keyboard(campaign_id, current_ad_type), parse_mode="html")
     elif action == "custom":
         await set_context(_uid(event), "awaiting_input", f"cmp_ad_custom:{campaign_id}")
-        await event.edit("Please send the <b>custom message text</b> for your ad.", buttons=keyboards.back_keyboard(), parse_mode="html")
+        await event.edit("Please send the <b>custom message text</b> for your ad.", buttons=keyboards.back_keyboard(CB.CAMPAIGN_VIEW.format(campaign_id=campaign_id)), parse_mode="html")
     elif action == "forward":
         await set_context(_uid(event), "awaiting_input", f"cmp_ad_forward:{campaign_id}")
-        await event.edit("Please send the <b>post link</b> (e.g. t.me/channel/123) you want to forward.", buttons=keyboards.back_keyboard(), parse_mode="html")
+        await event.edit("Please send the <b>post link</b> (e.g. t.me/channel/123) you want to forward.", buttons=keyboards.back_keyboard(CB.CAMPAIGN_VIEW.format(campaign_id=campaign_id)), parse_mode="html")
 
 async def on_campaign_set_interval(event: events.CallbackQuery.Event, action: str, campaign_id: str) -> None:
     await event.answer()
@@ -324,10 +325,10 @@ async def on_campaign_set_interval(event: events.CallbackQuery.Event, action: st
         await event.edit(text, buttons=keyboards.campaign_set_interval_keyboard(campaign_id), parse_mode="html")
     elif action == "group":
         await set_context(_uid(event), "awaiting_input", f"cmp_int_group:{campaign_id}")
-        await event.edit("Enter the <b>delay between groups</b> in seconds (e.g. 15):", buttons=keyboards.back_keyboard(), parse_mode="html")
+        await event.edit("Enter the <b>delay between groups</b> in seconds (e.g. 15):", buttons=keyboards.back_keyboard(CB.CAMPAIGN_VIEW.format(campaign_id=campaign_id)), parse_mode="html")
     elif action == "round":
         await set_context(_uid(event), "awaiting_input", f"cmp_int_round:{campaign_id}")
-        await event.edit("Enter the <b>delay after a full round</b> in seconds (e.g. 600):", buttons=keyboards.back_keyboard(), parse_mode="html")
+        await event.edit("Enter the <b>delay after a full round</b> in seconds (e.g. 600):", buttons=keyboards.back_keyboard(CB.CAMPAIGN_VIEW.format(campaign_id=campaign_id)), parse_mode="html")
 
 async def on_campaign_set_rounds(event: events.CallbackQuery.Event, action: str, campaign_id: str) -> None:
     await event.answer()
@@ -339,7 +340,7 @@ async def on_campaign_set_rounds(event: events.CallbackQuery.Event, action: str,
         await event.edit(text, buttons=keyboards.campaign_set_rounds_keyboard(campaign_id, max_rounds), parse_mode="html")
     elif action == "max":
         await set_context(_uid(event), "awaiting_input", f"cmp_rounds_max:{campaign_id}")
-        await event.edit("Enter the <b>maximum number of rounds</b> (e.g. 5):", buttons=keyboards.back_keyboard(), parse_mode="html")
+        await event.edit("Enter the <b>maximum number of rounds</b> (e.g. 5):", buttons=keyboards.back_keyboard(CB.CAMPAIGN_VIEW.format(campaign_id=campaign_id)), parse_mode="html")
     elif action == "infinite":
         from services import campaign_service
         await campaign_service.update_campaign(campaign_id, max_rounds=0)
@@ -607,7 +608,7 @@ async def on_campaign_create(event: events.CallbackQuery.Event) -> None:
         "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         "Please send the <b>campaign name</b>."
     )
-    await event.edit(text, buttons=keyboards.back_keyboard(), parse_mode="html")
+    await event.edit(text, buttons=keyboards.back_keyboard(CB.CAMPAIGNS), parse_mode="html")
 
 
 async def on_campaign_pause(event: events.CallbackQuery.Event, campaign_id: str) -> None:
@@ -644,7 +645,7 @@ async def on_campaign_duplicate(event: events.CallbackQuery.Event, campaign_id: 
         "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         "Please send a <b>name</b> for the new campaign."
     )
-    await event.edit(text, buttons=keyboards.back_keyboard(), parse_mode="html")
+    await event.edit(text, buttons=keyboards.back_keyboard(CB.CAMPAIGN_VIEW.format(campaign_id=campaign_id)), parse_mode="html")
 
 
 # ── Health ──────────────────────────────────────────────────
@@ -652,6 +653,7 @@ async def on_campaign_duplicate(event: events.CallbackQuery.Event, campaign_id: 
 async def on_health(event: events.CallbackQuery.Event) -> None:
     """Display health overview."""
     await event.answer()  # LINE 1. Non-negotiable.
+    await push_screen(_uid(event), "health")
     data = await health_cache.get_summary(_uid(event))
     if not data:
         from workers.cache_worker import warm_user_cache
@@ -718,7 +720,8 @@ async def on_health_view_all(event: events.CallbackQuery.Event, page: int = 1) -
         pagination, 
         action_prefix="acc:view", 
         show_actions=False,
-        screen="health_all"
+        screen="health_all",
+        back_cb=CB.HEALTH
     )
     await event.edit(text, buttons=buttons, parse_mode="html")
 
@@ -762,12 +765,12 @@ async def on_ai_confirm(event: events.CallbackQuery.Event, action_id: str) -> No
                 await client_pool.evict(account_id)
                 from repositories import accounts_repo
                 await accounts_repo.delete(account_id)
-                await event.edit("<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Account deleted successfully.", buttons=keyboards.back_keyboard())
+                await event.edit("<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Account deleted successfully.", buttons=keyboards.back_keyboard(CB.ACCOUNTS))
         elif action_type == "create_campaign":
             from repositories import campaigns_repo
             try:
                 await campaigns_repo.create(payload)
-                await event.edit(f"<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Campaign '{payload.get('name')}' created successfully.", buttons=keyboards.back_keyboard())
+                await event.edit(f"<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Campaign '{payload.get('name')}' created successfully.", buttons=keyboards.back_keyboard(CB.CAMPAIGNS))
             except ValueError as e:
                 await event.answer(str(e), alert=True)
                 return
@@ -777,41 +780,41 @@ async def on_ai_confirm(event: events.CallbackQuery.Event, action_id: str) -> No
             if campaign_id and status:
                 from repositories import campaigns_repo
                 await campaigns_repo.update_status(campaign_id, status)
-                await event.edit(f"<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Campaign status updated to {status}.", buttons=keyboards.back_keyboard())
+                await event.edit(f"<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Campaign status updated to {status}.", buttons=keyboards.back_keyboard(CB.CAMPAIGN_VIEW.format(campaign_id=campaign_id)))
         elif action_type == "edit_campaign_interval":
             campaign_id = payload.get("campaign_id")
             delay = payload.get("group_delay_seconds")
             if campaign_id and delay is not None:
                 from repositories import campaigns_repo
                 await campaigns_repo.update_fields(campaign_id, {"group_delay_seconds": int(delay)})
-                await event.edit(f"<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Campaign interval updated to {delay}s.", buttons=keyboards.back_keyboard())
+                await event.edit(f"<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Campaign interval updated to {delay}s.", buttons=keyboards.back_keyboard(CB.CAMPAIGN_VIEW.format(campaign_id=campaign_id)))
         elif action_type == "delete_campaign":
             campaign_id = payload.get("campaign_id")
             if campaign_id:
                 from repositories import campaigns_repo
                 await campaigns_repo.delete(campaign_id)
-                await event.edit("<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Campaign deleted successfully.", buttons=keyboards.back_keyboard())
+                await event.edit("<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Campaign deleted successfully.", buttons=keyboards.back_keyboard(CB.CAMPAIGNS))
         elif action_type == "edit_campaign_message":
             campaign_id = payload.get("campaign_id")
             message = payload.get("message")
             if campaign_id and message is not None:
                 from repositories import campaigns_repo
                 await campaigns_repo.update_fields(campaign_id, {"message": message})
-                await event.edit("<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Campaign message updated successfully.", buttons=keyboards.back_keyboard())
+                await event.edit("<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Campaign message updated successfully.", buttons=keyboards.back_keyboard(CB.CAMPAIGN_VIEW.format(campaign_id=campaign_id)))
         elif action_type == "edit_campaign_accounts":
             campaign_id = payload.get("campaign_id")
             account_ids = payload.get("account_ids")
             if campaign_id and account_ids is not None:
                 from repositories import campaigns_repo
                 await campaigns_repo.update_fields(campaign_id, {"account_ids": account_ids})
-                await event.edit("<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Campaign accounts updated successfully.", buttons=keyboards.back_keyboard())
+                await event.edit("<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Campaign accounts updated successfully.", buttons=keyboards.back_keyboard(CB.CAMPAIGN_VIEW.format(campaign_id=campaign_id)))
         elif action_type == "pause_all_campaigns":
             from repositories import campaigns_repo
             campaigns = await campaigns_repo.list_by_owner(_uid(event))
             for c in campaigns:
                 if getattr(c, "status", "") == "ACTIVE" and c.id:
                     await campaigns_repo.update_status(c.id, CampaignStatus.PAUSED)
-            await event.edit("<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> All active campaigns have been paused.", buttons=keyboards.back_keyboard())
+            await event.edit("<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> All active campaigns have been paused.", buttons=keyboards.back_keyboard(CB.CAMPAIGNS))
         else:
             await event.edit(f"<tg-emoji emoji-id='5420323339723881652'>⚠️</tg-emoji> Unknown action type: {action_type}", buttons=keyboards.back_keyboard())
     except Exception as e:
@@ -899,6 +902,7 @@ async def on_groups_checker_cancel(event: events.CallbackQuery.Event) -> None:
 async def on_analytics(event: events.CallbackQuery.Event) -> None:
     """Display analytics overview."""
     await event.answer("Refreshing analytics...")  # LINE 1. Non-negotiable.
+    await push_screen(_uid(event), "analytics")
     user_id = _uid(event)
     
     # Get synchronized data from dashboard service/cache
@@ -1269,7 +1273,19 @@ async def on_confirm_yes(event: events.CallbackQuery.Event, action: str, target_
     except Exception as exc:
         text: str = f"<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> Error: {str(exc)}"
 
-    await event.edit(text, buttons=keyboards.back_keyboard(), parse_mode="html")
+    # One-step-back target depends on the confirmed action
+    if action in ("delete_account", "delete_all_accounts", "delete_limited_accounts"):
+        back_target: str = CB.ACCOUNTS
+    elif action == "delete_campaign":
+        back_target = CB.CAMPAIGNS
+    elif action in ("pause_account", "resume_account"):
+        back_target = CB.ACCOUNT_VIEW.format(account_id=target_id)
+    elif action in ("pause_campaign", "resume_campaign", "select_all_accounts", "unselect_all_accounts"):
+        back_target = CB.CAMPAIGN_VIEW.format(campaign_id=target_id)
+    else:
+        back_target = CB.DASHBOARD
+
+    await event.edit(text, buttons=keyboards.back_keyboard(back_target), parse_mode="html")
 
 async def on_pay_profile(event: events.CallbackQuery.Event) -> None:
     from core.config import get_settings

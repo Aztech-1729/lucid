@@ -74,8 +74,10 @@ async def set_state(state: UserState) -> None:
 async def push_screen(user_id: int, screen: str, context: dict[str, Any] | None = None) -> None:
     """Navigate to a new screen, pushing current to back stack."""
     state = await get_state(user_id)
-    state.nav_stack.append(state.screen)
-    state.screen = screen
+    if state.screen != screen:
+        # Avoid duplicate pushes when the same screen re-renders
+        state.nav_stack.append(state.screen)
+        state.screen = screen
     if context:
         # Merge context instead of overwriting
         state.context.update(context)

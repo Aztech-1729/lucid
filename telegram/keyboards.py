@@ -88,7 +88,8 @@ def account_list_keyboard(
     pagination: dict[str, Any],
     action_prefix: str = "acc:view",
     show_actions: bool = True,
-    screen: str = "accounts"
+    screen: str = "accounts",
+    back_cb: str = CB.DASHBOARD
 ) -> list[list[Any]]:
     """Account list with account buttons, pagination, and actions."""
     rows: list[list[Any]] = []
@@ -154,7 +155,7 @@ def account_list_keyboard(
         ])
 
     # Back
-    rows.append([Button.inline(_b("← Back"), CB.DASHBOARD, style="danger")])
+    rows.append([Button.inline(_b("← Back"), back_cb, style="danger")])
 
     return rows
 
