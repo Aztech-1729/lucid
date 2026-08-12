@@ -39,7 +39,7 @@ async def on_dashboard(event: events.CallbackQuery.Event) -> None:
     data = await dashboard_cache.get(_uid(event))
     if not data:
         from workers.cache_worker import warm_user_cache
-        await warm_user_cache(_uid(event))
+        await warm_user_cache(_uid(event), force=True)
         data = await dashboard_cache.get(_uid(event))
         
     text: str = menus.render_dashboard(data)
@@ -68,7 +68,7 @@ async def on_accounts(event: events.CallbackQuery.Event) -> None:
     if not data or not data.get("accounts"):
         # Cache is cold or empty — warm it and re-read for instant results
         from workers.cache_worker import warm_user_cache
-        await warm_user_cache(_uid(event))
+        await warm_user_cache(_uid(event), force=True)
         data = await account_cache.get_page(_uid(event), page)
 
     text: str = menus.render_account_list(data)
@@ -254,7 +254,7 @@ async def on_campaigns(event: events.CallbackQuery.Event) -> None:
     data = await campaign_cache.get_page(_uid(event), page)
     if not data:
         from workers.cache_worker import warm_user_cache
-        await warm_user_cache(_uid(event))
+        await warm_user_cache(_uid(event), force=True)
         data = await campaign_cache.get_page(_uid(event), page)
         
     campaigns_list = data.get("campaigns", []) if data else []
@@ -352,7 +352,7 @@ async def on_campaign_manage_accounts(event: events.CallbackQuery.Event, campaig
     data = await account_cache.get_page(_uid(event), page)
     if not data:
         from workers.cache_worker import warm_user_cache
-        await warm_user_cache(_uid(event))
+        await warm_user_cache(_uid(event), force=True)
         data = await account_cache.get_page(_uid(event), page)
 
     campaign = await _get_campaign_summary(campaign_id)
@@ -655,7 +655,7 @@ async def on_health(event: events.CallbackQuery.Event) -> None:
     data = await health_cache.get_summary(_uid(event))
     if not data:
         from workers.cache_worker import warm_user_cache
-        await warm_user_cache(_uid(event))
+        await warm_user_cache(_uid(event), force=True)
         data = await health_cache.get_summary(_uid(event))
         
     text: str = menus.render_health_overview(data)
@@ -702,7 +702,7 @@ async def on_health_view_all(event: events.CallbackQuery.Event, page: int = 1) -
     data = await account_cache.get_page(_uid(event), page)
     if not data:
         from workers.cache_worker import warm_user_cache
-        await warm_user_cache(_uid(event))
+        await warm_user_cache(_uid(event), force=True)
         data = await account_cache.get_page(_uid(event), page)
 
     accounts = data.get("accounts", []) if data else []

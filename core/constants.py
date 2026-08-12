@@ -144,7 +144,7 @@ ROTATION_WEIGHT_FLOOD: float = 0.20
 
 # ── Cache TTLs (seconds) ───────────────────────────────────
 
-TTL_DASHBOARD: int = 180
+TTL_DASHBOARD: int = 300
 TTL_ACCOUNT_SUMMARY: int = 300
 TTL_HEALTH_SUMMARY: int = 300
 TTL_ANALYTICS: int = 600

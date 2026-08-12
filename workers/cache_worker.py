@@ -64,15 +64,17 @@ async def run_cache_cycle() -> None:
     await log.ainfo("cache_worker.cycle_complete", users=len(user_ids))
 
 
-async def warm_user_cache(user_id: int) -> None:
+async def warm_user_cache(user_id: int, force: bool = False) -> None:
     """Pre-warm all caches for a single user.
 
     Debounced: skips if refreshed within the last _WARM_INTERVAL_SECS.
+    Pass force=True when a cache miss was just observed (callback
+    fallback path) so the warm is never skipped and clicks stay instant.
     """
     import time
     now = time.monotonic()
     last = _last_warmed.get(user_id, 0.0)
-    if now - last < _WARM_INTERVAL_SECS:
+    if not force and now - last < _WARM_INTERVAL_SECS:
         return
     _last_warmed[user_id] = now
 

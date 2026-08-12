@@ -251,7 +251,7 @@ async def handle_cmp_ad_custom(event: Any, campaign_id: str) -> None:
     await event.respond("<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> <b>Custom message saved!</b>", parse_mode="html")
 
     from workers.cache_worker import warm_user_cache
-    await warm_user_cache(event.sender_id)
+    await warm_user_cache(event.sender_id, force=True)
     data = await campaign_cache.get_summary(campaign_id)
     text: str = render_campaign_detail(data)
     buttons = campaign_detail_keyboard(campaign_id, data.get("status", "UNKNOWN") if data else "UNKNOWN")
@@ -270,7 +270,7 @@ async def handle_cmp_ad_forward(event: Any, campaign_id: str) -> None:
     await event.respond("<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> <b>Forward link saved!</b>", parse_mode="html")
 
     from workers.cache_worker import warm_user_cache
-    await warm_user_cache(event.sender_id)
+    await warm_user_cache(event.sender_id, force=True)
     data = await campaign_cache.get_summary(campaign_id)
     text: str = render_campaign_detail(data)
     buttons = campaign_detail_keyboard(campaign_id, data.get("status", "UNKNOWN") if data else "UNKNOWN")
@@ -289,7 +289,7 @@ async def handle_cmp_int_group(event: Any, campaign_id: str) -> None:
         await event.respond("<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> <b>Group delay saved!</b>", parse_mode="html")
 
         from workers.cache_worker import warm_user_cache
-        await warm_user_cache(event.sender_id)
+        await warm_user_cache(event.sender_id, force=True)
         data = await campaign_cache.get_summary(campaign_id)
         text: str = render_campaign_detail(data)
         buttons = campaign_detail_keyboard(campaign_id, data.get("status", "UNKNOWN") if data else "UNKNOWN")
@@ -310,7 +310,7 @@ async def handle_cmp_int_round(event: Any, campaign_id: str) -> None:
         await event.respond("<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> <b>Round delay saved!</b>", parse_mode="html")
 
         from workers.cache_worker import warm_user_cache
-        await warm_user_cache(event.sender_id)
+        await warm_user_cache(event.sender_id, force=True)
         data = await campaign_cache.get_summary(campaign_id)
         text: str = render_campaign_detail(data)
         buttons = campaign_detail_keyboard(campaign_id, data.get("status", "UNKNOWN") if data else "UNKNOWN")
@@ -331,7 +331,7 @@ async def handle_cmp_rounds_max(event: Any, campaign_id: str) -> None:
         await event.respond("<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> <b>Max rounds saved!</b>", parse_mode="html")
 
         from workers.cache_worker import warm_user_cache
-        await warm_user_cache(event.sender_id)
+        await warm_user_cache(event.sender_id, force=True)
         data = await campaign_cache.get_summary(campaign_id)
         text: str = render_campaign_detail(data)
         buttons = campaign_detail_keyboard(campaign_id, data.get("status", "UNKNOWN") if data else "UNKNOWN")
