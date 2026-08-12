@@ -88,5 +88,8 @@ async def auto_distribute_all_groups(user_id: int) -> dict[str, int]:
         )
         results[c.name] = len(new_groups)
         
+    from services.campaign_service import _invalidate_caches
+    await _invalidate_caches(user_id)
+        
     await log.ainfo("distribution.completed", user_id=user_id, total_unique=len(unique_groups), distributions=results)
     return results
