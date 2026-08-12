@@ -158,8 +158,8 @@ async def _import_single_session_file(owner_id: int, file_path: str, is_burner: 
         # 2. Handle Conversion
         if is_pyrogram and dc_id and auth_key:
             # Convert Pyrogram auth_key to Telethon StringSession
-            # Telethon StringSession (v1): 
-            # [1 byte: version] + [1 byte: dc_id] + [ip length + ip] + [2 bytes: port] + [256 bytes: auth_key]
+            # Telethon StringSession format:
+            # '1' + base64(urlsafe_b64encode(struct.pack('>B{}sH256s', dc_id, ip_bytes, port, auth_key)))
             # Pyrogram stores raw auth_key (256 bytes)
             
             # Default IPs for Telegram DCs (Production)
@@ -172,17 +172,14 @@ async def _import_single_session_file(owner_id: int, file_path: str, is_burner: 
             }
             ip = dc_ips.get(dc_id, "149.154.167.50") # Default to DC2
             
-            # Construct Telethon v1 String
-            import socket
-            ip_bytes = socket.inet_aton(ip)
+            # Construct Telethon v1 String - match Telethon's exact format
+            import ipaddress
+            ip_bytes = ipaddress.ip_address(ip).packed
             
-            # Version(1) + DC(1) + IP_LEN(1) + IP(...) + PORT(2) + KEY(256)
-            data = struct.pack(">BB", 1, dc_id)
-            data += struct.pack(">B", len(ip_bytes)) + ip_bytes
-            data += struct.pack(">H", 443) # Default port
-            data += auth_key
-            
-            raw_string = base64.urlsafe_b64encode(data).decode('ascii')
+            # Telethon format: dc_id (1 byte) + ip (4 or 16 bytes) + port (2 bytes) + auth_key (256 bytes)
+            # Version '1' is a prefix character, NOT part of the binary data
+            data = struct.pack(f">B{len(ip_bytes)}sH256s", dc_id, ip_bytes, 443, auth_key)
+            raw_string = '1' + base64.urlsafe_b64encode(data).decode('ascii')
             
         elif is_telethon and dc_id and server_address and port and auth_key:
             import socket
