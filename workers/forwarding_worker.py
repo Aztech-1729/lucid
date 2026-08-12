@@ -266,7 +266,7 @@ async def forward_for_account(
         health_multiplier = 1.0
         if health_score < 100:
             health_multiplier = max(1.0, 100 / max(health_score, 10))
-        per_group_estimate = max(10.0, float(delay or 2.0) * health_multiplier) + 15.0
+        per_group_estimate = max(10.0, (delay or 2.0) * health_multiplier) + 15.0
         round_budget = max(300.0, len(groups) * per_group_estimate + 120.0)
 
         async with asyncio.timeout(round_budget):
