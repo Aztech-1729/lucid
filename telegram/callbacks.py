@@ -288,7 +288,7 @@ async def on_account_mails_check(event: events.CallbackQuery.Event, account_id: 
     """Check the latest emails for the account's secure email."""
     await event.answer("Checking inbox... ⏳")
     from repositories import accounts_repo
-    from services.mailtm_client import get_token, get_messages, get_message
+    from services.email_client import get_messages, get_message
     
     acc = await accounts_repo.get(account_id)
     if not acc or not acc.recovery_email:
@@ -296,8 +296,7 @@ async def on_account_mails_check(event: events.CallbackQuery.Event, account_id: 
         return
         
     try:
-        token = await get_token(acc.recovery_email, "aztech")
-        msgs = await get_messages(token)
+        msgs = await get_messages(acc.recovery_email)
         
         if not msgs:
             text = "📭 <b>Inbox is empty.</b>"
@@ -306,10 +305,10 @@ async def on_account_mails_check(event: events.CallbackQuery.Event, account_id: 
             # Get up to 3 latest messages
             for m in msgs[:3]:
                 # Fetch full to get text preview if needed
-                full_m = await get_message(token, m["id"])
-                subject = full_m.get("subject", "No Subject")
+                text_preview = await get_message(acc.recovery_email, m["messageID"])
+                subject = m.get("subject", "No Subject")
                 # text can be long, so truncate it
-                body = full_m.get("text", full_m.get("intro", ""))[:200]
+                body = text_preview[:200]
                 text += f"🔹 <b>{subject}</b>\n<code>{body}</code>\n\n"
     except Exception as e:
         text = f"❌ Error checking mail: {str(e)}"
@@ -1599,7 +1598,7 @@ async def on_bulk_action(event: events.CallbackQuery.Event, action: str) -> None
         await set_context(_uid(event), "awaiting_input", "bulk_secure_email")
         text_body = (
             "🔒 <b>Secure Email Setup</b>\n\n"
-            "This will create a permanent mail.tm email for all accounts and set it as the recovery email. "
+            "This will create a permanent @gmail.com alias for all accounts and set it as the recovery email. "
             "Because this requires 2FA to be enabled, you must provide a 2FA password to set.\n\n"
             "<i>Note: If an account already has 2FA enabled, it will be skipped automatically.</i>\n\n"
             "Please send the <b>2FA Password</b> you want to set for these accounts:"
