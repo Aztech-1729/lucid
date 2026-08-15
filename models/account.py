@@ -39,6 +39,7 @@ class Account(BaseModel):
     session: str = ""                       # Fernet-encrypted session string
     is_forwarding: bool = False             # Currently forwarding?
     two_fa_password: str = ""               # 2FA password if set
+    recovery_email: str = ""                # mail.tm recovery email
     added_at: datetime = Field(default_factory=now_utc_naive)
     round_num: int = 0                      # Forwarding round counter
     telegram_id: Optional[int] = None       # Telegram User ID

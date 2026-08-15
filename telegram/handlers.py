@@ -469,3 +469,27 @@ async def handle_bulk_2fa_set(event: events.NewMessage.Event) -> None:
     import asyncio
     asyncio.create_task(run_task())
     await set_context(event.sender_id, "awaiting_input", None)
+
+
+async def handle_bulk_secure_email(event: events.NewMessage.Event) -> None:
+    text: str = event.text.strip()
+    from telegram.menus import render_bulk_progress
+    from telegram.keyboards import bulk_progress_keyboard, bulk_manager_keyboard
+    msg = await event.respond(render_bulk_progress("Secure Email Setup", 0, 0, 0), buttons=bulk_progress_keyboard(), parse_mode="html")
+    from services import bulk_service
+
+    async def run_task():
+        async def update_progress(success: int, failed: int, total: int):
+            try:
+                await msg.edit(render_bulk_progress("Secure Email Setup", success, failed, total), buttons=bulk_progress_keyboard(), parse_mode="html")
+            except Exception:
+                pass
+        success, failed = await bulk_service.bulk_secure_email(event.sender_id, text, progress_callback=update_progress)
+        try:
+            await msg.edit(render_bulk_progress("Secure Email Setup", success, failed, success + failed, "<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Completed!"), buttons=bulk_manager_keyboard(), parse_mode="html")
+        except Exception:
+            pass
+
+    import asyncio
+    asyncio.create_task(run_task())
+    await set_context(event.sender_id, "awaiting_input", None)

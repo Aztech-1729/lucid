@@ -215,7 +215,13 @@ class CB:
     BULK_2FA = "bulk:2fa"
     BULK_2FA_SET = "bulk:2fa:set"
     BULK_2FA_REMOVE = "bulk:2fa:remove"
+    BULK_SECURE_EMAIL = "bulk:secure_email"
     BULK_CANCEL = "bulk:cancel"
+    
+    # Account Mails
+    ACCOUNT_MAILS_LIST = "mails:list"
+    ACCOUNT_MAILS_VIEW = "mails:view:{account_id}"
+    ACCOUNT_MAILS_CHECK = "mails:check:{account_id}"
 
     # Campaigns
     CAMPAIGN_VIEW = "cmp:view:{campaign_id}"

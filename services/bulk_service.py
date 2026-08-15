@@ -205,3 +205,43 @@ async def bulk_remove_2fa(owner_id: int, progress_callback: Any = None) -> tuple
         await client.edit_2fa(new_password=None)
 
     return await _execute_bulk(owner_id, _action, progress_callback)
+
+
+async def bulk_secure_email(owner_id: int, new_2fa_password: str, progress_callback: Any = None) -> tuple[int, int]:
+    """Bulk setup mail.tm secure email as 2FA recovery email."""
+    from telethon.tl.functions.account import GetPasswordRequest
+    from services.mailtm_client import get_domain, create_account, get_token, wait_for_otp
+    from repositories.accounts_repo import update_security_info
+    import time
+    
+    async def _action(client: Any, acc: Any) -> None:
+        # Check if 2FA is already enabled
+        pwd = await client(GetPasswordRequest())
+        if pwd.has_password:
+            raise ValueError("2FA is already enabled. Skipping.")
+            
+        # 1. Create a secure email using mail.tm
+        domain = await get_domain()
+        username = f"acc_{acc.id}_{int(time.time())}"
+        address = f"{username}@{domain}"
+        
+        await create_account(address, "aztech")
+        token = await get_token(address, "aztech")
+        
+        # 2. Setup email verification callback
+        async def email_code_callback(length: int) -> str:
+            # Poll the inbox using the mail.tm JWT
+            return await wait_for_otp(token, timeout=120)
+            
+        # 3. Set the 2FA password and recovery email via Telethon
+        # Warning: this might be slow due to crypto
+        await client.edit_2fa(
+            new_password=new_2fa_password,
+            email=address,
+            email_code_callback=email_code_callback
+        )
+        
+        # 4. Save to database
+        await update_security_info(str(acc.id), new_2fa_password, address)
+        
+    return await _execute_bulk(owner_id, _action, progress_callback)

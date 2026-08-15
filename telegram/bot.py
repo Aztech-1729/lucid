@@ -35,6 +35,7 @@ from telegram.handlers import (
     handle_bulk_bio,
     handle_bulk_photo,
     handle_bulk_2fa_set,
+    handle_bulk_secure_email,
 )
 from telegram.states import get_context, set_context
 from utils.helpers import now_utc_naive
@@ -787,6 +788,8 @@ def _register_handlers(bot: TelegramClient) -> None:
                 await handle_bulk_photo(event)
             elif awaiting == "bulk_2fa_set":
                 await handle_bulk_2fa_set(event)
+            elif awaiting == "bulk_secure_email":
+                await handle_bulk_secure_email(event)
         except Exception as exc:
             await event.respond(f"<tg-emoji emoji-id='5260293700088511294'>❌</tg-emoji> Error: {str(exc)}", parse_mode="html")
             await set_context(user_id, "awaiting_input", None)

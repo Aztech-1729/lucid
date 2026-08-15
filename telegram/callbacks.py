@@ -237,6 +237,91 @@ async def on_account_health(event: events.CallbackQuery.Event, account_id: str) 
     await event.edit(text, buttons=keyboards.back_keyboard(CB.ACCOUNT_VIEW.format(account_id=account_id)), parse_mode="html")
 
 
+async def on_account_mails_list(event: events.CallbackQuery.Event, page: int = 1) -> None:
+    """Show paginated list of accounts with secure emails."""
+    await event.answer()
+    from repositories import accounts_repo
+    accounts = await accounts_repo.list_by_owner(_uid(event))
+    
+    # Filter only accounts with recovery_email
+    mail_accounts = [acc for acc in accounts if acc.recovery_email]
+    
+    # Pagination logic
+    limit = 10
+    total = len(mail_accounts)
+    total_pages = max(1, (total + limit - 1) // limit)
+    page = max(1, min(page, total_pages))
+    start_idx = (page - 1) * limit
+    page_accounts = mail_accounts[start_idx : start_idx + limit]
+    
+    pagination = {"current_page": page, "total_pages": total_pages}
+    
+    text = (
+        "📧 <b>Account Mails</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"Total secure emails configured: <b>{total}</b>\n"
+        "Select an account to view details or check the inbox."
+    )
+    await event.edit(text, buttons=keyboards.account_mails_list_keyboard(page_accounts, pagination), parse_mode="html")
+
+
+async def on_account_mails_view(event: events.CallbackQuery.Event, account_id: str) -> None:
+    """View details of a specific account's secure email."""
+    await event.answer()
+    from repositories import accounts_repo
+    acc = await accounts_repo.get(account_id)
+    if not acc:
+        await event.answer("Account not found.", alert=True)
+        return
+        
+    text = (
+        "📧 <b>Mail Details</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"📱 Phone: <b>{acc.phone or 'Unknown'}</b>\n"
+        f"✉️ Email: <b>{acc.recovery_email}</b>\n"
+        f"🔐 2FA Password: <code>{acc.two_fa_password}</code>\n"
+    )
+    await event.edit(text, buttons=keyboards.account_mails_detail_keyboard(account_id), parse_mode="html")
+
+
+async def on_account_mails_check(event: events.CallbackQuery.Event, account_id: str) -> None:
+    """Check the latest emails for the account's secure email."""
+    await event.answer("Checking inbox... ⏳")
+    from repositories import accounts_repo
+    from services.mailtm_client import get_token, get_messages, get_message
+    
+    acc = await accounts_repo.get(account_id)
+    if not acc or not acc.recovery_email:
+        await event.answer("No secure email found.", alert=True)
+        return
+        
+    try:
+        token = await get_token(acc.recovery_email, "aztech")
+        msgs = await get_messages(token)
+        
+        if not msgs:
+            text = "📭 <b>Inbox is empty.</b>"
+        else:
+            text = "📬 <b>Latest Emails:</b>\n\n"
+            # Get up to 3 latest messages
+            for m in msgs[:3]:
+                # Fetch full to get text preview if needed, but 'intro' is usually enough
+                full_m = await get_message(token, m["id"])
+                subject = full_m.get("subject", "No Subject")
+                intro = full_m.get("intro", "")
+                text += f"🔹 <b>{subject}</b>\n<i>{intro}</i>\n\n"
+    except Exception as e:
+        text = f"❌ Error checking mail: {str(e)}"
+        
+    # Append the back buttons
+    final_text = (
+        f"📧 <b>Inbox for {acc.recovery_email}</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"{text}"
+    )
+    await event.edit(final_text, buttons=keyboards.account_mails_detail_keyboard(account_id), parse_mode="html")
+
+
 async def on_account_stats(event: events.CallbackQuery.Event, account_id: str) -> None:
     """Display account statistics."""
     await event.answer()  # LINE 1. Non-negotiable.
@@ -1509,6 +1594,16 @@ async def on_bulk_action(event: events.CallbackQuery.Event, action: str) -> None
     elif action == "2fa:set":
         await set_context(_uid(event), "awaiting_input", "bulk_2fa_set")
         await event.edit("Please send the <b>new 2FA Password</b> for all accounts.", buttons=keyboards.back_keyboard(CB.BULK_MANAGER), parse_mode="html")
+    elif action == "secure_email":
+        await set_context(_uid(event), "awaiting_input", "bulk_secure_email")
+        text_body = (
+            "🔒 <b>Secure Email Setup</b>\n\n"
+            "This will create a permanent mail.tm email for all accounts and set it as the recovery email. "
+            "Because this requires 2FA to be enabled, you must provide a 2FA password to set.\n\n"
+            "<i>Note: If an account already has 2FA enabled, it will be skipped automatically.</i>\n\n"
+            "Please send the <b>2FA Password</b> you want to set for these accounts:"
+        )
+        await event.edit(text_body, buttons=keyboards.back_keyboard(CB.BULK_MANAGER), parse_mode="html")
     elif action == "2fa:remove":
         buttons = keyboards.confirm_keyboard("bulk_rm_2fa", "all")
         await event.edit("🔓 Remove 2FA from all accounts?\n\n<i>Note: This only works if no 2FA is set, or if we can clear it.</i>", buttons=buttons, parse_mode="html")
@@ -1749,6 +1844,15 @@ async def route_callback(event: events.CallbackQuery.Event) -> None:
         screen = parts[2]
         page = int(parts[3])
         await on_page_prev(event, screen, page)
+
+    elif data.startswith("mails:list"):
+        await on_account_mails_list(event, page=1)
+    elif data.startswith("mails:view:"):
+        account_id = data.split(":")[2]
+        await on_account_mails_view(event, account_id)
+    elif data.startswith("mails:check:"):
+        account_id = data.split(":")[2]
+        await on_account_mails_check(event, account_id)
 
     elif data.startswith("confirm:yes:"):
         parts = data.split(":")

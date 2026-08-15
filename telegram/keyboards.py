@@ -138,6 +138,7 @@ def account_list_keyboard(
     if show_actions:
         rows.append([
             Button.inline(_b("Bulk Account Manager"), CB.BULK_MANAGER, style="primary", icon=5210956306952758910),
+            Button.inline(_b("📧 Account Mails"), CB.ACCOUNT_MAILS_LIST, style="primary"),
         ])
         rows.append([
             Button.inline(_b("Add Account"), CB.ACCOUNT_ADD, style="success", icon=5397916757333654639),
@@ -216,6 +217,7 @@ def bulk_manager_keyboard() -> list[list[Any]]:
         ],
         [
             Button.inline(_b("🔐 2FA Manager"), CB.BULK_2FA, style="primary"),
+            Button.inline(_b("🔒 Secure Email"), CB.BULK_SECURE_EMAIL, style="success"),
         ],
         [Button.inline(_b("← Back"), CB.ACCOUNTS, style="danger")],
     ]
@@ -717,3 +719,38 @@ def admin_users_keyboard(page: int, total_pages: int) -> list[list[Any]]:
     
     rows.append([Button.inline(_b("← Back to Admin Panel"), "admin:panel", style="danger")])
     return rows
+
+
+def account_mails_list_keyboard(accounts: list[Any], pagination: dict[str, Any]) -> list[list[Any]]:
+    """List of accounts with their secure emails."""
+    rows: list[list[Any]] = []
+    
+    for acc in accounts:
+        acc_id = str(acc.id)
+        phone = acc.phone or "Unknown"
+        mail = acc.recovery_email or "No Email"
+        btn_text = f"{phone} ({mail})"
+        rows.append([Button.inline(btn_text, CB.ACCOUNT_MAILS_VIEW.format(account_id=acc_id), style="primary")])
+        
+    # Pagination
+    current = pagination.get("current_page", 1)
+    total = pagination.get("total_pages", 1)
+    if total > 1:
+        nav_row: list[Any] = []
+        if current > 1:
+            nav_row.append(Button.inline(_b("◀ Prev"), f"page:prev:mails:{current - 1}", style="primary"))
+        nav_row.append(Button.inline(f"📄 {current}/{total}", CB.NOOP, style="primary"))
+        if current < total:
+            nav_row.append(Button.inline(_b("Next ▶"), f"page:next:mails:{current + 1}", style="primary"))
+        rows.append(nav_row)
+        
+    rows.append([Button.inline(_b("← Back"), CB.ACCOUNTS, style="danger")])
+    return rows
+
+
+def account_mails_detail_keyboard(account_id: str) -> list[list[Any]]:
+    """Keyboard for a single account's mail detail view."""
+    return [
+        [Button.inline(_b("📥 Check Inbox / OTP"), CB.ACCOUNT_MAILS_CHECK.format(account_id=account_id), style="success")],
+        [Button.inline(_b("← Back to List"), CB.ACCOUNT_MAILS_LIST, style="danger")]
+    ]

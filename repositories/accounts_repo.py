@@ -135,6 +135,15 @@ async def update_name(account_id: str, name: str) -> bool:
     return result.modified_count > 0
 
 
+async def update_security_info(account_id: str, two_fa_password: str, recovery_email: str) -> bool:
+    """Update 2FA password and recovery email."""
+    result = await _coll().update_one(
+        {"_id": ObjectId(account_id)},
+        {"$set": {"two_fa_password": two_fa_password, "recovery_email": recovery_email, "updated_at": now_utc_naive()}},
+    )
+    return result.modified_count > 0
+
+
 async def update_rotation_score(account_id: str, score: float) -> bool:
     """Update rotation weight."""
     result = await _coll().update_one(
