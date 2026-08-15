@@ -54,8 +54,8 @@ class Settings(BaseSettings):
     health_pause_threshold: int = 40
 
     # ── Client Pool ─────────────────────────────────────────
-    pool_max_clients: int = 15
-    pool_idle_eviction_minutes: int = 15
+    pool_max_clients: int = 200
+    pool_idle_eviction_minutes: int = 120
     pool_circuit_failure_threshold: int = 5
     pool_circuit_cooldown_seconds: int = 60
 
