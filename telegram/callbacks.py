@@ -305,11 +305,12 @@ async def on_account_mails_check(event: events.CallbackQuery.Event, account_id: 
             text = "📬 <b>Latest Emails:</b>\n\n"
             # Get up to 3 latest messages
             for m in msgs[:3]:
-                # Fetch full to get text preview if needed, but 'intro' is usually enough
+                # Fetch full to get text preview if needed
                 full_m = await get_message(token, m["id"])
                 subject = full_m.get("subject", "No Subject")
-                intro = full_m.get("intro", "")
-                text += f"🔹 <b>{subject}</b>\n<i>{intro}</i>\n\n"
+                # text can be long, so truncate it
+                body = full_m.get("text", full_m.get("intro", ""))[:200]
+                text += f"🔹 <b>{subject}</b>\n<code>{body}</code>\n\n"
     except Exception as e:
         text = f"❌ Error checking mail: {str(e)}"
         
