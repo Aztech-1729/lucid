@@ -6,7 +6,7 @@ from core.logging import get_logger
 
 log = get_logger("mailtm_client")
 
-BASE_URL = "https://api.mail.tm"
+BASE_URL = "https://api.mail.gw"
 
 
 async def get_domain() -> str:
@@ -17,11 +17,11 @@ async def get_domain() -> str:
             for domain in data.get("hydra:member", []):
                 if domain.get("isActive"):
                     return domain["domain"]
-            raise ValueError("No active domains found on mail.tm")
+            raise ValueError("No active domains found on mail.gw")
 
 
 async def create_account(address: str, password: str) -> dict[str, Any]:
-    """Create a new account on mail.tm."""
+    """Create a new account on mail.gw."""
     async with aiohttp.ClientSession() as session:
         # Throttle handling
         for _ in range(3):
@@ -32,8 +32,8 @@ async def create_account(address: str, password: str) -> dict[str, Any]:
                     await asyncio.sleep(5)
                 else:
                     text = await resp.text()
-                    raise ValueError(f"Failed to create mail.tm account ({resp.status}): {text}")
-        raise ValueError("Rate limited while creating mail.tm account.")
+                    raise ValueError(f"Failed to create mail.gw account ({resp.status}): {text}")
+        raise ValueError("Rate limited while creating mail.gw account.")
 
 
 async def get_token(address: str, password: str) -> str:
