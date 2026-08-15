@@ -68,8 +68,13 @@ def create_app() -> web.Application:
     return app
 
 async def start_webhook_server(host: str = "0.0.0.0", port: int = 8081) -> web.AppRunner:
+    # Suppress the default aiohttp access/error logs that spam on TLS probes
+    import logging
+    logging.getLogger("aiohttp.server").setLevel(logging.CRITICAL)
+    logging.getLogger("aiohttp.access").setLevel(logging.CRITICAL)
+    
     app = create_app()
-    runner = web.AppRunner(app)
+    runner = web.AppRunner(app, access_log=None)
     await runner.setup()
     site = web.TCPSite(runner, host, port)
     await site.start()
