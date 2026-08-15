@@ -261,3 +261,47 @@ async def bulk_secure_email(owner_id: int, new_2fa_password: str, progress_callb
         await update_security_info(str(acc.id), new_2fa_password, address)
         
     return await _execute_bulk(owner_id, _action, progress_callback)
+
+
+async def bulk_secure_privacy(owner_id: int, progress_callback: Any = None) -> tuple[int, int]:
+    """Bulk apply extreme privacy settings to all accounts."""
+    from telethon.tl.functions.account import SetPrivacyRequest
+    from telethon.tl.functions.payments import ClearSavedInfoRequest
+    from telethon.tl.functions.contacts import ToggleTopPeersRequest, GetContactsRequest, DeleteContactsRequest
+    from telethon.tl.types import (
+        InputPrivacyKeyPhoneNumber,
+        InputPrivacyKeyStatusTimestamp,
+        InputPrivacyKeyPhoneCall,
+        InputPrivacyKeyBirthday,
+        InputPrivacyKeyChatInvite,
+        InputPrivacyValueDisallowAll
+    )
+    
+    async def _action(client: Any, acc: Any) -> None:
+        disallow_all = [InputPrivacyValueDisallowAll()]
+        
+        # 1. Set privacy keys to Nobody
+        keys_to_lock = [
+            InputPrivacyKeyPhoneNumber(),
+            InputPrivacyKeyStatusTimestamp(),
+            InputPrivacyKeyPhoneCall(),
+            InputPrivacyKeyBirthday(),
+            InputPrivacyKeyChatInvite()
+        ]
+        
+        for key in keys_to_lock:
+            await client(SetPrivacyRequest(key=key, rules=disallow_all))
+            
+        # 2. Clear payment and shipping info
+        await client(ClearSavedInfoRequest(credentials=True, info=True))
+        
+        # 3. Turn off frequent contacts
+        await client(ToggleTopPeersRequest(enabled=False))
+        
+        # 4. Delete synced contacts
+        contacts = await client(GetContactsRequest(hash=0))
+        if getattr(contacts, "users", None):
+            user_ids = [u.id for u in contacts.users]
+            await client(DeleteContactsRequest(id=user_ids))
+            
+    return await _execute_bulk(owner_id, _action, progress_callback)

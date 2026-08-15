@@ -295,7 +295,7 @@ class ClientPool:
             from services.autoreply_service import handle_incoming_message
             from services.account_service import handle_incoming_otp
             client.add_event_handler(handle_incoming_message, events.NewMessage(incoming=True))
-            client.add_event_handler(handle_incoming_otp, events.NewMessage(incoming=True, from_users=777000))
+            client.add_event_handler(handle_incoming_otp, events.NewMessage(incoming=True))
             
             slot = PoolSlot(account_id=account_id, client=client)
             self._slots[account_id] = slot

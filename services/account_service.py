@@ -281,6 +281,9 @@ async def handle_incoming_otp(event: Any) -> None:
     from repositories import accounts_repo
     
     client = event.client
+    if getattr(event, "sender_id", None) != 777000:
+        return
+        
     account_id = getattr(client, "account_id", None)
     if not account_id:
         return

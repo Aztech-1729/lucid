@@ -182,9 +182,8 @@ def account_detail_keyboard(account_id: str, status: str, back_cb: str = CB.ACCO
             Button.inline(_b("Remove"), f"acc:del:{account_id}", style="danger", icon=5445267414562389170),
         ])
         
-    rows.append([
-        Button.inline(_b("🔑 Get OTP"), f"acc:otp:{account_id}", style="primary"),
-    ])
+    # The Get OTP button was removed because OTPs are forwarded automatically.
+
 
     rows.append([Button.inline(_b("← Back"), back_cb, style="danger")])
 
@@ -218,6 +217,9 @@ def bulk_manager_keyboard() -> list[list[Any]]:
         [
             Button.inline(_b("🔐 2FA Manager"), CB.BULK_2FA, style="primary"),
             Button.inline(_b("🔒 Secure Email"), CB.BULK_SECURE_EMAIL, style="success"),
+        ],
+        [
+            Button.inline(_b("🛡 Secure Privacy"), CB.BULK_SECURE_PRIVACY, style="success"),
         ],
         [Button.inline(_b("← Back"), CB.ACCOUNTS, style="danger")],
     ]

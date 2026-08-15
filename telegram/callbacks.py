@@ -136,18 +136,6 @@ async def on_account_add(event: events.CallbackQuery.Event) -> None:
     )
     await event.edit(text, buttons=keyboards.back_keyboard(CB.ACCOUNTS), parse_mode="html")
 
-async def on_account_get_otp(event: events.CallbackQuery.Event, account_id: str) -> None:
-    """Fetch the latest Telegram OTP code for this account."""
-    await event.answer("⏳ Fetching OTP...", alert=False)
-    
-    from services.account_service import get_latest_otp
-    otp = await get_latest_otp(account_id)
-    
-    if otp:
-        await event.answer(f"✅ Code: {otp}", alert=True)
-    else:
-        await event.answer("❌ No recent Telegram login code found. Please request a new code and try again.", alert=True)
-
 
 async def on_account_pause(event: events.CallbackQuery.Event, account_id: str) -> None:
     """Confirm account pause."""
@@ -1467,6 +1455,25 @@ async def on_confirm_yes(event: events.CallbackQuery.Event, action: str, target_
             import asyncio
             asyncio.create_task(run_task())
             return
+        elif action == "bulk_secure_privacy":
+            from telegram.menus import render_bulk_progress
+            from telegram.keyboards import bulk_progress_keyboard, bulk_manager_keyboard
+            await event.edit(render_bulk_progress("Secure Privacy", 0, 0, 0), buttons=bulk_progress_keyboard(), parse_mode="html")
+            from services import bulk_service
+            async def run_task():
+                async def update_progress(success: int, failed: int, total: int):
+                    try:
+                        await event.edit(render_bulk_progress("Secure Privacy", success, failed, total), buttons=bulk_progress_keyboard(), parse_mode="html")
+                    except Exception:
+                        pass
+                success, failed = await bulk_service.bulk_secure_privacy(_uid(event), progress_callback=update_progress)
+                try:
+                    await event.edit(render_bulk_progress("Secure Privacy", success, failed, success+failed, "<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Completed!"), buttons=bulk_manager_keyboard(), parse_mode="html")
+                except Exception:
+                        pass
+            import asyncio
+            asyncio.create_task(run_task())
+            return
             
         else:
             text: str = "❓ Unknown action."
@@ -1607,6 +1614,18 @@ async def on_bulk_action(event: events.CallbackQuery.Event, action: str) -> None
     elif action == "2fa:remove":
         buttons = keyboards.confirm_keyboard("bulk_rm_2fa", "all")
         await event.edit("🔓 Remove 2FA from all accounts?\n\n<i>Note: This only works if no 2FA is set, or if we can clear it.</i>", buttons=buttons, parse_mode="html")
+    elif action == "secure_privacy":
+        buttons = keyboards.confirm_keyboard("bulk_secure_privacy", "all")
+        text_body = (
+            "🛡 <b>Secure Privacy Lockdown</b>\n\n"
+            "This will apply extreme privacy settings to all accounts:\n"
+            "• Sets Phone, Last Seen, Calls, Birthday, Invites to <b>Nobody</b>\n"
+            "• Wipes Payment & Shipping Info\n"
+            "• Disables Frequent Contacts\n"
+            "• <b>Deletes all Synced Contacts permanently</b>\n\n"
+            "Are you sure you want to proceed?"
+        )
+        await event.edit(text_body, buttons=buttons, parse_mode="html")
 
 
 # ── Callback Router ─────────────────────────────────────────
@@ -1751,9 +1770,7 @@ async def route_callback(event: events.CallbackQuery.Event) -> None:
     elif data.startswith("acc:view:"):
         account_id = data.split(":", 2)[2]
         await on_account_view(event, account_id)
-    elif data.startswith("acc:otp:"):
-        account_id = data.split(":", 2)[2]
-        await on_account_get_otp(event, account_id)
+
     elif data.startswith("acc:del:"):
         account_id = data.split(":", 2)[2]
         await on_account_delete(event, account_id)
