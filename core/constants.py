@@ -98,8 +98,11 @@ class RedisKeys:
     ANALYTICS_CAMPAIGN = "analytics:campaign:{campaign_id}"
     ANALYTICS_TOP_ACCOUNTS = "analytics:top_accounts"
     ANALYTICS_TOP_CAMPAIGNS = "analytics:top_campaigns"
+    
+    # Admin Settings
+    ADMIN_BOT_IMAGE_ENABLED = "admin:bot_image_enabled"
 
-    # User State
+    # Context (Conversation State)
     USER_STATE = "state:{user_id}"
     USER_SESSION = "session:{user_id}"
     

@@ -207,7 +207,13 @@ def _register_handlers(bot: TelegramClient) -> None:
             
         text: str = menus.render_dashboard(data)
 
-        if settings.bot_image_url:
+        from core.db import get_redis
+        from core.constants import RedisKeys
+        r = get_redis()
+        val = await r.get(RedisKeys.ADMIN_BOT_IMAGE_ENABLED)
+        image_enabled = val.decode("utf-8") == "1" if val else True
+
+        if settings.bot_image_url and image_enabled:
             await event.respond(
                 file=settings.bot_image_url,
                 message=text,

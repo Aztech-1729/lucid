@@ -699,11 +699,13 @@ def invoice_keyboard(pay_url: str, show_link: bool = True) -> list[list[Any]]:
         
     buttons.append([Button.inline(_b("❌ Cancel Invoice"), b"invoice:cancel", style="danger")])
     return buttons
-def admin_panel_keyboard() -> list[list[Any]]:
+def admin_panel_keyboard(image_enabled: bool = True) -> list[list[Any]]:
     """Admin panel actions."""
+    toggle_text = "🟢 Bot Image: ON" if image_enabled else "🔴 Bot Image: OFF"
     return [
         [Button.inline(_b("📊 View Stats"), "admin:stats", style="primary")],
         [Button.inline(_b("👥 Active Users"), "admin:users", style="primary")],
+        [Button.inline(_b(toggle_text), "admin:toggle_image", style="primary")],
         [Button.inline(_b("← Back to Dashboard"), CB.DASHBOARD, style="danger")]
     ]
 
