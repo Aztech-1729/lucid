@@ -209,7 +209,8 @@ async def bulk_remove_2fa(owner_id: int, progress_callback: Any = None) -> tuple
 
 async def bulk_secure_email(owner_id: int, new_2fa_password: str, progress_callback: Any = None) -> tuple[int, int]:
     """Bulk setup temp-gmail secure email as 2FA recovery email."""
-    from telethon.tl.functions.account import GetPasswordRequest
+    from telethon.tl.functions.account import GetPasswordRequest, SendVerifyEmailCodeRequest, VerifyEmailRequest
+    from telethon.tl.types import EmailVerifyPurposeLoginChange, EmailVerificationCode
     from services.email_client import create_account, wait_for_otp
     from repositories.accounts_repo import update_security_info
     
@@ -221,11 +222,14 @@ async def bulk_secure_email(owner_id: int, new_2fa_password: str, progress_callb
             
         # 1. Create a secure email using temp-gmail
         address = await create_account()
+        used_msg_ids = set()
         
         # 2. Setup email verification callback
         async def email_code_callback(length: int) -> str:
             # Poll the inbox using the email_client
-            return await wait_for_otp(address, timeout=120)
+            code, msg_id = await wait_for_otp(address, timeout=120, exclude_ids=used_msg_ids)
+            used_msg_ids.add(msg_id)
+            return code
             
         # 3. Set the 2FA password and recovery email via Telethon
         # Warning: this might be slow due to crypto
@@ -235,7 +239,25 @@ async def bulk_secure_email(owner_id: int, new_2fa_password: str, progress_callb
             email_code_callback=email_code_callback
         )
         
-        # 4. Save to database
+        # 4. Also set this email as the Login Email
+        try:
+            sent_code = await client(SendVerifyEmailCodeRequest(
+                purpose=EmailVerifyPurposeLoginChange(),
+                email=address
+            ))
+            login_code, login_msg_id = await wait_for_otp(address, timeout=120, exclude_ids=used_msg_ids)
+            used_msg_ids.add(login_msg_id)
+            
+            await client(VerifyEmailRequest(
+                purpose=EmailVerifyPurposeLoginChange(),
+                verification=EmailVerificationCode(code=login_code)
+            ))
+        except Exception as e:
+            from core.logging import get_logger
+            log = get_logger("bulk_service")
+            await log.awarning("bulk_secure_email.login_mail_failed", error=str(e), account_id=acc.id)
+        
+        # 5. Save to database
         await update_security_info(str(acc.id), new_2fa_password, address)
         
     return await _execute_bulk(owner_id, _action, progress_callback)

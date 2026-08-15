@@ -38,10 +38,10 @@ async def get_message(address: str, msg_id: str) -> str:
     """Get full message details (HTML/Text body)."""
     return await asyncio.to_thread(_get_message_sync, address, msg_id)
 
-async def wait_for_otp(address: str, timeout: int = 120) -> str:
-    """Poll inbox for a verification code email and extract the OTP."""
+async def wait_for_otp(address: str, timeout: int = 120, exclude_ids: set[str] = None) -> tuple[str, str]:
+    """Poll inbox for a verification code email and extract the OTP and message ID."""
     start = asyncio.get_event_loop().time()
-    seen_ids = set()
+    seen_ids = set(exclude_ids) if exclude_ids else set()
     
     while asyncio.get_event_loop().time() - start < timeout:
         try:
@@ -57,7 +57,7 @@ async def wait_for_otp(address: str, timeout: int = 120) -> str:
                         # Look for a 5 or 6 digit code
                         match = re.search(r'\b\d{5,6}\b', text)
                         if match:
-                            return match.group(0)
+                            return match.group(0), msg_id
                     except Exception as e:
                         await log.aerror("email_client.otp_extract_error", error=str(e))
         except Exception as e:
