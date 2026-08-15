@@ -1514,7 +1514,7 @@ async def on_pay_options(event: events.CallbackQuery.Event) -> None:
     await event.edit(text, buttons=keyboards.paywall_keyboard(user), parse_mode="html")
 
 async def on_admin_panel(event: events.CallbackQuery.Event) -> None:
-    from core.db import get_redis
+    from cache.redis_client import get_redis
     from core.constants import RedisKeys
     r = get_redis()
     val = await r.get(RedisKeys.ADMIN_BOT_IMAGE_ENABLED)
@@ -1906,7 +1906,7 @@ async def route_callback(event: events.CallbackQuery.Event) -> None:
     elif data == "admin:users":
         await on_admin_users(event)
     elif data == "admin:toggle_image":
-        from core.db import get_redis
+        from cache.redis_client import get_redis
         from core.constants import RedisKeys
         r = get_redis()
         val = await r.get(RedisKeys.ADMIN_BOT_IMAGE_ENABLED)

@@ -207,7 +207,7 @@ def _register_handlers(bot: TelegramClient) -> None:
             
         text: str = menus.render_dashboard(data)
 
-        from core.db import get_redis
+        from cache.redis_client import get_redis
         from core.constants import RedisKeys
         r = get_redis()
         val = await r.get(RedisKeys.ADMIN_BOT_IMAGE_ENABLED)
