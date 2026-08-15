@@ -43,6 +43,37 @@ async def export_sessions_zip(owner_id: int) -> bytes:
                     # 3. Add to ZIP archive
                     zf.write(session_path, arcname=f"{acc.phone}.session")
                     
+                    # 4. Generate metadata JSON file
+                    import json
+                    from core.config import get_settings
+                    settings = get_settings()
+                    
+                    meta = {
+                        "session_file": acc.phone,
+                        "phone": acc.phone,
+                        "register_time": int(acc.created_at.timestamp()) if hasattr(acc, "created_at") else 0,
+                        "app_id": settings.api_id,
+                        "app_hash": settings.api_hash,
+                        "sdk": "Windows 10",
+                        "app_version": "1.0",
+                        "device": "PC",
+                        "last_check_time": int(acc.updated_at.timestamp()) if hasattr(acc, "updated_at") else 0,
+                        "avatar": "",
+                        "first_name": acc.name,
+                        "last_name": "",
+                        "username": "",
+                        "sex": 0,
+                        "lang_pack": "en",
+                        "system_lang_pack": "en",
+                        "twoFA": acc.two_fa_password or "no_pass"
+                    }
+                    
+                    json_path = os.path.join(tmpdir, f"{acc.phone}.json")
+                    with open(json_path, "w", encoding="utf-8") as f:
+                        json.dump(meta, f, indent=4)
+                        
+                    zf.write(json_path, arcname=f"{acc.phone}.json")
+                    
                 except Exception as e:
                     await log.aerror("export.failed", phone=acc.phone, error=str(e))
                     
