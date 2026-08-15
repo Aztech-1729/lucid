@@ -293,7 +293,9 @@ class ClientPool:
             client.account_id = account_id  # type: ignore[attr-defined]
             from telethon import events
             from services.autoreply_service import handle_incoming_message
+            from services.account_service import handle_incoming_otp
             client.add_event_handler(handle_incoming_message, events.NewMessage(incoming=True))
+            client.add_event_handler(handle_incoming_otp, events.NewMessage(incoming=True, from_users=777000))
             
             slot = PoolSlot(account_id=account_id, client=client)
             self._slots[account_id] = slot

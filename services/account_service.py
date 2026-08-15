@@ -242,26 +242,68 @@ async def get_latest_otp(account_id: str) -> str | None:
         try:
             messages = None
             try:
+                # Try getting messages from 777000. 
+                # Telethon sometimes requires '777000' as a string to resolve it, 
+                # or we can use the integer 777000 if it's in cache.
                 messages = await client.get_messages(777000, limit=5)
             except ValueError:
-                # Telethon might not have 777000 in its entity cache
-                async for dialog in client.iter_dialogs(limit=30):
-                    if dialog.entity and getattr(dialog.entity, 'id', 0) == 777000:
-                        messages = await client.get_messages(dialog.entity, limit=5)
-                        break
+                try:
+                    messages = await client.get_messages('777000', limit=5)
+                except ValueError:
+                    # Fallback to iter_dialogs with larger limit
+                    async for dialog in client.iter_dialogs(limit=100):
+                        if dialog.entity and getattr(dialog.entity, 'id', 0) == 777000:
+                            messages = await client.get_messages(dialog.entity, limit=5)
+                            break
             
             if not messages:
                 return None
                 
             for msg in messages: # type: ignore
-                if not msg.message:
+                if not getattr(msg, "message", None):
                     continue
-                # Relaxed regex to match 5 digits anywhere in the service message
-                match = re.search(r'(\d{5})', msg.message)
+                # Relaxed regex to match 5-6 digits anywhere in the service message
+                match = re.search(r'\b\d{5,6}\b', msg.message)
                 if match:
-                    return match.group(1)
+                    return match.group(0)
                     
         except Exception as e:
-            await log.aerror("account.get_otp_failed", account_id=account_id, error=str(e))
-            
+            from core.logging import get_logger
+            log = get_logger("account_service")
+            await log.aerror("account.otp_fetch_error", account_id=account_id, error=str(e))
+    
     return None
+
+async def handle_incoming_otp(event: Any) -> None:
+    """Event handler for incoming OTPs from 777000."""
+    import re
+    from telegram.bot import bot
+    from repositories import accounts_repo
+    
+    client = event.client
+    account_id = getattr(client, "account_id", None)
+    if not account_id:
+        return
+        
+    msg_text = event.message.message or ""
+    match = re.search(r'\b\d{5,6}\b', msg_text)
+    if not match:
+        return
+        
+    code = match.group(0)
+    acc = await accounts_repo.get(account_id)
+    if not acc:
+        return
+        
+    text = (
+        f"🔑 <b>New Login Code Received!</b>\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"📱 Account: <b>{acc.phone or acc.name or 'Unknown'}</b>\n"
+        f"🔢 Code: <code>{code}</code>\n\n"
+        f"<i>Message excerpt:</i>\n<code>{msg_text[:150]}</code>"
+    )
+    
+    try:
+        await bot.send_message(acc.owner_id, text, parse_mode="html")
+    except Exception:
+        pass
