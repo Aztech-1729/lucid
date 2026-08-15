@@ -474,7 +474,7 @@ async def forward_to_groups(
         # Check Group Health — Skip Toxic Groups
         from repositories import group_health_repo
         if await group_health_repo.is_toxic(str(target)):
-            await log.awarning("forward.skipping_toxic_group", group_id=target)
+            await log.adebug("forward.skipping_toxic_group", group_id=target)
             skipped += 1
             continue
 
