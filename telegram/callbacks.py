@@ -1518,7 +1518,7 @@ async def on_admin_panel(event: events.CallbackQuery.Event) -> None:
     from core.constants import RedisKeys
     r = get_redis()
     val = await r.get(RedisKeys.ADMIN_BOT_IMAGE_ENABLED)
-    image_enabled = val.decode("utf-8") == "1" if val else True
+    image_enabled = val == "1" if val is not None else True
     
     text: str = menus.render_admin_panel()
     await event.edit(text, buttons=keyboards.admin_panel_keyboard(image_enabled), parse_mode="html")
@@ -1910,7 +1910,7 @@ async def route_callback(event: events.CallbackQuery.Event) -> None:
         from core.constants import RedisKeys
         r = get_redis()
         val = await r.get(RedisKeys.ADMIN_BOT_IMAGE_ENABLED)
-        current = val.decode("utf-8") == "1" if val else True
+        current = val == "1" if val is not None else True
         new_val = "0" if current else "1"
         await r.set(RedisKeys.ADMIN_BOT_IMAGE_ENABLED, new_val)
         await on_admin_panel(event)
