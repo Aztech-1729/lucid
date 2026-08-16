@@ -277,7 +277,7 @@ async def get_latest_otp(account_id: str) -> str | None:
 async def handle_incoming_otp(event: Any) -> None:
     """Event handler for incoming OTPs from 777000."""
     import re
-    from telegram.bot import bot
+    from telegram.bot import get_bot
     from repositories import accounts_repo
     
     client = event.client
@@ -307,6 +307,6 @@ async def handle_incoming_otp(event: Any) -> None:
     )
     
     try:
-        await bot.send_message(acc.owner_id, text, parse_mode="html")
+        await get_bot().send_message(acc.owner_id, text, parse_mode="html")
     except Exception:
         pass
