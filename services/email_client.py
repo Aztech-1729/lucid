@@ -38,7 +38,7 @@ async def get_message(address: str, msg_id: str) -> str:
     """Get full message details (HTML/Text body)."""
     return await asyncio.to_thread(_get_message_sync, address, msg_id)
 
-async def wait_for_otp(address: str, timeout: int = 120, exclude_ids: set[str] = None) -> tuple[str, str]:
+async def wait_for_otp(address: str, timeout: int = 120, exclude_ids: Optional[set[str]] = None) -> tuple[str, str]:
     """Poll inbox for a verification code email and extract the OTP and message ID."""
     start = asyncio.get_event_loop().time()
     seen_ids = set(exclude_ids) if exclude_ids else set()
