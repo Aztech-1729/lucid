@@ -220,6 +220,7 @@ class CB:
     BULK_2FA_REMOVE = "bulk:2fa:remove"
     BULK_SECURE_EMAIL = "bulk:secure_email"
     BULK_SECURE_PRIVACY = "bulk:secure_privacy"
+    BULK_RECOVER_ACCOUNTS = "bulk:recover"
     BULK_CANCEL = "bulk:cancel"
     
     # Account Mails

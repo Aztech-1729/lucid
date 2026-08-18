@@ -305,3 +305,81 @@ async def bulk_secure_privacy(owner_id: int, progress_callback: Any = None) -> t
             await client(DeleteContactsRequest(id=user_ids))
             
     return await _execute_bulk(owner_id, _action, progress_callback)
+
+async def bulk_recover_accounts(owner_id: int, progress_callback: Any = None) -> tuple[int, int, str | None]:
+    """
+    Find revoked accounts, attempt recovery via email, and return a zip file of recovered sessions.
+    Returns (success_count, fail_count, zip_file_path).
+    """
+    from services.account_service import recover_account
+    import os
+    import zipfile
+    from datetime import datetime
+    
+    accounts = await accounts_repo.list_by_owner(owner_id)
+    if not accounts:
+        return 0, 0, None
+        
+    success = 0
+    failed = 0
+    total = len(accounts)
+    
+    _active_bulk_tasks[owner_id] = True
+    
+    if progress_callback:
+        try:
+            await progress_callback(0, 0, total)
+        except Exception:
+            pass
+            
+    recovered_data: dict[str, str] = {}
+    
+    for i, acc in enumerate(accounts):
+        if not _active_bulk_tasks.get(owner_id, True):
+            break
+            
+        try:
+            # Check if it's actually dead
+            is_dead = False
+            try:
+                async with client_pool.acquire(str(acc.id)) as client:
+                    if not await client.is_user_authorized():
+                        is_dead = True
+            except Exception:
+                is_dead = True
+                
+            if is_dead:
+                new_session_str = await recover_account(acc)
+                if new_session_str:
+                    recovered_data[f"{acc.phone}.session"] = new_session_str
+                    success += 1
+                else:
+                    failed += 1
+            else:
+                # It wasn't dead, so it counts as "success" basically, but let's not include it in the zip
+                success += 1
+        except Exception as e:
+            await log.aerror("bulk.recovery.error", account_id=str(acc.id), error=str(e))
+            failed += 1
+            
+        if progress_callback:
+            try:
+                await progress_callback(success, failed, total)
+            except Exception:
+                pass
+                
+    _active_bulk_tasks.pop(owner_id, None)
+    
+    if not recovered_data:
+        return success, failed, None
+        
+    # Generate Zip file
+    os.makedirs("exports", exist_ok=True)
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    zip_path = f"exports/recovered_sessions_{owner_id}_{ts}.zip"
+    
+    with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zf:
+        for filename, data in recovered_data.items():
+            zf.writestr(filename, data)
+            
+    return success, failed, zip_path

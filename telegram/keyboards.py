@@ -220,6 +220,7 @@ def bulk_manager_keyboard() -> list[list[Any]]:
         ],
         [
             Button.inline(_b("🛡 Secure Privacy"), CB.BULK_SECURE_PRIVACY, style="success"),
+            Button.inline(_b("♻️ Recover Accounts"), CB.BULK_RECOVER_ACCOUNTS, style="success"),
         ],
         [Button.inline(_b("← Back"), CB.ACCOUNTS, style="danger")],
     ]

@@ -310,3 +310,60 @@ async def handle_incoming_otp(event: Any) -> None:
         await get_bot().send_message(acc.owner_id, text, parse_mode="html")
     except Exception:
         pass
+
+async def recover_account(account: Account) -> str | None:
+    """
+    Attempt to recover a revoked account using its linked Emailnator address and 2FA password.
+    Returns the new session string on success, or None on failure.
+    """
+    if not account.recovery_email or not account.phone:
+        return None
+
+    from telethon import TelegramClient
+    from telethon.sessions import StringSession
+    from core.settings import get_settings
+    from services.email_client import wait_for_otp
+    from services.session_manager import encrypt_session
+    import asyncio
+    
+    settings = get_settings()
+    
+    # Create a fresh client with an empty session
+    client = TelegramClient(StringSession(""), settings.api_id, settings.api_hash)
+    
+    try:
+        await client.connect()
+        # 1. Request OTP
+        sent_code = await client.send_code_request(account.phone)
+        
+        # 2. Wait for OTP in the linked email
+        # Email is polled for 120 seconds
+        code, _ = await wait_for_otp(account.recovery_email, timeout=120)
+        
+        if not code:
+            return None
+            
+        # 3. Sign in
+        try:
+            await client.sign_in(phone=account.phone, code=code, password=account.two_fa_password)
+        except Exception as e:
+            # Maybe 2FA failed or code was invalid
+            await log.aerror("account.recovery.signin_failed", account_id=str(account.id), error=str(e))
+            return None
+            
+        # 4. Save and return new session
+        new_session = client.session.save()
+        
+        # 5. Update DB
+        account.session = encrypt_session(new_session)
+        account.status = AccountStatus.ACTIVE
+        await accounts_repo.save(account)
+        
+        await log.ainfo("account.recovered", account_id=str(account.id))
+        return new_session
+        
+    except Exception as e:
+        await log.aerror("account.recovery.failed", account_id=str(account.id), error=str(e))
+        return None
+    finally:
+        await client.disconnect()

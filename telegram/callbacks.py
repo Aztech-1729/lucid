@@ -1475,6 +1475,28 @@ async def on_confirm_yes(event: events.CallbackQuery.Event, action: str, target_
             asyncio.create_task(run_task())
             return
             
+        elif action == "bulk_recover_accounts":
+            from telegram.menus import render_bulk_progress
+            from telegram.keyboards import bulk_progress_keyboard, bulk_manager_keyboard
+            await event.edit(render_bulk_progress("Recover Accounts", 0, 0, 0), buttons=bulk_progress_keyboard(), parse_mode="html")
+            from services import bulk_service
+            async def run_task():
+                async def update_progress(success: int, failed: int, total: int):
+                    try:
+                        await event.edit(render_bulk_progress("Recover Accounts", success, failed, total), buttons=bulk_progress_keyboard(), parse_mode="html")
+                    except Exception:
+                        pass
+                success, failed, zip_path = await bulk_service.bulk_recover_accounts(_uid(event), progress_callback=update_progress)
+                try:
+                    await event.edit(render_bulk_progress("Recover Accounts", success, failed, success+failed, "<tg-emoji emoji-id='5206607081334906820'>✅</tg-emoji> Completed!"), buttons=bulk_manager_keyboard(), parse_mode="html")
+                    if zip_path:
+                        await event.client.send_file(event.chat_id, zip_path, caption="Here are your recovered sessions.")
+                except Exception:
+                        pass
+            import asyncio
+            asyncio.create_task(run_task())
+            return
+            
         else:
             text: str = "❓ Unknown action."
     except Exception as exc:
@@ -1628,6 +1650,15 @@ async def on_bulk_action(event: events.CallbackQuery.Event, action: str) -> None
             "• Wipes Payment & Shipping Info\n"
             "• Disables Frequent Contacts\n"
             "• <b>Deletes all Synced Contacts permanently</b>\n\n"
+            "Are you sure you want to proceed?"
+        )
+        await event.edit(text_body, buttons=buttons, parse_mode="html")
+    elif action == "recover":
+        buttons = keyboards.confirm_keyboard("bulk_recover_accounts", "all")
+        text_body = (
+            "♻️ <b>Bulk Account Recovery</b>\n\n"
+            "This will attempt to recover all revoked accounts by fetching login OTPs from their linked Emailnator inboxes and using their saved 2FA passwords.\n\n"
+            "Once completed, the new sessions will be sent to you as a Zip file.\n\n"
             "Are you sure you want to proceed?"
         )
         await event.edit(text_body, buttons=buttons, parse_mode="html")
