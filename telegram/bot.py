@@ -525,7 +525,7 @@ def _register_handlers(bot: TelegramClient) -> None:
                     await msg.edit("<tg-emoji emoji-id='5420323339723881652'>⚠️</tg-emoji> Failed to enqueue action.", parse_mode="html")
             else:
                 # Normal chat response
-                text: str = f"<tg-emoji emoji-id='6256032707470428424'>🤖</tg-emoji> <b>AI:</b>\n\n{response}"
+                text = f"<tg-emoji emoji-id='6256032707470428424'>🤖</tg-emoji> <b>AI:</b>\n\n{response}"
                 await msg.edit(text, buttons=keyboards.ai_chat_keyboard(), parse_mode="html")
                 
             return

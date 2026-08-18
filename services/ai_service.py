@@ -182,7 +182,7 @@ async def chat_with_ai(user_id: int, user_message: str) -> str:
                 try:
                     func_args = json.loads(getattr(tool_call, "function").arguments)  # type: ignore[attr-defined]
                 except Exception:
-                    func_args: dict[str, Any] = {}
+                    func_args = {}
                 if func_name in TOOL_REGISTRY:
                     # Execute tool securely
                     tool_result = await TOOL_REGISTRY[func_name](user_id, func_args)

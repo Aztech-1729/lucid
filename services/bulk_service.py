@@ -222,7 +222,7 @@ async def bulk_secure_email(owner_id: int, new_2fa_password: str, progress_callb
             
         # 1. Create a secure email using temp-gmail
         address = await create_account()
-        used_msg_ids = set()
+        used_msg_ids: set[str] = set()
         
         # 2. Setup email verification callback
         async def email_code_callback(length: int) -> str:
