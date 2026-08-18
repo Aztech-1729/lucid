@@ -123,7 +123,7 @@ async def bulk_join_links(user_id: int, links: List[Any], progress_callback: Cal
         await progress_callback("❌ No accounts connected.")
         return
         
-    total_joins = len(accounts) * len(links)
+    total_joins = len(links)
     
     async def legacy_callback(joined: int, failed: int, total: int, status: str = "Processing") -> None:
         from telegram.menus import render_autojoin_progress

@@ -61,7 +61,13 @@ async def _run_joiner_task(user_id: int, links: List[str], update_callback: Call
             await update_callback(0, 0, len(links), "❌ No accounts found.")
             return
 
-        total_joins = len(accounts) * len(links)
+        total_joins = len(links)
+        
+        # Auto-split links across accounts (round-robin) so the whole batch is
+        # covered in parallel: account i handles links[i::n]. With a single
+        # account, all links go to it.
+        _n = len(accounts)
+        _assigned: Dict[Any, List[str]] = {account: [ln for ln in links[i::_n]] for i, account in enumerate(accounts)}
         
         state = {
             "joined": 0,
@@ -77,20 +83,23 @@ async def _run_joiner_task(user_id: int, links: List[str], update_callback: Call
                 
         async def _account_worker(account: Any) -> None:
             account_id = str(account.id)
+            my_links = _assigned[account]
+            if not my_links:
+                return
             # Skip accounts currently in Telegram flood-wait — don't hammer them
             if await is_flooded(account_id):
                 remaining = await flood_remaining(account_id)
                 await log.ainfo("joiner.skipping_flooded_account", account_id=account_id, wait_seconds=int(remaining))
-                await _safe_update(failed_inc=len(links))
+                await _safe_update(failed_inc=len(my_links))
                 return
 
             # Skip Telegram-limited accounts — joins will fail/risk the limitation
             if await is_limited(account_id):
                 await log.ainfo("joiner.skipping_limited_account", account_id=account_id)
-                await _safe_update(failed_inc=len(links))
+                await _safe_update(failed_inc=len(my_links))
                 return
 
-            for i, link in enumerate(links):
+            for i, link in enumerate(my_links):
                 clean_link = _sanitize_link(link)
                 if not clean_link:
                     await _safe_update(failed_inc=1)
@@ -143,7 +152,7 @@ async def _run_joiner_task(user_id: int, links: List[str], update_callback: Call
                 await _safe_update(joined_inc=joined_inc, failed_inc=failed_inc)
                 
                 # Delay for each account independently (stay under 200/hour = 18s minimum)
-                if i < len(links) - 1:
+                if i < len(my_links) - 1:
                     await asyncio.sleep(random.uniform(18, 25))
 
         # Run all account workers concurrently
