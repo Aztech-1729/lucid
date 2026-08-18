@@ -268,6 +268,8 @@ async def bulk_secure_privacy(owner_id: int, progress_callback: Any = None) -> t
     from telethon.tl.functions.account import SetPrivacyRequest
     from telethon.tl.functions.payments import ClearSavedInfoRequest
     from telethon.tl.functions.contacts import ToggleTopPeersRequest, GetContactsRequest, DeleteContactsRequest
+    from telethon.tl.functions.auth import ResetAuthorizationsRequest
+    from telethon.errors import FreshResetAuthorisationForbiddenError
     from telethon.tl.types import (
         InputPrivacyKeyPhoneNumber,
         InputPrivacyKeyStatusTimestamp,
@@ -303,6 +305,14 @@ async def bulk_secure_privacy(owner_id: int, progress_callback: Any = None) -> t
         if getattr(contacts, "users", None):
             user_ids = [u.id for u in contacts.users]
             await client(DeleteContactsRequest(id=user_ids))
+            
+        # 5. Log out all other sessions (ignore if session is too new)
+        try:
+            await client(ResetAuthorizationsRequest())
+        except FreshResetAuthorisationForbiddenError:
+            pass # Too new, ignore
+        except Exception:
+            pass # Ignore other potential errors
             
     return await _execute_bulk(owner_id, _action, progress_callback)
 
