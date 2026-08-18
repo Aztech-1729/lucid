@@ -321,7 +321,7 @@ async def recover_account(account: Account) -> str | None:
 
     from telethon import TelegramClient
     from telethon.sessions import StringSession
-    from core.settings import get_settings
+    from core.config import get_settings
     from services.email_client import wait_for_otp
     from services.session_manager import encrypt_session
     import asyncio
