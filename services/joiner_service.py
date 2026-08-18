@@ -128,15 +128,14 @@ async def _run_joiner_task(user_id: int, links: List[str], update_callback: Call
                 except (ChatWriteForbiddenError, InviteRequestSentError):
                     joined_inc = 1
                 except FloodWaitError as e:
-                    # Register the flood and stop attempting this account until it clears
+                    # Register the flood but KEEP trying the remaining links.
+                    # A single failure must not stop the whole batch — attempt all links.
                     await mark_flood(account_id, e.seconds)
                     await log.awarning("joiner.flood_wait", seconds=e.seconds, account_id=account_id)
-                    failed_inc = len(links) - i  # remaining links will also fail
-                    break
+                    failed_inc = 1
                 except CircuitOpenError:
                     await log.ainfo("joiner.skipping_circuit_open", account_id=account_id)
-                    failed_inc = len(links) - i
-                    break
+                    failed_inc = 1
                 except Exception as e:
                     await log.aerror("joiner.error", error=str(e), link=link, account_id=account_id)
                     failed_inc = 1
