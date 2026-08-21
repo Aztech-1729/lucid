@@ -67,7 +67,7 @@ async def _run_joiner_task(user_id: int, links: List[str], update_callback: Call
         # covered in parallel: account i handles links[i::n]. With a single
         # account, all links go to it.
         _n = len(accounts)
-        _assigned: Dict[Any, List[str]] = {account: [ln for ln in links[i::_n]] for i, account in enumerate(accounts)}
+        _assigned: Dict[str, List[str]] = {account.id: [ln for ln in links[i::_n]] for i, account in enumerate(accounts)}
         
         state = {
             "joined": 0,
@@ -83,7 +83,7 @@ async def _run_joiner_task(user_id: int, links: List[str], update_callback: Call
                 
         async def _account_worker(account: Any) -> None:
             account_id = str(account.id)
-            my_links = _assigned[account]
+            my_links = _assigned[account_id]
             if not my_links:
                 return
             # Skip accounts currently in Telegram flood-wait — don't hammer them
@@ -99,6 +99,24 @@ async def _run_joiner_task(user_id: int, links: List[str], update_callback: Call
                 await _safe_update(failed_inc=len(my_links))
                 return
 
+            # Cache for entity resolution to avoid duplicate get_entity calls
+            entity_cache: Dict[str, Any] = {}
+            join_count = 0
+            pending_dialogs_refresh = False
+
+            async def refresh_groups():
+                nonlocal pending_dialogs_refresh
+                try:
+                    dialogs = await client.get_dialogs()
+                    new_groups = [
+                        {"id": d.id, "title": d.title, "is_selected": False}
+                        for d in dialogs if d.is_group or d.is_channel
+                    ]
+                    await account_groups_repo.save_groups(account_id, new_groups)
+                    pending_dialogs_refresh = False
+                except Exception as e:
+                    await log.aerror("joiner.save_groups_failed", account_id=account_id, error=str(e))
+
             for i, link in enumerate(my_links):
                 clean_link = _sanitize_link(link)
                 if not clean_link:
@@ -110,7 +128,13 @@ async def _run_joiner_task(user_id: int, links: List[str], update_callback: Call
                 
                 try:
                     async with client_pool.acquire(account_id) as client:
-                        entity = await client.get_entity(clean_link)
+                        # Use cached entity if available
+                        if clean_link in entity_cache:
+                            entity = entity_cache[clean_link]
+                        else:
+                            entity = await client.get_entity(clean_link)
+                            entity_cache[clean_link] = entity
+                        
                         is_group = False
                         if isinstance(entity, (types.Chat, types.ChatForbidden)):
                             is_group = True
@@ -122,15 +146,14 @@ async def _run_joiner_task(user_id: int, links: List[str], update_callback: Call
                             failed_inc = 1
                         else:
                             await client(functions.channels.JoinChannelRequest(channel=entity))  # type: ignore[arg-type]
-                            
-                            # Refresh groups
-                            dialogs = await client.get_dialogs()
-                            new_groups = [
-                                {"id": d.id, "title": d.title, "is_selected": False}
-                                for d in dialogs if d.is_group or d.is_channel
-                            ]
-                            await account_groups_repo.save_groups(account_id, new_groups)
                             joined_inc = 1
+                            
+                            # Batch group refresh - only every 10 joins
+                            if (join_count + 1) % 10 == 0:
+                                await refresh_groups()
+                            else:
+                                pending_dialogs_refresh = True
+                            join_count += 1
                             
                 except UserAlreadyParticipantError:
                     joined_inc = 1
@@ -152,12 +175,16 @@ async def _run_joiner_task(user_id: int, links: List[str], update_callback: Call
                     await log.aerror("joiner.error", error=str(e), link=link, account_id=account_id)
                     failed_inc = 1
                 
+                # Flush pending group refresh at end
+                if pending_dialogs_refresh:
+                    await refresh_groups()
+                
                 await _safe_update(joined_inc=joined_inc, failed_inc=failed_inc)
                 
-                # Delay for each account independently (adaptive based on account count)
+                # Adaptive delay - faster with more accounts, minimum 2s
                 if i < len(my_links) - 1:
-                    base_delay = max(3, 18 // max(1, len(accounts)))  # Faster with more accounts
-                    await asyncio.sleep(random.uniform(base_delay, base_delay + 2))
+                    base_delay = max(2, 15 // max(1, len(accounts)))  # Faster with more accounts
+                    await asyncio.sleep(random.uniform(base_delay, base_delay + 1))
 
         # Run all account workers concurrently
         tasks = [_account_worker(account) for account in accounts]
