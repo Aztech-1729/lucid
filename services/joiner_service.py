@@ -137,13 +137,16 @@ async def _run_joiner_task(user_id: int, links: List[str], update_callback: Call
                 except (ChatWriteForbiddenError, InviteRequestSentError):
                     joined_inc = 1
                 except FloodWaitError as e:
-                    # Register the flood but KEEP trying the remaining links.
-                    # A single failure must not stop the whole batch — attempt all links.
+                    # Register the flood and WAIT for it to clear before continuing
                     await mark_flood(account_id, e.seconds)
                     await log.awarning("joiner.flood_wait", seconds=e.seconds, account_id=account_id)
+                    # Wait for the flood to clear before continuing to next link
+                    await asyncio.sleep(e.seconds + 2)
                     failed_inc = 1
                 except CircuitOpenError:
                     await log.ainfo("joiner.skipping_circuit_open", account_id=account_id)
+                    # Small delay before next link to allow circuit to potentially recover
+                    await asyncio.sleep(5)
                     failed_inc = 1
                 except Exception as e:
                     await log.aerror("joiner.error", error=str(e), link=link, account_id=account_id)
@@ -151,9 +154,10 @@ async def _run_joiner_task(user_id: int, links: List[str], update_callback: Call
                 
                 await _safe_update(joined_inc=joined_inc, failed_inc=failed_inc)
                 
-                # Delay for each account independently (stay under 200/hour = 18s minimum)
+                # Delay for each account independently (adaptive based on account count)
                 if i < len(my_links) - 1:
-                    await asyncio.sleep(random.uniform(18, 25))
+                    base_delay = max(3, 18 // max(1, len(accounts)))  # Faster with more accounts
+                    await asyncio.sleep(random.uniform(base_delay, base_delay + 2))
 
         # Run all account workers concurrently
         tasks = [_account_worker(account) for account in accounts]
