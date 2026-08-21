@@ -58,11 +58,14 @@ async def is_flooded(account_id: str) -> bool:
     return await flood_remaining(account_id) > 0
 
 
-async def mark_limited(account_id: str, ttl: int = 43200) -> None:
+async def mark_limited(account_id: str, ttl: int = 18000) -> None:
     """Record that Telegram has spam-limited this account (SpamBot LIMITED).
 
     A limited account gets "banned from sending messages in supergroups/channels"
     on every send and every join — hammering it only piles up failures.
+    TTL is a fallback only — the health service clears the flag as soon as
+    SpamBot reports the account healthy again. 5h balances fast recovery
+    against not re-hammering an account that is still limited.
     """
     try:
         await cache_set(
